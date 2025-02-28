@@ -11,8 +11,28 @@ from pyTsetlinMachineParallel.tm import MultiClassTsetlinMachine
 from datasets import Dataset
 from __init__ import *
 from prodict import Prodict
+from activation_maps import visualize_activation_maps
 
-def train_step(model, X_train, Y_train, X_test, Y_test, epoch: int, soft_labels: np.ndarray | None = None) -> tuple[float, float, float]:
+DISTILLED_DEFAULTS_NESTED = {
+    "teacher": {
+        "C": 1000,
+        "T": 10,
+        "s": 5,
+        "epochs": 30,
+    },
+    "student": {
+        "C": 100,
+        "T": 10,
+        "s": 5,
+        "epochs": 60,
+    },
+    "temperature": 4.0,
+    "alpha": 0.5,
+    "weighted_clauses": True,
+    "number_of_state_bits": 8,
+}
+
+def train_step(model, X_train, Y_train, X_test, Y_test, epoch: int, soft_labels: np.ndarray | None = None, temperature: float | None = None, alpha: float | None = None) -> tuple[float, float, float, float]:
     """
     Train a model for one epoch and return test accuracy and timing information.
 
@@ -23,24 +43,32 @@ def train_step(model, X_train, Y_train, X_test, Y_test, epoch: int, soft_labels:
         X_test: Test data features
         Y_test: Test data labels
         soft_labels: Soft labels for the training data
+        temperature: Temperature for the soft labels
+        alpha: Alpha for the soft labels
     Returns:
         tuple[float, float, float]: Test accuracy percentage, training time, and testing time
     """
     tqdm.write(f'Epoch {epoch:>3}:', end=' ')
 
     start_training = time()
-    if soft_labels is None:
+    if soft_labels is None or temperature is None or alpha is None:
         model.fit(X_train, Y_train, epochs=1, incremental=True)
     else:
-        model.fit_soft(X_train, Y_train, epochs=1, incremental=True, soft_labels=soft_labels)
+        model.fit_soft(X_train, Y_train, epochs=1, incremental=True, soft_labels=soft_labels, temperature=temperature, alpha=alpha)
     stop_training = time()
     tqdm.write(f'Training time: {stop_training-start_training:.2f} s', end=' ')
+
+    # test the model on the training set - not included in timing
+    train_prediction = model.predict(X_train)
+    train_result = 100*(train_prediction == Y_train).mean()
+    tqdm.write(f'Training accuracy: {train_result:.2f}%', end=' ')
+
     start_testing = time()
     prediction = model.predict(X_test)
-    result = 100*(prediction == Y_test).mean()
+    test_result = 100*(prediction == Y_test).mean()
     stop_testing = time()
-    tqdm.write(f'Testing time: {stop_testing-start_testing:.2f} s, Test accuracy: {result:.2f}%')
-    return result, stop_training-start_training, stop_testing-start_testing
+    tqdm.write(f'Testing time: {stop_testing-start_testing:.2f} s, Test accuracy: {test_result:.2f}%')
+    return train_result, test_result, stop_training-start_training, stop_testing-start_testing
 
 def validate_params(params: dict, experiment_name: str) -> str:
     """
@@ -60,6 +88,7 @@ def validate_params(params: dict, experiment_name: str) -> str:
                 "epochs": 60,
             },
             "temperature": 4.0,
+            "alpha": 0.5,
             "weighted_clauses": True,
             "number_of_state_bits": 8,
         }
@@ -79,13 +108,15 @@ def validate_params(params: dict, experiment_name: str) -> str:
     assert "temperature" in params, "temperature is required"
     assert "weighted_clauses" in params, "weighted_clauses is required"
     assert "number_of_state_bits" in params, "number_of_state_bits is required"
+    assert "alpha" in params, "alpha is required"
+    assert params["alpha"] >= 0 and params["alpha"] <= 1, "alpha must be between 0 and 1"
 
     params["combined_epochs"] = params["teacher"]["epochs"] + params["student"]["epochs"]
     
     # generate experiment id
     exid = f"{experiment_name.replace(' ', '-')}_tC{params['teacher']['C']}_sC{params['student']['C']}_" \
            f"tT{params['teacher']['T']}_sT{params['student']['T']}_ts{params['teacher']['s']}_ss{params['student']['s']}_" \
-           f"te{params['teacher']['epochs']}_se{params['student']['epochs']}"    
+           f"te{params['teacher']['epochs']}_se{params['student']['epochs']}_temp{params['temperature']}_a{params['alpha']}"    
     return exid
 
 
@@ -96,6 +127,7 @@ def distillation_experiment(
     folderpath: str = DEFAULT_FOLDERPATH,
     save_all: bool = False,
     overwrite: bool = False,
+    make_activation_maps: bool = True,
     baseline_teacher_model: MultiClassTsetlinMachine | None = None,
     baseline_student_model: MultiClassTsetlinMachine | None = None,
     pretrained_teacher_model: MultiClassTsetlinMachine | None = None,
@@ -158,7 +190,7 @@ def distillation_experiment(
     if not overwrite and os.path.exists(os.path.join(folderpath, experiment_id)):
         # Check if experiment files exist, and if save_all, check model files exist too
         basic_files_exist = all(os.path.exists(os.path.join(folderpath, experiment_id, f)) 
-                              for f in [OUTPUT_JSON_PATH, RESULTS_CSV_PATH, ACCURACY_PNG_PATH])
+                              for f in [OUTPUT_JSON_PATH, RESULTS_CSV_PATH, TEST_ACCURACY_PNG_PATH, TRAIN_ACCURACY_PNG_PATH, TEST_TIME_PNG_PATH])
         
         model_files_exist = not save_all or all(os.path.exists(os.path.join(folderpath, experiment_id, f)) 
                                                for f in [TEACHER_BASELINE_MODEL_PATH, 
@@ -171,6 +203,8 @@ def distillation_experiment(
             results = pd.read_csv(os.path.join(folderpath, experiment_id, RESULTS_CSV_PATH))
             output = load_json(os.path.join(folderpath, experiment_id, OUTPUT_JSON_PATH))
             return output, results
+        else:
+            print(f"Experiment {experiment_id} already exists, but some files are missing, continuing") 
 
     make_dir(os.path.join(folderpath, experiment_id), overwrite=True)
     teacher_model_path = os.path.join(folderpath, experiment_id, TEACHER_CHECKPOINT_PATH)
@@ -198,6 +232,7 @@ def distillation_experiment(
 
         # delete entries after params['teacher_epochs'] for 'acc_test_distilled', 'time_train_distilled', 'time_test_distilled' columns
         results.loc[params.teacher.epochs:, ACC_TEST_DISTILLED] = np.nan
+        results.loc[params.teacher.epochs:, ACC_TRAIN_DISTILLED] = np.nan
         results.loc[params.teacher.epochs:, TIME_TRAIN_DISTILLED] = np.nan 
         results.loc[params.teacher.epochs:, TIME_TEST_DISTILLED] = np.nan
         print(f"Prefilled results loaded")
@@ -214,13 +249,14 @@ def distillation_experiment(
         best_acc = 0
         best_acc_epoch = 0
         for i in bt_pbar:
-            result, train_time, test_time = train_step(baseline_teacher_tm, X_train, Y_train, X_test, Y_test, i)
-            results.loc[i, ACC_TEST_TEACHER], results.loc[i, TIME_TRAIN_TEACHER], results.loc[i, TIME_TEST_TEACHER] = result, train_time, test_time
+            train_result, test_result, train_time, test_time = train_step(baseline_teacher_tm, X_train, Y_train, X_test, Y_test, i)
+            results.loc[i, ACC_TRAIN_TEACHER], results.loc[i, TIME_TRAIN_TEACHER] = train_result, train_time
+            results.loc[i, ACC_TEST_TEACHER], results.loc[i, TIME_TEST_TEACHER] = test_result, test_time
             bt_pbar.set_description(f"Teacher: {results[ACC_TEST_TEACHER].mean():.2f}%")
 
-            if i <= params.teacher.epochs - 1 and result > best_acc:
+            if i <= params.teacher.epochs - 1 and test_result > best_acc:
                 save_pkl(baseline_teacher_tm, teacher_model_path)
-                best_acc = result
+                best_acc = test_result
                 best_acc_epoch = i
 
             if i == params.teacher.epochs - 1:
@@ -244,8 +280,9 @@ def distillation_experiment(
         start = time()
         bs_pbar = tqdm(range(params.combined_epochs), desc="Student", leave=False, dynamic_ncols=True)
         for i in bs_pbar:
-            result, train_time, test_time = train_step(baseline_student_tm, X_train, Y_train, X_test, Y_test, i)
-            results.loc[i, ACC_TEST_STUDENT], results.loc[i, TIME_TRAIN_STUDENT], results.loc[i, TIME_TEST_STUDENT] = result, train_time, test_time
+            train_result, test_result, train_time, test_time = train_step(baseline_student_tm, X_train, Y_train, X_test, Y_test, i)
+            results.loc[i, ACC_TRAIN_STUDENT], results.loc[i, TIME_TRAIN_STUDENT] = train_result, train_time
+            results.loc[i, ACC_TEST_STUDENT], results.loc[i, TIME_TEST_STUDENT] = test_result, test_time
             bs_pbar.set_description(f"Student: {results[ACC_TEST_STUDENT].mean():.2f}%")
 
         bs_pbar.close()
@@ -273,8 +310,9 @@ def distillation_experiment(
     print(f"Training distilled model for {params.student.epochs} epochs")
     dt_pbar = tqdm(range(params.teacher.epochs, params.combined_epochs), desc="Distilled", leave=False, dynamic_ncols=True)
     for i in dt_pbar:
-        result, train_time, test_time = train_step(distilled_tm, X_train, Y_train, X_test, Y_test, i, soft_labels)
-        results.loc[i, ACC_TEST_DISTILLED], results.loc[i, TIME_TRAIN_DISTILLED], results.loc[i, TIME_TEST_DISTILLED] = result, train_time, test_time
+        train_result, test_result, train_time, test_time = train_step(distilled_tm, X_train, Y_train, X_test, Y_test, i, soft_labels, params.temperature, params.alpha)
+        results.loc[i, ACC_TRAIN_DISTILLED], results.loc[i, TIME_TRAIN_DISTILLED] = train_result, train_time
+        results.loc[i, ACC_TEST_DISTILLED], results.loc[i, TIME_TEST_DISTILLED] = test_result, test_time
         dt_pbar.set_description(f"Distilled: {results[ACC_TEST_DISTILLED].mean():.2f}%")
 
     dt_pbar.close()
@@ -294,30 +332,52 @@ def distillation_experiment(
 
     output = {
         "analysis": {
-            "avg_acc_test_teacher": results[ACC_TEST_TEACHER].mean(),
+            # average accuracy on the test set
+            "avg_acc_test_teacher": results[ACC_TEST_TEACHER].mean(), 
             "avg_acc_test_student": results[ACC_TEST_STUDENT].mean(),
             "avg_acc_test_distilled": post_teacher_results[ACC_TEST_DISTILLED].mean(),
 
+            # standard deviation of accuracy on the test set
             "std_acc_test_teacher": results[ACC_TEST_TEACHER].std(),
             "std_acc_test_student": results[ACC_TEST_STUDENT].std(),
             "std_acc_test_distilled": post_teacher_results[ACC_TEST_DISTILLED].std(),
 
+            # average accuracy on the training set
+            "avg_acc_train_teacher": results[ACC_TRAIN_TEACHER].mean(),
+            "avg_acc_train_student": results[ACC_TRAIN_STUDENT].mean(),
+            "avg_acc_train_distilled": post_teacher_results[ACC_TRAIN_DISTILLED].mean(),\
+
+            # standard deviation of accuracy on the training set
+            "std_acc_train_teacher": results[ACC_TRAIN_TEACHER].std(),
+            "std_acc_train_student": results[ACC_TRAIN_STUDENT].std(),
+            "std_acc_train_distilled": post_teacher_results[ACC_TRAIN_DISTILLED].std(),
+
+            # final accuracy on the test set
             "final_acc_test_distilled": results[ACC_TEST_DISTILLED].iloc[-1],
             "final_acc_test_teacher": results[ACC_TEST_TEACHER].iloc[-1],
             "final_acc_test_student": results[ACC_TEST_STUDENT].iloc[-1],
 
+            # final accuracy on the training set
+            "final_acc_train_distilled": results[ACC_TRAIN_DISTILLED].iloc[-1],
+            "final_acc_train_teacher": results[ACC_TRAIN_TEACHER].iloc[-1],
+            "final_acc_train_student": results[ACC_TRAIN_STUDENT].iloc[-1],
+
+            # sum of all training epoch times
             "sum_time_train_teacher": results[TIME_TRAIN_TEACHER].sum(),
             "sum_time_train_student": results[TIME_TRAIN_STUDENT].sum(),
             "sum_time_train_distilled": results[TIME_TRAIN_DISTILLED].sum(),
 
+            # sum of all test set evaluation times
             "sum_time_test_teacher": results[TIME_TEST_TEACHER].sum(),
             "sum_time_test_student": results[TIME_TEST_STUDENT].sum(),
             "sum_time_test_distilled": results[TIME_TEST_DISTILLED].sum(),
 
+            # average time for each training epoch
             "avg_time_train_teacher": results[TIME_TRAIN_TEACHER].mean(),
             "avg_time_train_student": results[TIME_TRAIN_STUDENT].mean(),
             "avg_time_train_distilled": post_teacher_results[TIME_TRAIN_DISTILLED].mean(),
 
+            # average time for each test set evaluation
             "avg_time_test_teacher": results[TIME_TEST_TEACHER].mean(),
             "avg_time_test_student": results[TIME_TEST_STUDENT].mean(),
             "avg_time_test_distilled": post_teacher_results[TIME_TEST_DISTILLED].mean(),
@@ -336,8 +396,11 @@ def distillation_experiment(
     save_json(output, os.path.join(fpath, OUTPUT_JSON_PATH))
     results.to_csv(os.path.join(fpath, RESULTS_CSV_PATH))
 
-    # plot results and save
+    # plot test results and save
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
+    plt.axhline(results[ACC_TEST_DISTILLED].mean(), color="blue", linestyle=":", alpha=0.4, label="_Distilled Avg")
+    plt.axhline(results[ACC_TEST_TEACHER].mean(), color="orange", linestyle=":", alpha=0.4, label="_Teacher Avg")
+    plt.axhline(results[ACC_TEST_STUDENT].mean(), color="green", linestyle=":", alpha=0.4, label="_Student Avg")
     plt.plot(results[ACC_TEST_DISTILLED], label="Distilled")
     plt.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=0.5)
     plt.plot(results[ACC_TEST_STUDENT], label="Student", alpha=0.5)
@@ -347,11 +410,29 @@ def distillation_experiment(
         plt.xticks(range(0, len(results), 5))
     else:
         plt.xticks(range(0, len(results), 10))
-    plt.legend(loc="upper left")
+    plt.legend(loc="lower right")
     plt.grid(linestyle='dotted')
-    plt.savefig(os.path.join(fpath, ACCURACY_PNG_PATH))
+    plt.savefig(os.path.join(fpath, TEST_ACCURACY_PNG_PATH))
     plt.close()
-
+    
+    # plot train results and save
+    plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
+    plt.axhline(results[ACC_TRAIN_DISTILLED].mean(), color="blue", linestyle=":", alpha=0.4, label="_Distilled Avg")
+    plt.axhline(results[ACC_TRAIN_TEACHER].mean(), color="orange", linestyle=":", alpha=0.4, label="_Teacher Avg")
+    plt.axhline(results[ACC_TRAIN_STUDENT].mean(), color="green", linestyle=":", alpha=0.4, label="_Student Avg")
+    plt.plot(results[ACC_TRAIN_DISTILLED], label="Distilled")
+    plt.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=0.5)
+    plt.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=0.5)
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy (%)")
+    if len(results) < 100:
+        plt.xticks(range(0, len(results), 5))
+    else:
+        plt.xticks(range(0, len(results), 10))
+    plt.legend(loc="lower right")
+    plt.grid(linestyle='dotted')
+    plt.savefig(os.path.join(fpath, TRAIN_ACCURACY_PNG_PATH))
+    plt.close()
 
     # plot bar chart of test time for each model
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
@@ -359,8 +440,12 @@ def distillation_experiment(
     data = [output["analysis"]["avg_time_test_teacher"], output["analysis"]["avg_time_test_student"], output["analysis"]["avg_time_test_distilled"]]
     colors = ["orange", "green", "blue"]
     plt.bar(labels, data, color=colors)
+
+    # get y tick size
+    yticks = plt.yticks()[0]
+    offset = yticks[0] * 0.1
+
     # add text on top of each bar
-    offset = max(data) * 0.02
     for i, label in enumerate(labels):
         plt.text(i, data[i]+offset, f"{data[i]:.3f} s", ha="center", va="bottom")
     
@@ -372,6 +457,16 @@ def distillation_experiment(
     plt.ylabel("Inference Time (s)")
     plt.savefig(os.path.join(fpath, TEST_TIME_PNG_PATH))
     plt.close()
+
+    if make_activation_maps:
+        try:
+            # plot activation maps
+            samples = np.random.randint(0, len(X_test), size=5)
+            visualize_activation_maps(baseline_teacher_tm, baseline_student_tm, distilled_tm, 
+                                    X_test[samples], dataset.image_shape, os.path.join(fpath, ACTIVATION_MAPS_PNG_PATH))
+        except Exception as e:
+            print(f"Error making activation maps: {e}")
+            print("Make sure the dataset has a valid image shape")
 
     return output, results
 

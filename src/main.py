@@ -12,25 +12,30 @@ random.seed(0)
 So far, these are the best params:
 
 distilled:
-    (mnist_dataset, "MNIST", { "teacher_num_clauses": 600, "student_num_clauses": 100, "T": 20, "s": 10.0,"teacher_epochs": 60, "student_epochs": 60 , "temperature": 3.0}, {"overwrite": False}),
-
-    EMNIST:
-        (emnist_dataset, "EMNIST", 
-            {
-                "teacher": { "C": 800, "T": 100, "s": 4.0, "epochs": 40 },
-                "student": { "C": 100, "T": 60, "s": 4.0, "epochs": 80 },
-                "temperature": 3,
-            },
-            {"overwrite": True}
-        )
-        (mnist_dataset, "MNIST", 
-            {
-                "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 40 },
-                "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 80 },
-                "temperature": 3.0,
-            },
-            {"overwrite": True}
-        ),
+    (kmnist_dataset, "KMNIST", 
+        {
+            "teacher": { "C": 1000, "T": 100, "s": 8.2, "epochs": 60 },
+            "student": { "C": 100, "T": 100, "s": 8.2, "epochs": 120 },
+            "temperature": 4.0,
+        },
+        {"overwrite": False}
+    ),
+    (mnist_dataset, "MNIST", 
+        {
+            "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 60 },
+            "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 120 },
+            "temperature": 3.0,
+        },
+        {"overwrite": False}
+    ),
+    (emnist_dataset, "EMNIST", 
+        {
+            "teacher": { "C": 800, "T": 100, "s": 4.0, "epochs": 60 },
+            "student": { "C": 100, "T": 60, "s": 4.0, "epochs": 120 },
+            "temperature": 4.0,
+        },
+        {"overwrite": False}
+    ),
 """
 
 if __name__ == "__main__":
@@ -48,61 +53,50 @@ if __name__ == "__main__":
     # this goes (dataset, name, params, kwargs)
     one_off_dir = os.path.join("results")
     distilled_experiments = [
-        (emnist_dataset, "EMNIST", 
-            {
-                "teacher": { "C": 800, "T": 100, "s": 4.0, "epochs": 60 },
-                "student": { "C": 100, "T": 60, "s": 4.0, "epochs": 120 },
-                "temperature": 4,
-            },
-            {"overwrite": False}
-        ),
-        (emnist_dataset, "EMNIST", 
-            {
-                "teacher": { "C": 1000, "T": 200, "s": 5.0, "epochs": 60 },
-                "student": { "C": 100, "T": 200, "s": 5.0, "epochs": 120 },
-                "temperature": 3,
-            },
-            {"overwrite": False}
-        ),
         (kmnist_dataset, "KMNIST", 
             {
-                "teacher": { "C": 1000, "T": 400, "s": 4.0, "epochs": 30 },
-                "student": { "C": 100, "T": 400, "s": 4.0, "epochs": 60 },
-                "temperature": 3,
-            },
-            {"overwrite": False}
-        ),
-        (kmnist_dataset, "KMNIST", 
-            {
-                "teacher": { "C": 2000, "T": 600, "s": 4.0, "epochs": 60 },
-                "student": { "C": 200, "T": 1000, "s": 3.5, "epochs": 120 },
-                "temperature": 3,
+                "teacher": { "C": 1000, "T": 100, "s": 8.2, "epochs": 60 },
+                "student": { "C": 100, "T": 100, "s": 8.2, "epochs": 120 },
+                "temperature": 4.0,
+                "alpha": 0.5,
             },
             {"overwrite": False}
         ),
         (mnist_dataset, "MNIST", 
             {
-                "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 40 },
-                "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 80 },
+                "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 60 },
+                "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 120 },
                 "temperature": 3.0,
+                "alpha": 0.5,
             },
-            {"overwrite": True}
+            {"overwrite": False}
+        ),
+        (emnist_dataset, "EMNIST", 
+            {
+                "teacher": { "C": 800, "T": 100, "s": 4.0, "epochs": 60 },
+                "student": { "C": 100, "T": 60, "s": 4.0, "epochs": 120 },
+                "temperature": 4.0,
+                "alpha": 0.5,
+            },
+            {"overwrite": False}
         ),
         (mnist3d_dataset, "MNIST3D", 
             {
-                "teacher": { "C": 2000, "T": 100, "s": 8.0, "epochs": 30 },
-                "student": { "C": 200, "T": 100, "s": 8.0, "epochs": 60 },
+                "teacher": { "C": 2000, "T": 100, "s": 8.0, "epochs": 60 },
+                "student": { "C": 200, "T": 100, "s": 8.0, "epochs": 120 },
                 "temperature": 4.0,
+                "alpha": 0.5,
             },
-            {"overwrite": False}
+            {"overwrite": False, "make_activation_maps": False}
         ),
         (imdb_dataset, "IMDB", 
             {
-                "teacher": { "C": 10000, "T": 6000, "s": 4.0, "epochs": 20 },
+                "teacher": { "C": 10000, "T": 6000, "s": 4.0, "epochs": 30 },
                 "student": { "C": 2000, "T": 6000, "s": 4.0, "epochs": 60 },
-                "temperature": 4.0,
+                "temperature": 3.0,
+                "alpha": 0.5,
             },
-            {"overwrite": False}
+            {"overwrite": False, "make_activation_maps": False}
         ),
     ]
     
