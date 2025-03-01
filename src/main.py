@@ -1,6 +1,6 @@
 from distillation import distillation_experiment
 import os
-from datasets import MNISTDataset, MNIST3DDataset, FashionMNISTDataset, KMNISTDataset, IMDBDataset, EMNISTLettersDataset
+from datasets import MNISTDataset, FashionMNISTDataset, KMNISTDataset, IMDBDataset, EMNISTLettersDataset, OracleMNISTDataset
 from util import load_or_create
 import numpy as np
 import random
@@ -14,9 +14,10 @@ So far, these are the best params:
 distilled:
     (kmnist_dataset, "KMNIST", 
         {
-            "teacher": { "C": 1000, "T": 100, "s": 8.2, "epochs": 60 },
-            "student": { "C": 100, "T": 100, "s": 8.2, "epochs": 120 },
+            "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 60 },
+            "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 120 },
             "temperature": 4.0,
+            "alpha": 0.5,
         },
         {"overwrite": False}
     ),
@@ -42,11 +43,12 @@ if __name__ == "__main__":
     # load datasets.
     print("Loading datasets...")
     kmnist_dataset = load_or_create(os.path.join("data", "kmnist_dataset.pkl"), KMNISTDataset)
-    mnist3d_dataset = load_or_create(os.path.join("data", "mnist3d_dataset.pkl"), MNIST3DDataset)
     mnist_dataset = load_or_create(os.path.join("data", "mnist_dataset.pkl"), MNISTDataset)
     fashion_mnist_dataset = load_or_create(os.path.join("data", "fashion_mnist_dataset.pkl"), FashionMNISTDataset)
     imdb_dataset = load_or_create(os.path.join("data", "imdb_dataset.pkl"), IMDBDataset)
     emnist_dataset = load_or_create(os.path.join("data", "emnist_dataset.pkl"), EMNISTLettersDataset)
+    oracle_mnist_dataset = load_or_create(os.path.join("data", "oracle_mnist_dataset.pkl"), OracleMNISTDataset)
+
     print("Datasets loaded")
         
     #run distilled experiments
@@ -57,6 +59,15 @@ if __name__ == "__main__":
             {
                 "teacher": { "C": 1000, "T": 100, "s": 8.2, "epochs": 60 },
                 "student": { "C": 100, "T": 100, "s": 8.2, "epochs": 120 },
+                "temperature": 4.0,
+                "alpha": 0.5,
+            },
+            {"overwrite": False}
+        ),
+        (kmnist_dataset, "KMNIST", 
+            {
+                "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 60 },
+                "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 120 },
                 "temperature": 4.0,
                 "alpha": 0.5,
             },
@@ -79,20 +90,20 @@ if __name__ == "__main__":
                 "alpha": 0.5,
             },
             {"overwrite": False}
-        ),
-        (mnist3d_dataset, "MNIST3D", 
+        ),  
+        (emnist_dataset, "EMNIST", 
             {
-                "teacher": { "C": 2000, "T": 100, "s": 8.0, "epochs": 60 },
-                "student": { "C": 200, "T": 100, "s": 8.0, "epochs": 120 },
+                "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 60 },
+                "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 120 },
                 "temperature": 4.0,
                 "alpha": 0.5,
             },
-            {"overwrite": False, "make_activation_maps": False}
-        ),
+            {"overwrite": False}
+        ),  
         (imdb_dataset, "IMDB", 
             {
-                "teacher": { "C": 10000, "T": 6000, "s": 4.0, "epochs": 30 },
-                "student": { "C": 2000, "T": 6000, "s": 4.0, "epochs": 60 },
+                "teacher": { "C": 10000, "T": 8000, "s": 4.0, "epochs": 50 },
+                "student": { "C": 2000, "T": 8000, "s": 4.0, "epochs": 100 },
                 "temperature": 3.0,
                 "alpha": 0.5,
             },

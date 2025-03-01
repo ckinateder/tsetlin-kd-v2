@@ -268,6 +268,7 @@ def distillation_experiment(
 
     # copy first teacher_epochs results to distilled results
     results.loc[:params.teacher.epochs, ACC_TEST_DISTILLED] = results.loc[:params.teacher.epochs, ACC_TEST_TEACHER]
+    results.loc[:params.teacher.epochs, ACC_TRAIN_DISTILLED] = results.loc[:params.teacher.epochs, ACC_TRAIN_TEACHER]
     results.loc[:params.teacher.epochs, TIME_TRAIN_DISTILLED] = results.loc[:params.teacher.epochs, TIME_TRAIN_TEACHER]
     results.loc[:params.teacher.epochs, TIME_TEST_DISTILLED] = results.loc[:params.teacher.epochs, TIME_TEST_TEACHER]
 

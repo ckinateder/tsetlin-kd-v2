@@ -1,10 +1,12 @@
 .DS_Store
 *.pdf
 **.pyc
-data
 *~*
 **/*.pkl
 old_save
 trash
 .specstory
 old_results
+data/EMNIST
+data/KMNIST
+data/*.pkl

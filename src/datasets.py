@@ -12,6 +12,7 @@ import os
 from abc import ABC, abstractmethod
 from torchvision.datasets import KMNIST, EMNIST
 from torchvision import transforms
+from __init__ import DATASET_FOLDERPATH
 
 def prepare_imdb_data(
     max_ngram: int = 2,
@@ -153,8 +154,8 @@ class Dataset(ABC):
     def _load(self, **kwargs):
         raise NotImplementedError
 
-    def get_data(self):
-        return self.X_train, self.Y_train, self.X_test, self.Y_test
+    def get_data(self, percentage: float = 1.0):
+        return self.X_train[:int(len(self.X_train) * percentage)], self.Y_train[:int(len(self.Y_train) * percentage)], self.X_test[:int(len(self.X_test) * percentage)], self.Y_test[:int(len(self.Y_test) * percentage)]
 
     def get_data_train(self):
         return self.get_data()[:2]
@@ -177,10 +178,59 @@ class ImageDataset(Dataset):
             raise ValueError("Shape not set")
         return scale(X, self.image_shape, self.scale_factor)
     
-    def get_data(self):
+    def get_data(self, percentage: float = 1.0):
         if self.scale_factor != 1:
-            return self.scale(self.X_train), self.Y_train, self.scale(self.X_test), self.Y_test
-        return super().get_data()
+            return self.scale(self.X_train[:int(len(self.X_train) * percentage)]), self.Y_train[:int(len(self.Y_train) * percentage)], self.scale(self.X_test[:int(len(self.X_test) * percentage)]), self.Y_test[:int(len(self.Y_test) * percentage)]
+        return super().get_data(percentage)
+
+class Spots10Dataset(ImageDataset):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.image_shape = (32, 32)
+
+    def _load(self, booleanize_threshold: float = 75):
+        if not os.path.exists(os.path.join(DATASET_FOLDERPATH, "spots10.npz")):
+            raise FileNotFoundError(f"Spots10 dataset not found. Please download from https://github.com/amotica/spots-10?tab=readme-ov-file#usage and place it in the {DATASET_FOLDERPATH} folder.")
+        path = os.path.join(DATASET_FOLDERPATH, "spots10.npz")
+        data = np.load(path)
+        self.X_train = data["X_train"]
+        self.Y_train = data["Y_train"]
+        self.X_test = data["X_test"]
+        self.Y_test = data["Y_test"]
+
+        # booleanize the images
+        self.X_train = np.where(self.X_train > booleanize_threshold, 1, 0)  
+        self.X_test = np.where(self.X_test > booleanize_threshold, 1, 0)
+
+        # flatten each image using numpy
+        self.X_train = self.X_train.reshape(self.X_train.shape[0], 32*32)
+        self.X_test = self.X_test.reshape(self.X_test.shape[0], 32*32)
+        
+
+class OracleMNISTDataset(ImageDataset):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.image_shape = (28, 28)
+
+    def _load(self, booleanize_threshold: int = 75):
+        # load the dataset from https://github.com/wm-bupt/oracle-mnist
+        # download the dataset and put it in the DATASET_FOLDERPATH folder
+        if not os.path.exists(os.path.join(DATASET_FOLDERPATH, "oracle_mnist.npz")):
+            raise FileNotFoundError(f"OracleMNIST dataset not found. Please download from https://github.com/wm-bupt/oracle-mnist and place it in the {DATASET_FOLDERPATH} folder.")
+        path = os.path.join(DATASET_FOLDERPATH, "oracle_mnist.npz")
+        data = np.load(path)
+        self.X_train = data["X_train"]
+        self.Y_train = data["Y_train"]
+        self.X_test = data["X_test"]
+        self.Y_test = data["Y_test"]
+        
+        # booleanize the images
+        self.X_train = np.where(self.X_train > booleanize_threshold, 1, 0)  
+        self.X_test = np.where(self.X_test > booleanize_threshold, 1, 0)
+
+        # flatten each image using numpy
+        self.X_train = self.X_train.reshape(self.X_train.shape[0], 28*28)
+        self.X_test = self.X_test.reshape(self.X_test.shape[0], 28*28)
 
 class IMDBDataset(Dataset):
     def __init__(self, **kwargs):
@@ -207,8 +257,8 @@ class EMNISTLettersDataset(ImageDataset):
         super().__init__(**kwargs)
         self.image_shape = (28, 28)
     def _load(self, booleanize_threshold: int = 75):
-        train = EMNIST(root="data", split="letters", download=True, train=True, transform=transforms.ToTensor())
-        test = EMNIST(root="data", split="letters", download=True, train=False, transform=transforms.ToTensor())
+        train = EMNIST(root=DATASET_FOLDERPATH, split="letters", download=True, train=True, transform=transforms.ToTensor())
+        test = EMNIST(root=DATASET_FOLDERPATH, split="letters", download=True, train=False, transform=transforms.ToTensor())
 
         self.X_train, self.Y_train = train.data.numpy(), train.targets.numpy()
         self.X_test, self.Y_test = test.data.numpy(), test.targets.numpy()
@@ -239,8 +289,8 @@ class KMNISTDataset(ImageDataset):
         self.image_shape = (28, 28)
 
     def _load(self, booleanize_threshold: float = 75):
-        train = KMNIST(root="data", download=True, train=True, transform=transforms.ToTensor())
-        test = KMNIST(root="data", download=True, train=False, transform=transforms.ToTensor())
+        train = KMNIST(root=DATASET_FOLDERPATH, download=True, train=True, transform=transforms.ToTensor())
+        test = KMNIST(root=DATASET_FOLDERPATH, download=True, train=False, transform=transforms.ToTensor())
         self.X_train, self.Y_train = train.data.numpy(), train.targets.numpy()
         self.X_test, self.Y_test = test.data.numpy(), test.targets.numpy()
 
@@ -255,7 +305,7 @@ class MNIST3DDataset(Dataset):
         super().__init__(**kwargs)
 
     def _load(self, booleanize_threshold: float = 0.3):
-        with h5py.File(os.path.join("data", "mnist3d.h5"), "r") as hf:
+        with h5py.File(os.path.join(DATASET_FOLDERPATH, "mnist3d.h5"), "r") as hf:
             self.X_train = hf["X_train"][:]
             self.Y_train = hf["y_train"][:]    
             self.X_test = hf["X_test"][:]  
@@ -269,7 +319,7 @@ class MNIST3DDataset(Dataset):
 
 
 if __name__ == "__main__":
-    dataset = IMDBDataset()
+    dataset = Spots10Dataset()
     data = dataset.get_data()
 
     print(data[0].shape)

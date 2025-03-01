@@ -1,6 +1,7 @@
 absl-py==2.1.0
 asttokens==3.0.0
 astunparse==1.6.3
+beautifulsoup4==4.13.3
 certifi==2024.12.14
 charset-normalizer==3.4.0
 comm==0.2.2
@@ -15,6 +16,7 @@ flatbuffers==24.3.25
 fonttools==4.55.3
 fsspec==2024.12.0
 gast==0.6.0
+gdown==5.2.0
 google-pasta==0.2.0
 grpcio==1.68.1
 h5py==3.12.1
@@ -70,8 +72,9 @@ ptyprocess==0.7.0
 pure_eval==0.2.3
 Pygments==2.18.0
 pyparsing==3.2.0
+PySocks==1.7.1
 python-dateutil==2.9.0.post0
-pyTsetlinMachineParallel @ git+https://github.com/ckinateder/pyTsetlinMachineParallel.git
+pyTsetlinMachineParallel @ git+https://github.com/ckinateder/pyTsetlinMachineParallel.git@2633ec361968a46214ba9c5b6579100e71e3bcdc
 pytz==2024.2
 pyzmq==26.2.0
 requests==2.32.3
@@ -79,6 +82,7 @@ rich==13.9.4
 scikit-learn==1.6.0
 scipy==1.14.1
 six==1.17.0
+soupsieve==2.6
 stack-data==0.6.3
 sympy==1.13.1
 tensorboard==2.18.0
