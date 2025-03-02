@@ -31,12 +31,13 @@ distilled:
     ),
     (emnist_dataset, "EMNIST", 
         {
-            "teacher": { "C": 800, "T": 100, "s": 4.0, "epochs": 60 },
-            "student": { "C": 100, "T": 60, "s": 4.0, "epochs": 120 },
+            "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 60 },
+            "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 120 },
             "temperature": 4.0,
+            "alpha": 0.5,
         },
         {"overwrite": False}
-    ),
+    ),  
 """
 
 if __name__ == "__main__":
@@ -57,15 +58,6 @@ if __name__ == "__main__":
     distilled_experiments = [
         (kmnist_dataset, "KMNIST", 
             {
-                "teacher": { "C": 1000, "T": 100, "s": 8.2, "epochs": 60 },
-                "student": { "C": 100, "T": 100, "s": 8.2, "epochs": 120 },
-                "temperature": 4.0,
-                "alpha": 0.5,
-            },
-            {"overwrite": False}
-        ),
-        (kmnist_dataset, "KMNIST", 
-            {
                 "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 60 },
                 "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 120 },
                 "temperature": 4.0,
@@ -84,15 +76,6 @@ if __name__ == "__main__":
         ),
         (emnist_dataset, "EMNIST", 
             {
-                "teacher": { "C": 800, "T": 100, "s": 4.0, "epochs": 60 },
-                "student": { "C": 100, "T": 60, "s": 4.0, "epochs": 120 },
-                "temperature": 4.0,
-                "alpha": 0.5,
-            },
-            {"overwrite": False}
-        ),  
-        (emnist_dataset, "EMNIST", 
-            {
                 "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 60 },
                 "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 120 },
                 "temperature": 4.0,
@@ -102,8 +85,8 @@ if __name__ == "__main__":
         ),  
         (imdb_dataset, "IMDB", 
             {
-                "teacher": { "C": 10000, "T": 8000, "s": 4.0, "epochs": 50 },
-                "student": { "C": 2000, "T": 8000, "s": 4.0, "epochs": 100 },
+                "teacher": { "C": 10000, "T": 8000, "s": 4.0, "epochs": 60 },
+                "student": { "C": 2000, "T": 8000, "s": 4.0, "epochs": 120 },
                 "temperature": 3.0,
                 "alpha": 0.5,
             },
