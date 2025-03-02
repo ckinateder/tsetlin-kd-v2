@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # this goes (dataset, name, params, kwargs)
     one_off_dir = os.path.join("results")
     distilled_experiments = [
-        (mnist_dataset, "MNIST-new-fit", 
+        (mnist_dataset, "MNIST", 
             {
                 "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 60 },
                 "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 120 },
@@ -64,7 +64,7 @@ if __name__ == "__main__":
             },
             {"overwrite": False}
         ),
-        (kmnist_dataset, "KMNIST-new-fit", 
+        (kmnist_dataset, "KMNIST", 
             {
                 "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 60 },
                 "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 120 },
@@ -73,7 +73,7 @@ if __name__ == "__main__":
             },
             {"overwrite": False}
         ),
-        (emnist_dataset, "EMNIST-new-fit", 
+        (emnist_dataset, "EMNIST", 
             {
                 "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 60 },
                 "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 120 },
@@ -82,11 +82,11 @@ if __name__ == "__main__":
             },
             {"overwrite": False}
         ),  
-        (imdb_dataset, "IMDB-new-fit", 
+        (imdb_dataset, "IMDB", 
             {
-                "teacher": { "C": 10000, "T": 8000, "s": 4.0, "epochs": 60 },
-                "student": { "C": 2000, "T": 8000, "s": 4.0, "epochs": 120 },
-                "temperature": 3.0,
+                "teacher": { "C": 10000, "T": 6000, "s": 4.0, "epochs": 60 },
+                "student": { "C": 1000, "T": 6000, "s": 4.0, "epochs": 120 },
+                "temperature": 4.0,
                 "alpha": 0.5,
             },
             {"overwrite": False, "make_activation_maps": False}

@@ -51,9 +51,9 @@
         "number_of_state_bits": 8,
         "combined_epochs": 180
     },
-    "experiment_name": "MNIST-new-fit",
+    "experiment_name": "MNIST",
     "timestamp": "2025-03-02 00:41:19",
-    "id": "MNIST-new-fit_tC1000_sC100_tT10_sT10_ts4.0_ss4.0_te60_se120_temp3.0_a0.5",
+    "id": "MNIST_tC1000_sC100_tT10_sT10_ts4.0_ss4.0_te60_se120_temp3.0_a0.5",
     "results": {
         "acc_test_teacher": {
             "0": 85.05,

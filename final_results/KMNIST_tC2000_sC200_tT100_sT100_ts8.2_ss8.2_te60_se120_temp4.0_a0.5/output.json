@@ -51,9 +51,9 @@
         "number_of_state_bits": 8,
         "combined_epochs": 180
     },
-    "experiment_name": "KMNIST-new-fit",
+    "experiment_name": "KMNIST",
     "timestamp": "2025-03-02 01:12:21",
-    "id": "KMNIST-new-fit_tC2000_sC200_tT100_sT100_ts8.2_ss8.2_te60_se120_temp4.0_a0.5",
+    "id": "KMNIST_tC2000_sC200_tT100_sT100_ts8.2_ss8.2_te60_se120_temp4.0_a0.5",
     "results": {
         "acc_test_teacher": {
             "0": 71.14,
