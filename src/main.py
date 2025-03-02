@@ -48,7 +48,6 @@ if __name__ == "__main__":
     fashion_mnist_dataset = load_or_create(os.path.join("data", "fashion_mnist_dataset.pkl"), FashionMNISTDataset)
     imdb_dataset = load_or_create(os.path.join("data", "imdb_dataset.pkl"), IMDBDataset)
     emnist_dataset = load_or_create(os.path.join("data", "emnist_dataset.pkl"), EMNISTLettersDataset)
-    oracle_mnist_dataset = load_or_create(os.path.join("data", "oracle_mnist_dataset.pkl"), OracleMNISTDataset)
 
     print("Datasets loaded")
         
@@ -56,16 +55,7 @@ if __name__ == "__main__":
     # this goes (dataset, name, params, kwargs)
     one_off_dir = os.path.join("results")
     distilled_experiments = [
-        (kmnist_dataset, "KMNIST", 
-            {
-                "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 60 },
-                "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 120 },
-                "temperature": 4.0,
-                "alpha": 0.5,
-            },
-            {"overwrite": False}
-        ),
-        (mnist_dataset, "MNIST", 
+        (mnist_dataset, "MNIST-new-fit", 
             {
                 "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 60 },
                 "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 120 },
@@ -74,7 +64,16 @@ if __name__ == "__main__":
             },
             {"overwrite": False}
         ),
-        (emnist_dataset, "EMNIST", 
+        (kmnist_dataset, "KMNIST-new-fit", 
+            {
+                "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 60 },
+                "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 120 },
+                "temperature": 4.0,
+                "alpha": 0.5,
+            },
+            {"overwrite": False}
+        ),
+        (emnist_dataset, "EMNIST-new-fit", 
             {
                 "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 60 },
                 "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 120 },
@@ -83,7 +82,7 @@ if __name__ == "__main__":
             },
             {"overwrite": False}
         ),  
-        (imdb_dataset, "IMDB", 
+        (imdb_dataset, "IMDB-new-fit", 
             {
                 "teacher": { "C": 10000, "T": 8000, "s": 4.0, "epochs": 60 },
                 "student": { "C": 2000, "T": 8000, "s": 4.0, "epochs": 120 },

@@ -437,23 +437,19 @@ def distillation_experiment(
 
     # plot bar chart of test time for each model
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
+    plt.grid(linestyle='dotted')
     labels = ["Teacher", "Student", "Distilled"]
     data = [output["analysis"]["avg_time_test_teacher"], output["analysis"]["avg_time_test_student"], output["analysis"]["avg_time_test_distilled"]]
     colors = ["orange", "green", "blue"]
     plt.bar(labels, data, color=colors)
-
     # get y tick size
     yticks = plt.yticks()[0]
     offset = yticks[0] * 0.1
-
+    plt.yticks(np.arange(0, yticks.max()*1.1, yticks[1]-yticks[0]))
     # add text on top of each bar
     for i, label in enumerate(labels):
         plt.text(i, data[i]+offset, f"{data[i]:.3f} s", ha="center", va="bottom")
-    
     # take default y ticks and set 10% higher
-    yticks = plt.yticks()[0]
-    plt.yticks(np.arange(0, yticks.max()*1.1, yticks[1]-yticks[0]))
-
     #plt.xlabel("Model")
     plt.ylabel("Inference Time (s)")
     plt.savefig(os.path.join(fpath, TEST_TIME_PNG_PATH))
