@@ -74,12 +74,8 @@ def grid_search(
                     result = 100 * (tm.predict(X_test) == Y_test).mean()
                     stop_testing = time()
 
-                    start_transform = time()
-                    tm.transform(X_test)
-                    stop_transform = time()
-
                     tqdm.write(
-                        f"#{i + 1} Accuracy: {result:.2f}% Training: {stop_training - start_training:.2f}s Testing: {stop_testing - start_testing:.2f}s Transform:{stop_transform - start_transform:.2f}s"
+                        f"#{i + 1} Accuracy: {result:.2f}% Training: {stop_training - start_training:.2f}s Testing: {stop_testing - start_testing:.2f}s"
                     )
 
                     # Update best parameters if we found better accuracy
@@ -111,20 +107,20 @@ def grid_search(
 
 
 if __name__ == "__main__":
-    # OracleMNIST grid search
-    oracle_mnist_dataset = load_or_create(os.path.join("data", "oracle_mnist_dataset.pkl"), OracleMNISTDataset)
+    #  IMDB grid search
+    imdb_dataset = load_or_create(os.path.join("data", "imdb_dataset.pkl"), IMDBDataset)
 
-    X_train, Y_train, X_test, Y_test = oracle_mnist_dataset.get_data(percentage=0.4)
-
+    X_train, Y_train, X_test, Y_test = imdb_dataset.get_data(percentage=0.4)
+    
     best_params = grid_search(
         X_train,
         Y_train,
         X_test,
         Y_test,
         num_clauses_values=[1000],
-        threshold_values=[10, 22, 50, 100, 400],
-        specificity_values=[7, 10.0, 20.0],
+        threshold_values=[22, 100, 500, 1000, 2000, 4000, 6000, 8000,],
+        specificity_values=[2.5, 4.0, 7.5, 10.0],
         epochs=5,
         random_search=True
     )
- 
+

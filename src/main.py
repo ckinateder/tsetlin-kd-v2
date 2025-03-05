@@ -1,7 +1,9 @@
-from distillation import distillation_experiment
+from distillation import distillation_experiment, plot_results
 import os
 from datasets import MNISTDataset, FashionMNISTDataset, KMNISTDataset, IMDBDataset, EMNISTLettersDataset, OracleMNISTDataset
-from util import load_or_create
+from util import load_or_create, load_json, save_json
+from __init__ import *
+import pandas as pd
 import numpy as np
 import random
 # set seeds
@@ -38,6 +40,15 @@ distilled:
         },
         {"overwrite": False}
     ),  
+    (imdb_dataset, "IMDB", 
+        {
+            "teacher": { "C": 8000, "T": 6000, "s": 7.0, "epochs": 30 },
+            "student": { "C": 4000, "T": 6000, "s": 7.0, "epochs": 60 },
+            "temperature": 3.0,
+            "alpha": 0.5,
+        },
+        {"overwrite": False, "make_activation_maps": False}
+    ),
 """
 
 if __name__ == "__main__":
@@ -84,9 +95,9 @@ if __name__ == "__main__":
         ),  
         (imdb_dataset, "IMDB", 
             {
-                "teacher": { "C": 10000, "T": 6000, "s": 4.0, "epochs": 60 },
-                "student": { "C": 1000, "T": 6000, "s": 4.0, "epochs": 120 },
-                "temperature": 4.0,
+                "teacher": { "C": 8000, "T": 6000, "s": 7.0, "epochs": 150 },
+                "student": { "C": 4000, "T": 6000, "s": 7.0, "epochs": 300 },
+                "temperature": 3.0,
                 "alpha": 0.5,
             },
             {"overwrite": False, "make_activation_maps": False}
@@ -99,4 +110,3 @@ if __name__ == "__main__":
         kwargs["save_all"] = True
         distillation_experiment(dataset, name, params, **kwargs)
         
-    
