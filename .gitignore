@@ -10,5 +10,4 @@ old_results
 data/EMNIST
 data/KMNIST
 data/*.pkl
-combined_results/vkd/**.pkl
-combined_results/vkd
+combined_results/ckd

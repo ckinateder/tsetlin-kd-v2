@@ -238,18 +238,136 @@ def fix_mi_plots(top_folderpath):
     plt.savefig(os.path.join(top_folderpath, "downsample_results_information.png"))
     plt.close()
 
+def make_paper_1_tables(exps: list[tuple[str, str]]):
+    """
+    exps: list of experiment directory paths
+    """
+    # test accuracy table
+    test_acc_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$Acc_S$", "$Acc_{CKD}$", "$Acc_{CKD-PCD}$"], index=[])
 
-if __name__ == "__main__":
-    fix_mi_calculations(os.path.join("results", "top_singles"))
-    fix_mi_calculations(os.path.join("final_results", "singles"))
-    #fix_mi_calculations(os.path.join("final_results", "downsample", "KMNIST-Downsample"))
-    #fix_mi_calculations(os.path.join("final_results", "downsample", "MNIST-Downsample"))
-    #fix_mi_calculations(os.path.join("final_results", "downsample", "MNIST-Downsample-1200"))
-    #fix_mi_calculations(os.path.join("final_results", "downsample", "MNIST3D-Downsample"))
-    #fix_mi_calculations(os.path.join("final_results", "downsample", "IMDB-Downsample"))
+    # information table
+    info_table = pd.DataFrame(columns=["Dataset", "$I_T$", "$I_S$", "$I_{CKD}$", "$I_{CKD-PCD}$"], index=[])
+
+    # training time table
+    # cols = ["dataset", "teacher", "student", "CKD", "CKD-PCD"]
+    training_time_table = pd.DataFrame(columns=["Dataset", "$\mathcal{T}_T$", "$\mathcal{T}_S$", "$\mathcal{T}_{CKD}$", "$\mathcal{T}_{CKD-PCD}$"], index=[])
     
-    #fix_mi_plots(os.path.join("final_results", "downsample", "KMNIST-Downsample"))
-    #fix_mi_plots(os.path.join("final_results", "downsample", "MNIST-Downsample"))
-    #fix_mi_plots(os.path.join("final_results", "downsample", "MNIST-Downsample-1200"))
-    #fix_mi_plots(os.path.join("final_results", "downsample", "MNIST3D-Downsample"))
-    #fix_mi_plots(os.path.join("final_results", "downsample", "IMDB-Downsample"))
+    # best r value for PCD table
+    pcd_r_table = pd.DataFrame(columns=["Dataset", "$r$"], index=[])
+    
+    for exp in exps:
+        print(exp)
+        ckd_exp, ckd_pcd_exp = exp
+        ckd_exp_output = load_json(os.path.join(ckd_exp, OUTPUT_JSON_PATH))
+        ckd_pcd_exp_output = load_json(os.path.join(ckd_pcd_exp, OUTPUT_JSON_PATH))
+
+        # get row name
+        rowname = ckd_exp_output["experiment_name"].split("-")[0]
+
+        # get test accuracy
+        print(test_acc_table)
+        new_row = {
+            "Dataset": rowname,
+            "$Acc_T$": f'{ckd_exp_output["analysis"]["avg_acc_test_teacher"]:.2f} $\pm$ {ckd_exp_output["analysis"]["std_acc_test_teacher"]:.2f}',
+            "$Acc_S$": f'{ckd_exp_output["analysis"]["avg_acc_test_student"]:.2f} $\pm$ {ckd_exp_output["analysis"]["std_acc_test_student"]:.2f}',
+            "$Acc_{CKD}$": f'{ckd_exp_output["analysis"]["avg_acc_test_distilled"]:.2f} $\pm$ {ckd_exp_output["analysis"]["std_acc_test_distilled"]:.2f}',
+            "$Acc_{CKD-PCD}$": f'{ckd_pcd_exp_output["analysis"]["avg_acc_test_distilled"]:.2f} $\pm$ {ckd_pcd_exp_output["analysis"]["std_acc_test_distilled"]:.2f}'
+        }
+        test_acc_table = test_acc_table._append(new_row, ignore_index=True)
+
+        # get training time
+        new_row = {
+            "Dataset": rowname,
+            "$\mathcal{T}_T$": f'{ckd_exp_output["analysis"]["avg_time_train_teacher"]:.2f}',
+            "$\mathcal{T}_S$": f'{ckd_exp_output["analysis"]["avg_time_train_student"]:.2f}',
+            "$\mathcal{T}_{CKD}$": f'{ckd_exp_output["analysis"]["avg_time_train_distilled"]:.2f}',
+            "$\mathcal{T}_{CKD-PCD}$": f'{ckd_pcd_exp_output["analysis"]["avg_time_train_distilled"]:.2f}'
+        }
+        training_time_table = training_time_table._append(new_row, ignore_index=True)
+
+        # get information in scientific notation, 3 decimal places
+        new_row = {
+            "Dataset": rowname,
+            "$I_T$": f'{ckd_exp_output["mutual_information"]["I_teacher"]:.3e}',
+            "$I_S$": f'{ckd_exp_output["mutual_information"]["I_student"]:.3e}',
+            "$I_{CKD}$": f'{ckd_exp_output["mutual_information"]["I_distilled"]:.3e}',
+            "$I_{CKD-PCD}$": f'{ckd_pcd_exp_output["mutual_information"]["I_distilled"]:.3e}'
+        }
+        info_table = info_table._append(new_row, ignore_index=True)
+
+        # get best r value for PCD
+        new_row = {
+            "Dataset": rowname,
+            "r": ckd_pcd_exp_output["params"]["downsample"]
+        }
+        pcd_r_table = pcd_r_table._append(new_row, ignore_index=True)
+
+    # save tables
+    test_acc_table.to_csv(os.path.join("assets", "paper_1", "test_acc_table.csv"), index=False)
+    training_time_table.to_csv(os.path.join("assets", "paper_1", "training_time_table.csv"), index=False)
+    pcd_r_table.to_csv(os.path.join("assets", "paper_1", "pcd_r_table.csv"), index=False)
+    info_table.to_csv(os.path.join("assets", "paper_1", "info_table.csv"), index=False)
+
+    # save tables in latex format
+    # Export to LaTeX with specific formatting
+    column_format = "lllll"
+    latex_table = test_acc_table.to_latex(index=False, escape=False, column_format=column_format, caption="Average Test Accuracy (\\%)", label="tab:test-acc")
+
+    with open(os.path.join("assets", "paper_1", "test_acc_table.tex"), "w") as f:
+        f.write(latex_table)
+
+    latex_table = training_time_table.to_latex(index=False, escape=False, column_format=column_format, caption="Average Training Time (s)", label="tab:training-time")
+    with open(os.path.join("assets", "paper_1", "training_time_table.tex"), "w") as f:
+        f.write(latex_table)
+
+    latex_table = info_table.to_latex(index=False, escape=False, column_format=column_format, caption="Information (nats)", label="tab:info")
+    with open(os.path.join("assets", "paper_1", "info_table.tex"), "w") as f:
+        f.write(latex_table)
+
+    latex_table = pcd_r_table.to_latex(index=False, escape=False, column_format="ll", caption="Best $r$ value for $PCD$", label="tab:best-pcd")
+    with open(os.path.join("assets", "paper_1", "pcd_r_table.tex"), "w") as f:
+        f.write(latex_table)
+        
+        
+
+def make_final_tables_and_plots(exps: list[str]):
+    """
+    exps: list of experiment directory paths
+    """
+    # test accuracy table
+    # cols = ["dataset", "teacher", "student", "CKD", "CKD-PCD", "SKD"]
+    test_acc_table = pd.DataFrame(columns=["dataset", "teacher", "student", "CKD", "CKD-PCD", "SKD"])
+    # training time table
+    # cols = ["dataset", "teacher", "student", "CKD", "CKD-PCD", "SKD"]
+    # test time table
+    # cols = ["dataset", "teacher", "student", "CKD", "CKD-PCD", "SKD"]
+    
+    
+    for exp in exps:
+        results = pd.read_csv(os.path.join(exp, "results.csv"))
+"""
+def fix_names(exps: list[str]):
+    for exp in exps:
+        output = load_json(os.path.join(exp, OUTPUT_JSON_PATH))
+        parent_dir = os.path.basename(os.path.dirname(exp))
+        downsample = output["params"]["downsample"]
+        new_name = f"{parent_dir}_{downsample}"
+        output["old_name"] = output["experiment_name"]
+        output["experiment_name"] = new_name
+        save_json(output, os.path.join(exp, OUTPUT_JSON_PATH))
+"""
+def j(*args):
+    return os.path.join(*args)
+if __name__ == "__main__":
+
+    
+    make_paper_1_tables([
+       (j("combined_results", "ckd", "IMDB-Downsample-Take-2", "ds_tnc10000_snc2000_T6000_s4.0_te30_se90_downsample0"),
+        j("combined_results", "ckd", "IMDB-Downsample-Take-2", "ds_tnc10000_snc2000_T6000_s4.0_te30_se90_downsample0.25")),
+        (j("combined_results", "ckd", "KMNIST-Downsample-Take-3", "ds_tnc400_snc100_T100_s5_te50_se100_downsample0"),
+        j("combined_results", "ckd", "KMNIST-Downsample-Take-3", "ds_tnc400_snc100_T100_s5_te50_se100_downsample0.22")),
+        (j("combined_results", "ckd", "MNIST-Downsample-Take-5", "ds_tnc800_snc100_T10_s7.0_te50_se100_downsample0"),
+        j("combined_results", "ckd", "MNIST-Downsample-Take-5", "ds_tnc800_snc100_T10_s7.0_te50_se100_downsample0.15")),
+        (j("combined_results", "ckd", "MNIST3D-Downsample-Take-2", "ds_tnc1500_snc250_T100_s3.0_te20_se70_downsample0"),
+        j("combined_results", "ckd", "MNIST3D-Downsample-Take-2", "ds_tnc1500_snc250_T100_s3.0_te20_se70_downsample0.15")),
+    ])

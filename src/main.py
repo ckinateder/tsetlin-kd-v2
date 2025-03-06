@@ -95,8 +95,8 @@ if __name__ == "__main__":
         ),  
         (imdb_dataset, "IMDB", 
             {
-                "teacher": { "C": 8000, "T": 6000, "s": 7.0, "epochs": 150 },
-                "student": { "C": 4000, "T": 6000, "s": 7.0, "epochs": 300 },
+                "teacher": { "C": 8000, "T": 6000, "s": 7.0, "epochs": 120 },
+                "student": { "C": 4000, "T": 6000, "s": 7.0, "epochs": 240 },
                 "temperature": 3.0,
                 "alpha": 0.5,
             },
