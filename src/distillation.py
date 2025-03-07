@@ -28,6 +28,7 @@ DISTILLED_DEFAULTS_NESTED = {
     },
     "temperature": 4.0,
     "alpha": 0.5,
+    "z": 0.2,
     "weighted_clauses": True,
     "number_of_state_bits": 8,
 }
@@ -89,6 +90,7 @@ def validate_params(params: dict, experiment_name: str) -> str:
             },
             "temperature": 4.0,
             "alpha": 0.5,
+            "z": 0.2,
             "weighted_clauses": True,
             "number_of_state_bits": 8,
         }
@@ -110,13 +112,15 @@ def validate_params(params: dict, experiment_name: str) -> str:
     assert "number_of_state_bits" in params, "number_of_state_bits is required"
     assert "alpha" in params, "alpha is required"
     assert params["alpha"] >= 0 and params["alpha"] <= 1, "alpha must be between 0 and 1"
+    assert "z" in params, "z is required"
+    assert params["z"] > 0 and params["z"] < 1, "z must be between 0 and 1"
 
     params["combined_epochs"] = params["teacher"]["epochs"] + params["student"]["epochs"]
     
     # generate experiment id
     exid = f"{experiment_name.replace(' ', '-')}_tC{params['teacher']['C']}_sC{params['student']['C']}_" \
            f"tT{params['teacher']['T']}_sT{params['student']['T']}_ts{params['teacher']['s']}_ss{params['student']['s']}_" \
-           f"te{params['teacher']['epochs']}_se{params['student']['epochs']}_temp{params['temperature']}_a{params['alpha']}"    
+           f"te{params['teacher']['epochs']}_se{params['student']['epochs']}_temp{params['temperature']}_a{params['alpha']}_z{params['z']}"    
     return exid
 
 def plot_results(results: pd.DataFrame, output: dict, fpath: str):
@@ -131,9 +135,9 @@ def plot_results(results: pd.DataFrame, output: dict, fpath: str):
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy (%)")
     if len(results) < 100:
-        plt.xticks(range(0, len(results), 5))
+        plt.xticks(range(0, len(results), 10))
     else:
-        plt.xticks(range(0, len(results), (len(results)//100)*10))
+        plt.xticks(range(0, len(results), ((len(results)//100)+1)*10))
     plt.legend(loc="lower right")
     plt.grid(linestyle='dotted')
     plt.savefig(os.path.join(fpath, TEST_ACCURACY_PNG_PATH))
@@ -150,9 +154,9 @@ def plot_results(results: pd.DataFrame, output: dict, fpath: str):
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy (%)")
     if len(results) < 100:
-        plt.xticks(range(0, len(results), 5))
+        plt.xticks(range(0, len(results), 10))
     else:
-        plt.xticks(range(0, len(results), (len(results)//100)*10))
+        plt.xticks(range(0, len(results), ((len(results)//100)+1)*10))
     plt.legend(loc="lower right")
     plt.grid(linestyle='dotted')
     plt.savefig(os.path.join(fpath, TRAIN_ACCURACY_PNG_PATH))
@@ -178,6 +182,25 @@ def plot_results(results: pd.DataFrame, output: dict, fpath: str):
     plt.savefig(os.path.join(fpath, TEST_TIME_PNG_PATH))
     plt.close()
 
+    # plot bar chart of training time for each model
+    plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
+    plt.grid(linestyle='dotted', zorder=0)
+    labels = ["Teacher", "Student", "Distilled"]
+    data = [output["analysis"]["avg_time_train_teacher"], output["analysis"]["avg_time_train_student"], output["analysis"]["avg_time_train_distilled"]]
+    colors = ["orange", "green", "blue"]
+    plt.bar(labels, data, color=colors, zorder=10)
+    # get y tick size
+    yticks = plt.yticks()[0]
+    offset = yticks[0] * 0.1
+    plt.yticks(np.arange(0, yticks.max()*1.1, yticks[1]-yticks[0]))
+    # add text on top of each bar
+    for i, label in enumerate(labels):
+        plt.text(i, data[i]+offset, f"{data[i]:.3f} s", ha="center", va="bottom")
+    # take default y ticks and set 10% higher
+    #plt.xlabel("Model")
+    plt.ylabel("Training Time (s)")
+    plt.savefig(os.path.join(fpath, TRAIN_TIME_PNG_PATH))
+    plt.close()
 
 def distillation_experiment(
     dataset: Dataset,
@@ -360,10 +383,10 @@ def distillation_experiment(
             rm_file(teacher_model_path) # remove the teacher model file. we don't need it anymore
 
     # GET soft labels
-    print(f"Initializing student with {params.student.C} clauses from teacher")
-    distilled_tm.init_from_teacher(teacher_tm, params.student.C, X_train, Y_train)
-    print(f"Generating soft labels from teacher with temperature {params.temperature}")
-    soft_labels = teacher_tm.get_soft_labels(X_train, temperature=params.temperature)
+    print(f"Initializing student with {params.student.C} clauses from teacher and z={params.z}")
+    distilled_tm.init_from_teacher(teacher_tm, X_train, Y_train, clauses_per_class=params.student.C, z=params.z)
+    print(f"Generating soft labels from teacher")
+    soft_labels = teacher_tm.get_soft_labels(X_train)
     print(f"Soft labels generated")
 
     start = time()

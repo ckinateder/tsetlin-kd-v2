@@ -66,39 +66,43 @@ if __name__ == "__main__":
     # this goes (dataset, name, params, kwargs)
     one_off_dir = os.path.join("results")
     distilled_experiments = [
-        (mnist_dataset, "MNIST", 
+        (mnist_dataset, "MNIST-top-indices", 
             {
                 "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 60 },
                 "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 120 },
                 "temperature": 3.0,
                 "alpha": 0.5,
+                "z": 0.2,
             },
             {"overwrite": False}
         ),
-        (kmnist_dataset, "KMNIST", 
-            {
-                "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 60 },
-                "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 120 },
-                "temperature": 4.0,
-                "alpha": 0.5,
-            },
-            {"overwrite": False}
-        ),
-        (emnist_dataset, "EMNIST", 
+        (emnist_dataset, "EMNIST-top-indices", 
             {
                 "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 60 },
                 "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 120 },
                 "temperature": 4.0,
                 "alpha": 0.5,
+                "z": 0.2,
             },
             {"overwrite": False}
         ),  
-        (imdb_dataset, "IMDB", 
+        (kmnist_dataset, "KMNIST-top-indices", 
             {
-                "teacher": { "C": 8000, "T": 6000, "s": 7.0, "epochs": 120 },
-                "student": { "C": 4000, "T": 6000, "s": 7.0, "epochs": 240 },
+                "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 60 },
+                "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 120 },
+                "temperature": 4.0,
+                "alpha": 0.5,
+                "z": 0.2,
+            },
+            {"overwrite": False}
+        ),
+        (imdb_dataset, "IMDB-top-indices", 
+            {
+                "teacher": { "C": 8000, "T": 6000, "s": 7.0, "epochs": 30 },
+                "student": { "C": 4000, "T": 6000, "s": 7.0, "epochs": 60 },
                 "temperature": 3.0,
                 "alpha": 0.5,
+                "z": 0.2,
             },
             {"overwrite": False, "make_activation_maps": False}
         ),
