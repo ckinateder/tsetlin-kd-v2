@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # this goes (dataset, name, params, kwargs)
     one_off_dir = os.path.join("results")
     distilled_experiments = [
-        (mnist_dataset, "MNIST-top-indices", 
+        (mnist_dataset, "MNIST", 
             {
                 "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 60 },
                 "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 120 },
@@ -76,7 +76,7 @@ if __name__ == "__main__":
             },
             {"overwrite": False}
         ),
-        (emnist_dataset, "EMNIST-top-indices", 
+        (emnist_dataset, "EMNIST", 
             {
                 "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 60 },
                 "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 120 },
@@ -86,7 +86,7 @@ if __name__ == "__main__":
             },
             {"overwrite": False}
         ),  
-        (kmnist_dataset, "KMNIST-top-indices", 
+        (kmnist_dataset, "KMNIST", 
             {
                 "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 60 },
                 "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 120 },
@@ -96,7 +96,7 @@ if __name__ == "__main__":
             },
             {"overwrite": False}
         ),
-        (imdb_dataset, "IMDB-top-indices", 
+        (imdb_dataset, "IMDB", 
             {
                 "teacher": { "C": 8000, "T": 6000, "s": 7.0, "epochs": 30 },
                 "student": { "C": 4000, "T": 6000, "s": 7.0, "epochs": 60 },
@@ -113,4 +113,8 @@ if __name__ == "__main__":
         kwargs["folderpath"] = one_off_dir
         kwargs["save_all"] = True
         distillation_experiment(dataset, name, params, **kwargs)
-        
+    exit(0)
+    # update all charts
+    for fpath in os.listdir(one_off_dir):
+        output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
+        plot_results(output, os.path.join(one_off_dir, fpath))

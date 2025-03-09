@@ -123,7 +123,10 @@ def validate_params(params: dict, experiment_name: str) -> str:
            f"te{params['teacher']['epochs']}_se{params['student']['epochs']}_temp{params['temperature']}_a{params['alpha']}_z{params['z']}"    
     return exid
 
-def plot_results(results: pd.DataFrame, output: dict, fpath: str):
+def plot_results(output: dict, fpath: str):
+    # load results
+    results = pd.read_json(output["results"])
+
     # plot test results and save
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
     plt.axhline(results[ACC_TEST_DISTILLED].mean(), color="blue", linestyle=":", alpha=0.4, label="_Distilled Avg")
@@ -491,6 +494,6 @@ def distillation_experiment(
     results.to_csv(os.path.join(fpath, RESULTS_CSV_PATH))
 
     # plot results
-    plot_results(results, output, fpath)
+    plot_results(output, fpath)
 
     return output, results

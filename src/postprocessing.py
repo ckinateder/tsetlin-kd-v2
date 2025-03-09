@@ -330,37 +330,98 @@ def make_paper_1_tables(exps: list[tuple[str, str]]):
         
         
 
-def make_final_tables_and_plots(exps: list[str]):
+
+def make_paper_2_tables(exps: list[tuple[str, str]]):
     """
     exps: list of experiment directory paths
     """
     # test accuracy table
-    # cols = ["dataset", "teacher", "student", "CKD", "CKD-PCD", "SKD"]
-    test_acc_table = pd.DataFrame(columns=["dataset", "teacher", "student", "CKD", "CKD-PCD", "SKD"])
+    test_acc_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$Acc_S$", "$Acc_D$"], index=[])
+
+    # train accuracy table
+    train_acc_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$Acc_S$", "$Acc_D$"], index=[])
+
     # training time table
-    # cols = ["dataset", "teacher", "student", "CKD", "CKD-PCD", "SKD"]
+    training_time_table = pd.DataFrame(columns=["Dataset", "$\mathcal{T}_T$", "$\mathcal{T}_S$", "$\mathcal{T}_D$"], index=[])
+
     # test time table
-    # cols = ["dataset", "teacher", "student", "CKD", "CKD-PCD", "SKD"]
-    
+    test_time_table = pd.DataFrame(columns=["Dataset", "$t_T$", "$t_S$", "$t_D$"], index=[])
     
     for exp in exps:
-        results = pd.read_csv(os.path.join(exp, "results.csv"))
-"""
-def fix_names(exps: list[str]):
-    for exp in exps:
-        output = load_json(os.path.join(exp, OUTPUT_JSON_PATH))
-        parent_dir = os.path.basename(os.path.dirname(exp))
-        downsample = output["params"]["downsample"]
-        new_name = f"{parent_dir}_{downsample}"
-        output["old_name"] = output["experiment_name"]
-        output["experiment_name"] = new_name
-        save_json(output, os.path.join(exp, OUTPUT_JSON_PATH))
-"""
+        print(exp)
+        exp_output = load_json(os.path.join(exp, OUTPUT_JSON_PATH))
+
+        # get row name
+        rowname = exp_output["experiment_name"]
+
+        # get test accuracy
+        new_row = {
+            "Dataset": rowname,
+            "$Acc_T$": f'{exp_output["analysis"]["avg_acc_test_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_teacher"]:.2f}',
+            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
+            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_test_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_distilled"]:.2f}'
+        }
+        test_acc_table = test_acc_table._append(new_row, ignore_index=True)
+
+        # get train accuracy
+        new_row = {
+            "Dataset": rowname,
+            "$Acc_T$": f'{exp_output["analysis"]["avg_acc_train_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_teacher"]:.2f}',
+            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
+            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_train_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_distilled"]:.2f}'
+        }
+        train_acc_table = train_acc_table._append(new_row, ignore_index=True)
+
+        # get training time
+        new_row = {
+            "Dataset": rowname,
+            "$\mathcal{T}_T$": f'{exp_output["analysis"]["avg_time_train_teacher"]:.2f}',
+            "$\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f}',
+            "$\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f}'
+        }
+        training_time_table = training_time_table._append(new_row, ignore_index=True)   
+
+        # get test time      
+        new_row = {
+            "Dataset": rowname,
+            "$t_T$": f'{exp_output["analysis"]["avg_time_test_teacher"]:.2f}',
+            "$t_S$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f}',
+            "$t_D$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f}'
+        }
+        test_time_table = test_time_table._append(new_row, ignore_index=True)
+
+
+    # save tables
+    test_acc_table.to_csv(os.path.join("assets", "paper_2", "test_acc_table.csv"), index=False)
+    training_time_table.to_csv(os.path.join("assets", "paper_2", "training_time_table.csv"), index=False)
+    test_time_table.to_csv(os.path.join("assets", "paper_2", "test_time_table.csv"), index=False)
+    train_acc_table.to_csv(os.path.join("assets", "paper_2", "train_acc_table.csv"), index=False)
+    # save tables in latex format
+    # Export to LaTeX with specific formatting
+    column_format = "lllll"
+    latex_table = test_acc_table.to_latex(index=False, escape=False, column_format=column_format, caption="Average Test Accuracy (\\%)", label="tab:test-acc")
+
+    with open(os.path.join("assets", "paper_2", "test_acc_table.tex"), "w") as f:
+        f.write(latex_table)
+
+    latex_table = training_time_table.to_latex(index=False, escape=False, column_format=column_format, caption="Average Training Time (s)", label="tab:training-time")
+    with open(os.path.join("assets", "paper_2", "training_time_table.tex"), "w") as f:
+        f.write(latex_table)
+
+    latex_table = test_time_table.to_latex(index=False, escape=False, column_format=column_format, caption="Average Test Time (s)", label="tab:test-time")
+    with open(os.path.join("assets", "paper_2", "test_time_table.tex"), "w") as f:
+        f.write(latex_table)
+
+    latex_table = train_acc_table.to_latex(index=False, escape=False, column_format=column_format, caption="Average Train Accuracy (\\%)", label="tab:train-acc")
+    with open(os.path.join("assets", "paper_2", "train_acc_table.tex"), "w") as f:
+        f.write(latex_table)
+        
+        
 def j(*args):
     return os.path.join(*args)
 if __name__ == "__main__":
 
-    
+    """
     make_paper_1_tables([
        (j("combined_results", "ckd", "IMDB-Downsample-Take-2", "ds_tnc10000_snc2000_T6000_s4.0_te30_se90_downsample0"),
         j("combined_results", "ckd", "IMDB-Downsample-Take-2", "ds_tnc10000_snc2000_T6000_s4.0_te30_se90_downsample0.25")),
@@ -370,4 +431,13 @@ if __name__ == "__main__":
         j("combined_results", "ckd", "MNIST-Downsample-Take-5", "ds_tnc800_snc100_T10_s7.0_te50_se100_downsample0.15")),
         (j("combined_results", "ckd", "MNIST3D-Downsample-Take-2", "ds_tnc1500_snc250_T100_s3.0_te20_se70_downsample0"),
         j("combined_results", "ckd", "MNIST3D-Downsample-Take-2", "ds_tnc1500_snc250_T100_s3.0_te20_se70_downsample0.15")),
+    ])
+    """
+    print(os.listdir("combined_results"))
+    
+    make_paper_2_tables([
+        j("combined_results", "EMNIST_tC1000_sC100_tT100_sT100_ts4.0_ss4.0_te60_se120_temp4.0_a0.5_z0.2"),
+        j("combined_results", "IMDB_tC8000_sC4000_tT6000_sT6000_ts7.0_ss7.0_te30_se60_temp3.0_a0.5_z0.2"),
+        j("combined_results", "MNIST_tC1000_sC100_tT10_sT10_ts4.0_ss4.0_te60_se120_temp3.0_a0.5_z0.2"),
+        j("combined_results", "KMNIST_tC2000_sC200_tT100_sT100_ts8.2_ss8.2_te60_se120_temp4.0_a0.5_z0.2"),
     ])
