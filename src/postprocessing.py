@@ -347,6 +347,15 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
     # test time table
     test_time_table = pd.DataFrame(columns=["Dataset", "$t_T$", "$t_S$", "$t_D$"], index=[])
     
+    # hyperparameter table
+    hyperparam_table = pd.DataFrame(columns=["Dataset", "$|C_T|$", "$|C_S|$", "$T_T$", "$T_S$", "$s_T$", "$s_S$", "$\\tau$", "$\\alpha$", "$z$", "$E_T$", "$E_S$"], index=[])
+
+    # dataset size table
+    dataset_size_table = pd.DataFrame(columns=["Dataset", "$|X_{train}|$", "$|X_{test}|$", "$|L|$", "$\\zeta$"], index=[])
+
+    # combined train table with time
+    train_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$Acc_S$", "$Acc_D$", "$\mathcal{T}_T$", "$\mathcal{T}_S$", "$\mathcal{T}_D$"], index=[])
+    test_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$Acc_S$", "$Acc_D$", "$t_T$", "$t_S$", "$t_D$"], index=[])
     for exp in exps:
         print(exp)
         exp_output = load_json(os.path.join(exp, OUTPUT_JSON_PATH))
@@ -390,32 +399,131 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
         }
         test_time_table = test_time_table._append(new_row, ignore_index=True)
 
+        # get hyperparameters
+        new_row = {
+            "Dataset": rowname,
+            "$|C_T|$": f'{exp_output["params"]["teacher"]["C"]}',
+            "$|C_S|$": f'{exp_output["params"]["student"]["C"]}',
+            "$T_T$": f'{exp_output["params"]["teacher"]["T"]}',
+            "$T_S$": f'{exp_output["params"]["student"]["T"]}',
+            "$s_T$": f'{exp_output["params"]["teacher"]["s"]}',
+            "$s_S$": f'{exp_output["params"]["student"]["s"]}',
+            "$\\tau$": f'{exp_output["params"]["temperature"]}',
+            "$\\alpha$": f'{exp_output["params"]["alpha"]}',
+            "$z$": f'{exp_output["params"]["z"]}',
+            "$E_T$": f'{exp_output["params"]["teacher"]["epochs"]}',
+            "$E_S$": f'{exp_output["params"]["student"]["epochs"]}'
+        }
+        hyperparam_table = hyperparam_table._append(new_row, ignore_index=True) 
 
-    # save tables
-    test_acc_table.to_csv(os.path.join("assets", "paper_2", "test_acc_table.csv"), index=False)
-    training_time_table.to_csv(os.path.join("assets", "paper_2", "training_time_table.csv"), index=False)
-    test_time_table.to_csv(os.path.join("assets", "paper_2", "test_time_table.csv"), index=False)
-    train_acc_table.to_csv(os.path.join("assets", "paper_2", "train_acc_table.csv"), index=False)
-    # save tables in latex format
-    # Export to LaTeX with specific formatting
-    column_format = "lllll"
-    latex_table = test_acc_table.to_latex(index=False, escape=False, column_format=column_format, caption="Average Test Accuracy (\\%)", label="tab:test-acc")
+        # get dataset size
+        new_row = {
+            "Dataset": rowname,
+            "$|X_{train}|$": f'{exp_output["data"]["X_train"][0]}',
+            "$|X_{test}|$": f'{exp_output["data"]["X_test"][0]}',
+            "$|L|$": f'{exp_output["data"]["X_train"][1]}',
+            "$\\zeta$": f'{exp_output["data"]["num_classes"]}'
+        }
+        dataset_size_table = dataset_size_table._append(new_row, ignore_index=True)
 
-    with open(os.path.join("assets", "paper_2", "test_acc_table.tex"), "w") as f:
-        f.write(latex_table)
-
-    latex_table = training_time_table.to_latex(index=False, escape=False, column_format=column_format, caption="Average Training Time (s)", label="tab:training-time")
-    with open(os.path.join("assets", "paper_2", "training_time_table.tex"), "w") as f:
-        f.write(latex_table)
-
-    latex_table = test_time_table.to_latex(index=False, escape=False, column_format=column_format, caption="Average Test Time (s)", label="tab:test-time")
-    with open(os.path.join("assets", "paper_2", "test_time_table.tex"), "w") as f:
-        f.write(latex_table)
-
-    latex_table = train_acc_table.to_latex(index=False, escape=False, column_format=column_format, caption="Average Train Accuracy (\\%)", label="tab:train-acc")
-    with open(os.path.join("assets", "paper_2", "train_acc_table.tex"), "w") as f:
-        f.write(latex_table)
+        # get combined train table with time
+        new_row = {
+            "Dataset": rowname,
+            "$Acc_T$": f'{exp_output["analysis"]["avg_acc_train_teacher"]:.2f}',
+            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f}',
+            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_train_distilled"]:.2f}',
+            "$\mathcal{T}_T$": f'{exp_output["analysis"]["avg_time_train_teacher"]:.2f}',
+            "$\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f}',
+            "$\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f}'
+        }
+        train_table = train_table._append(new_row, ignore_index=True)
         
+        new_row = {
+            "Dataset": rowname,
+            "$Acc_T$": f'{exp_output["analysis"]["avg_acc_test_teacher"]:.2f}',
+            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f}',
+            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_test_distilled"]:.2f}',
+            "$t_T$": f'{exp_output["analysis"]["avg_time_test_teacher"]:.2f}',
+            "$t_S$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f}',
+            "$t_D$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f}'
+        }
+        test_table = test_table._append(new_row, ignore_index=True)
+
+    # Define table configurations
+    table_configs = [
+        {
+            "name": "test_acc_table",
+            "file_name": "test_acc_table",
+            "caption": "Average Test Accuracy (\\%)",
+            "label": "tab:test-acc"
+        },
+        {
+            "name": "training_time_table",
+            "file_name": "training_time_table",
+            "caption": "Average Training Time (s)",
+            "label": "tab:training-time"
+        },
+        {
+            "name": "test_time_table",
+            "file_name": "test_time_table",
+            "caption": "Average Test Time (s)",
+            "label": "tab:test-time"
+        },
+        {
+            "name": "train_acc_table",
+            "file_name": "train_acc_table",
+            "caption": "Average Train Accuracy (\\%)",
+            "label": "tab:train-acc"
+        },
+        {
+            "name": "hyperparam_table",
+            "file_name": "hyperparam_table",
+            "caption": "Hyperparameters",
+            "label": "tab:hyperparams"
+        },
+        {
+            "name": "dataset_size_table",
+            "file_name": "dataset_size_table",
+            "caption": "Dataset Size",
+            "label": "tab:dataset-size"
+        },
+        {
+            "name": "train_table",
+            "file_name": "train_table",
+            "caption": "Train Table",
+            "label": "tab:train-table"
+        },
+        {
+            "name": "test_table",
+            "file_name": "test_table",
+            "caption": "Test Table",
+            "label": "tab:test-table"
+        }
+    ]
+    
+    # Create output directory if it doesn't exist
+    output_dir = os.path.join("assets", "paper_2")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Save tables in CSV and LaTeX formats
+    for config in table_configs:
+        table = locals()[config["name"]]
+        
+        # Save CSV
+        # csv_path = os.path.join(output_dir, f"{config['file_name']}.csv")
+        # table.to_csv(csv_path, index=False)
+        
+        # Save LaTeX
+        latex_table = table.to_latex(
+            index=False, 
+            escape=False, 
+            column_format="l"*len(table.columns),
+            caption=config["caption"], 
+            label=config["label"],
+        )
+        latex_path = os.path.join(output_dir, f"{config['file_name']}.tex")
+        with open(latex_path, "w") as f:
+            f.write(latex_table)
         
 def j(*args):
     return os.path.join(*args)

@@ -113,7 +113,8 @@ if __name__ == "__main__":
         kwargs["folderpath"] = one_off_dir
         kwargs["save_all"] = True
         distillation_experiment(dataset, name, params, **kwargs)
-    exit(0)
+    
+    print("Updating charts")
     # update all charts
     for fpath in os.listdir(one_off_dir):
         output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))

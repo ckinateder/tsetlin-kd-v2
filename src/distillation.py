@@ -125,7 +125,18 @@ def validate_params(params: dict, experiment_name: str) -> str:
 
 def plot_results(output: dict, fpath: str):
     # load results
-    results = pd.read_json(output["results"])
+    results = pd.DataFrame(output["results"])
+    experiment_name = output["experiment_name"]
+
+    # Plot configuration
+    subplot_scale = 1.6  # Adjust this to change the size of the combined plot (default: 2.0)
+    alpha = 0.7
+
+    # Set font to Times New Roman for all plots
+    plt.rcParams['font.family'] = 'Times New Roman'
+    plt.rcParams['font.serif'] = ['Times New Roman']
+    plt.rcParams['mathtext.fontset'] = 'dejavuserif'  # For math text
+    plt.rcParams['font.size'] = 12
 
     # plot test results and save
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
@@ -133,8 +144,8 @@ def plot_results(output: dict, fpath: str):
     plt.axhline(results[ACC_TEST_TEACHER].mean(), color="orange", linestyle=":", alpha=0.4, label="_Teacher Avg")
     plt.axhline(results[ACC_TEST_STUDENT].mean(), color="green", linestyle=":", alpha=0.4, label="_Student Avg")
     plt.plot(results[ACC_TEST_DISTILLED], label="Distilled")
-    plt.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=0.5)
-    plt.plot(results[ACC_TEST_STUDENT], label="Student", alpha=0.5)
+    plt.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=alpha)
+    plt.plot(results[ACC_TEST_STUDENT], label="Student", alpha=alpha)
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy (%)")
     if len(results) < 100:
@@ -143,7 +154,7 @@ def plot_results(output: dict, fpath: str):
         plt.xticks(range(0, len(results), ((len(results)//100)+1)*10))
     plt.legend(loc="lower right")
     plt.grid(linestyle='dotted')
-    plt.savefig(os.path.join(fpath, TEST_ACCURACY_PNG_PATH))
+    plt.savefig(os.path.join(fpath, experiment_name+"_"+TEST_ACCURACY_PNG_PATH))
     plt.close()
     
     # plot train results and save
@@ -152,8 +163,8 @@ def plot_results(output: dict, fpath: str):
     plt.axhline(results[ACC_TRAIN_TEACHER].mean(), color="orange", linestyle=":", alpha=0.4, label="_Teacher Avg")
     plt.axhline(results[ACC_TRAIN_STUDENT].mean(), color="green", linestyle=":", alpha=0.4, label="_Student Avg")
     plt.plot(results[ACC_TRAIN_DISTILLED], label="Distilled")
-    plt.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=0.5)
-    plt.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=0.5)
+    plt.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=alpha)
+    plt.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=alpha)
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy (%)")
     if len(results) < 100:
@@ -162,7 +173,7 @@ def plot_results(output: dict, fpath: str):
         plt.xticks(range(0, len(results), ((len(results)//100)+1)*10))
     plt.legend(loc="lower right")
     plt.grid(linestyle='dotted')
-    plt.savefig(os.path.join(fpath, TRAIN_ACCURACY_PNG_PATH))
+    plt.savefig(os.path.join(fpath, experiment_name+"_"+TRAIN_ACCURACY_PNG_PATH))
     plt.close()
 
     # plot bar chart of test time for each model
@@ -182,7 +193,7 @@ def plot_results(output: dict, fpath: str):
     # take default y ticks and set 10% higher
     #plt.xlabel("Model")
     plt.ylabel("Inference Time (s)")
-    plt.savefig(os.path.join(fpath, TEST_TIME_PNG_PATH))
+    plt.savefig(os.path.join(fpath, experiment_name+"_"+TEST_TIME_PNG_PATH))
     plt.close()
 
     # plot bar chart of training time for each model
@@ -202,7 +213,73 @@ def plot_results(output: dict, fpath: str):
     # take default y ticks and set 10% higher
     #plt.xlabel("Model")
     plt.ylabel("Training Time (s)")
-    plt.savefig(os.path.join(fpath, TRAIN_TIME_PNG_PATH))
+    plt.savefig(os.path.join(fpath, experiment_name+"_"+TRAIN_TIME_PNG_PATH))
+    plt.close()
+
+    # Create a 2x2 subplot figure combining all plots
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(PLOT_FIGSIZE[0]*subplot_scale, PLOT_FIGSIZE[1]*subplot_scale), dpi=PLOT_DPI)
+    fig.suptitle(f"Results Overview - {experiment_name}")
+
+    # Test accuracy plot
+    ax1.axhline(results[ACC_TEST_DISTILLED].mean(), color="blue", linestyle=":", alpha=0.4, label="_Distilled Avg")
+    ax1.axhline(results[ACC_TEST_TEACHER].mean(), color="orange", linestyle=":", alpha=0.4, label="_Teacher Avg")
+    ax1.axhline(results[ACC_TEST_STUDENT].mean(), color="green", linestyle=":", alpha=0.4, label="_Student Avg")
+    ax1.plot(results[ACC_TEST_DISTILLED], label="Distilled")
+    ax1.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=alpha)
+    ax1.plot(results[ACC_TEST_STUDENT], label="Student", alpha=alpha)
+    ax1.set_xlabel("Epoch")
+    ax1.set_ylabel("Accuracy (%)")
+    if len(results) < 100:
+        ax1.set_xticks(range(0, len(results), 10))
+    else:
+        ax1.set_xticks(range(0, len(results), ((len(results)//100)+1)*10))
+    ax1.legend(loc="lower right")
+    ax1.grid(linestyle='dotted')
+    ax1.set_title("Test Accuracy")
+
+    # Train accuracy plot
+    ax2.axhline(results[ACC_TRAIN_DISTILLED].mean(), color="blue", linestyle=":", alpha=0.4, label="_Distilled Avg")
+    ax2.axhline(results[ACC_TRAIN_TEACHER].mean(), color="orange", linestyle=":", alpha=0.4, label="_Teacher Avg")
+    ax2.axhline(results[ACC_TRAIN_STUDENT].mean(), color="green", linestyle=":", alpha=0.4, label="_Student Avg")
+    ax2.plot(results[ACC_TRAIN_DISTILLED], label="Distilled")
+    ax2.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=alpha)
+    ax2.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=alpha)
+    ax2.set_xlabel("Epoch")
+    ax2.set_ylabel("Accuracy (%)")
+    if len(results) < 100:
+        ax2.set_xticks(range(0, len(results), 10))
+    else:
+        ax2.set_xticks(range(0, len(results), ((len(results)//100)+1)*10))
+    ax2.legend(loc="lower right")
+    ax2.grid(linestyle='dotted')
+    ax2.set_title("Train Accuracy")
+
+    # Test time bar plot
+    ax3.grid(linestyle='dotted', zorder=0)
+    data = [output["analysis"]["avg_time_test_teacher"], output["analysis"]["avg_time_test_student"], output["analysis"]["avg_time_test_distilled"]]
+    bars = ax3.bar(labels, data, color=colors, zorder=10)
+    yticks = ax3.get_yticks()
+    offset = yticks[0] * 0.1
+    ax3.set_yticks(np.arange(0, yticks.max()*1.1, yticks[1]-yticks[0]))
+    for bar, val in zip(bars, data):
+        ax3.text(bar.get_x() + bar.get_width()/2, val+offset, f"{val:.3f} s", ha="center", va="bottom")
+    ax3.set_ylabel("Inference Time (s)")
+    ax3.set_title("Average Test Time")
+
+    # Train time bar plot
+    ax4.grid(linestyle='dotted', zorder=0)
+    data = [output["analysis"]["avg_time_train_teacher"], output["analysis"]["avg_time_train_student"], output["analysis"]["avg_time_train_distilled"]]
+    bars = ax4.bar(labels, data, color=colors, zorder=10)
+    yticks = ax4.get_yticks()
+    offset = yticks[0] * 0.1
+    ax4.set_yticks(np.arange(0, yticks.max()*1.1, yticks[1]-yticks[0]))
+    for bar, val in zip(bars, data):
+        ax4.text(bar.get_x() + bar.get_width()/2, val+offset, f"{val:.3f} s", ha="center", va="bottom")
+    ax4.set_ylabel("Training Time (s)")
+    ax4.set_title("Average Training Time")
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(fpath, experiment_name+"_combined_results.png"))
     plt.close()
 
 def distillation_experiment(
@@ -470,6 +547,13 @@ def distillation_experiment(
 
             "total_time": total_time,
         },
+        "data": {
+            "X_train": X_train.shape,
+            "Y_train": Y_train.shape,
+            "X_test": X_test.shape,
+            "Y_test": Y_test.shape,
+            "num_classes": len(np.unique(Y_train)),
+        },
         "params": params.to_dict(),
         "experiment_name": experiment_name,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -477,21 +561,21 @@ def distillation_experiment(
         "results": results.to_dict(),
     }
 
+    # save output
+    fpath = os.path.join(folderpath, experiment_id)
+    save_json(output, os.path.join(fpath, OUTPUT_JSON_PATH))
+    results.to_csv(os.path.join(fpath, RESULTS_CSV_PATH))
+
     # make activation maps
     if make_activation_maps:
         try:
             # plot activation maps
             samples = np.random.randint(0, len(X_test), size=5)
             visualize_activation_maps(baseline_teacher_tm, baseline_student_tm, distilled_tm, 
-                                    X_test[samples], dataset.image_shape, os.path.join(fpath, ACTIVATION_MAPS_PNG_PATH))
+                                    X_test[samples], dataset.image_shape, os.path.join(fpath, experiment_name+ACTIVATION_MAPS_PNG_PATH))
         except Exception as e:
             print(f"Error making activation maps: {e}")
             print("Make sure the dataset has a valid image shape")
-
-    # save output
-    fpath = os.path.join(folderpath, experiment_id)
-    save_json(output, os.path.join(fpath, OUTPUT_JSON_PATH))
-    results.to_csv(os.path.join(fpath, RESULTS_CSV_PATH))
 
     # plot results
     plot_results(output, fpath)
