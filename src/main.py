@@ -1,7 +1,9 @@
 from distillation import distillation_experiment, plot_results
+from activation_maps import visualize_activation_maps
 import os
+from stats import info_theory_experiment
 from datasets import MNISTDataset, FashionMNISTDataset, KMNISTDataset, IMDBDataset, EMNISTLettersDataset, OracleMNISTDataset
-from util import load_or_create, load_json, save_json
+from util import load_or_create, load_json, save_json, load_pkl
 from __init__ import *
 import pandas as pd
 import numpy as np
@@ -59,12 +61,12 @@ if __name__ == "__main__":
     fashion_mnist_dataset = load_or_create(os.path.join("data", "fashion_mnist_dataset.pkl"), FashionMNISTDataset)
     imdb_dataset = load_or_create(os.path.join("data", "imdb_dataset.pkl"), IMDBDataset)
     emnist_dataset = load_or_create(os.path.join("data", "emnist_dataset.pkl"), EMNISTLettersDataset)
-
     print("Datasets loaded")
         
+    one_off_dir = os.path.join("results")
+    
     #run distilled experiments
     # this goes (dataset, name, params, kwargs)
-    one_off_dir = os.path.join("results")
     distilled_experiments = [
         (mnist_dataset, "MNIST", 
             {
@@ -114,8 +116,29 @@ if __name__ == "__main__":
         kwargs["save_all"] = True
         distillation_experiment(dataset, name, params, **kwargs)
     
+
     print("Updating charts")
     # update all charts
     for fpath in os.listdir(one_off_dir):
         output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
         plot_results(output, os.path.join(one_off_dir, fpath))
+
+    exit()
+
+    # information theory experiments
+    for fpath in os.listdir(one_off_dir):
+        output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
+        if output["experiment_name"] == "IMDB":
+            continue
+        # get dataset from output
+        dataset = locals()[output["experiment_name"].lower()+"_dataset"]
+        distilled_model = load_pkl(os.path.join(one_off_dir, fpath, "distilled.pkl"))
+        teacher_model = load_pkl(os.path.join(one_off_dir, fpath, "teacher_baseline.pkl"))
+        student_model = load_pkl(os.path.join(one_off_dir, fpath, "student_baseline.pkl"))
+
+        samples = np.random.randint(0, len(dataset.X_test), size=4)
+        print(samples)
+        visualize_activation_maps(teacher_model, student_model, distilled_model, 
+                                dataset.X_test[samples], dataset.Y_test[samples], dataset.image_shape, os.path.join(one_off_dir, fpath, output["experiment_name"]+"_activation_maps.png"))
+
+        #info_theory_experiment(output, dataset, distilled_model, teacher_model, student_model)

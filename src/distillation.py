@@ -133,10 +133,10 @@ def plot_results(output: dict, fpath: str):
     alpha = 0.7
 
     # Set font to Times New Roman for all plots
-    plt.rcParams['font.family'] = 'Times New Roman'
-    plt.rcParams['font.serif'] = ['Times New Roman']
-    plt.rcParams['mathtext.fontset'] = 'dejavuserif'  # For math text
-    plt.rcParams['font.size'] = 12
+    plt.rcParams['font.family'] = 'CMU Serif'
+    plt.rcParams['font.serif'] = ['CMU Serif']
+    plt.rcParams['mathtext.fontset'] = 'cm'  # For math text
+    plt.rcParams['font.size'] = 14
 
     # plot test results and save
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
@@ -570,9 +570,10 @@ def distillation_experiment(
     if make_activation_maps:
         try:
             # plot activation maps
-            samples = np.random.randint(0, len(X_test), size=5)
+            samples = np.random.randint(0, len(X_test), size=4)
             visualize_activation_maps(baseline_teacher_tm, baseline_student_tm, distilled_tm, 
-                                    X_test[samples], dataset.image_shape, os.path.join(fpath, experiment_name+ACTIVATION_MAPS_PNG_PATH))
+                                    X_test[samples], Y_test[samples], dataset.image_shape, os.path.join(fpath, 
+                                    experiment_name+"_"+ACTIVATION_MAPS_PNG_PATH))
         except Exception as e:
             print(f"Error making activation maps: {e}")
             print("Make sure the dataset has a valid image shape")

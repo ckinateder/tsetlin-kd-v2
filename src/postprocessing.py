@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from util import load_pkl, load_json, save_json
 import os 
-from stats import calculate_information
 from __init__ import  OUTPUT_JSON_PATH, PLOT_FIGSIZE, PLOT_DPI
 def iterate_over_file_in_folder(folder="experiments", file_extension=".json"):
     for root, dirs, files in os.walk(folder):
@@ -335,18 +334,7 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
     """
     exps: list of experiment directory paths
     """
-    # test accuracy table
-    test_acc_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$Acc_S$", "$Acc_D$"], index=[])
 
-    # train accuracy table
-    train_acc_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$Acc_S$", "$Acc_D$"], index=[])
-
-    # training time table
-    training_time_table = pd.DataFrame(columns=["Dataset", "$\mathcal{T}_T$", "$\mathcal{T}_S$", "$\mathcal{T}_D$"], index=[])
-
-    # test time table
-    test_time_table = pd.DataFrame(columns=["Dataset", "$t_T$", "$t_S$", "$t_D$"], index=[])
-    
     # hyperparameter table
     hyperparam_table = pd.DataFrame(columns=["Dataset", "$|C_T|$", "$|C_S|$", "$T_T$", "$T_S$", "$s_T$", "$s_S$", "$\\tau$", "$\\alpha$", "$z$", "$E_T$", "$E_S$"], index=[])
 
@@ -354,50 +342,15 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
     dataset_size_table = pd.DataFrame(columns=["Dataset", "$|X_{train}|$", "$|X_{test}|$", "$|L|$", "$\\zeta$"], index=[])
 
     # combined train table with time
-    train_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$Acc_S$", "$Acc_D$", "$\mathcal{T}_T$", "$\mathcal{T}_S$", "$\mathcal{T}_D$"], index=[])
-    test_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$Acc_S$", "$Acc_D$", "$t_T$", "$t_S$", "$t_D$"], index=[])
+    train_table = pd.DataFrame(columns=["Dataset", "$Acc'_T$", "$\\mathcal{T}'_T$", "$Acc'_S$", "$\\mathcal{T}'_S$", "$Acc'_D$", "$\\mathcal{T}'_D$"], index=[])
+    test_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$\\mathcal{T}_T$", "$Acc_S$", "$\\mathcal{T}_S$", "$Acc_D$", "$\\mathcal{T}_D$"], index=[])
+
     for exp in exps:
         print(exp)
         exp_output = load_json(os.path.join(exp, OUTPUT_JSON_PATH))
 
         # get row name
         rowname = exp_output["experiment_name"]
-
-        # get test accuracy
-        new_row = {
-            "Dataset": rowname,
-            "$Acc_T$": f'{exp_output["analysis"]["avg_acc_test_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_teacher"]:.2f}',
-            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
-            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_test_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_distilled"]:.2f}'
-        }
-        test_acc_table = test_acc_table._append(new_row, ignore_index=True)
-
-        # get train accuracy
-        new_row = {
-            "Dataset": rowname,
-            "$Acc_T$": f'{exp_output["analysis"]["avg_acc_train_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_teacher"]:.2f}',
-            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
-            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_train_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_distilled"]:.2f}'
-        }
-        train_acc_table = train_acc_table._append(new_row, ignore_index=True)
-
-        # get training time
-        new_row = {
-            "Dataset": rowname,
-            "$\mathcal{T}_T$": f'{exp_output["analysis"]["avg_time_train_teacher"]:.2f}',
-            "$\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f}',
-            "$\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f}'
-        }
-        training_time_table = training_time_table._append(new_row, ignore_index=True)   
-
-        # get test time      
-        new_row = {
-            "Dataset": rowname,
-            "$t_T$": f'{exp_output["analysis"]["avg_time_test_teacher"]:.2f}',
-            "$t_S$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f}',
-            "$t_D$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f}'
-        }
-        test_time_table = test_time_table._append(new_row, ignore_index=True)
 
         # get hyperparameters
         new_row = {
@@ -429,75 +382,55 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
         # get combined train table with time
         new_row = {
             "Dataset": rowname,
-            "$Acc_T$": f'{exp_output["analysis"]["avg_acc_train_teacher"]:.2f}',
-            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f}',
-            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_train_distilled"]:.2f}',
-            "$\mathcal{T}_T$": f'{exp_output["analysis"]["avg_time_train_teacher"]:.2f}',
-            "$\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f}',
-            "$\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f}'
+            "$Acc'_T$": f'{exp_output["analysis"]["avg_acc_train_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_teacher"]:.2f}',
+            "$Acc'_S$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
+            "$Acc'_D$": f'{exp_output["analysis"]["avg_acc_train_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_distilled"]:.2f}',
+            "$\\mathcal{T}'_T$": f'{exp_output["analysis"]["avg_time_train_teacher"]:.2f}',
+            "$\\mathcal{T}'_S$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f}',
+            "$\\mathcal{T}'_D$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f}'
         }
         train_table = train_table._append(new_row, ignore_index=True)
         
         new_row = {
             "Dataset": rowname,
-            "$Acc_T$": f'{exp_output["analysis"]["avg_acc_test_teacher"]:.2f}',
-            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f}',
-            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_test_distilled"]:.2f}',
-            "$t_T$": f'{exp_output["analysis"]["avg_time_test_teacher"]:.2f}',
-            "$t_S$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f}',
-            "$t_D$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f}'
+            "$Acc_T$": f'{exp_output["analysis"]["avg_acc_test_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_teacher"]:.2f}',
+            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
+            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_test_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_distilled"]:.2f}',
+            "$\\mathcal{T}_T$": f'{exp_output["analysis"]["avg_time_test_teacher"]:.2f}',
+            "$\\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f}',
+            "$\\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f}'
         }
         test_table = test_table._append(new_row, ignore_index=True)
 
     # Define table configurations
     table_configs = [
         {
-            "name": "test_acc_table",
-            "file_name": "test_acc_table",
-            "caption": "Average Test Accuracy (\\%)",
-            "label": "tab:test-acc"
-        },
-        {
-            "name": "training_time_table",
-            "file_name": "training_time_table",
-            "caption": "Average Training Time (s)",
-            "label": "tab:training-time"
-        },
-        {
-            "name": "test_time_table",
-            "file_name": "test_time_table",
-            "caption": "Average Test Time (s)",
-            "label": "tab:test-time"
-        },
-        {
-            "name": "train_acc_table",
-            "file_name": "train_acc_table",
-            "caption": "Average Train Accuracy (\\%)",
-            "label": "tab:train-acc"
-        },
-        {
             "name": "hyperparam_table",
             "file_name": "hyperparam_table",
             "caption": "Hyperparameters",
-            "label": "tab:hyperparams"
+            "label": "tab:hyperparams",
+            "column_format": "l"*len(hyperparam_table.columns)
         },
         {
             "name": "dataset_size_table",
             "file_name": "dataset_size_table",
             "caption": "Dataset Size",
-            "label": "tab:dataset-size"
+            "label": "tab:dataset-size",
+            "column_format": "l"*len(dataset_size_table.columns)
         },
         {
             "name": "train_table",
             "file_name": "train_table",
             "caption": "Train Table",
-            "label": "tab:train-table"
+            "label": "tab:train-table",
+            "column_format": "l"+("c"*(len(train_table.columns)-1))
         },
         {
             "name": "test_table",
             "file_name": "test_table",
             "caption": "Test Table",
-            "label": "tab:test-table"
+            "label": "tab:test-table",
+            "column_format": "l"+("c"*(len(test_table.columns)-1))
         }
     ]
     
@@ -517,7 +450,7 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
         latex_table = table.to_latex(
             index=False, 
             escape=False, 
-            column_format="l"*len(table.columns),
+            column_format=config["column_format"],
             caption=config["caption"], 
             label=config["label"],
         )

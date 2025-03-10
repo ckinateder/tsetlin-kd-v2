@@ -32,6 +32,23 @@
         "avg_time_test_distilled": 9.41297740538915,
         "total_time": 10968.308916807175
     },
+    "data": {
+        "X_train": [
+            25000,
+            5000
+        ],
+        "Y_train": [
+            25000
+        ],
+        "X_test": [
+            25000,
+            5000
+        ],
+        "Y_test": [
+            25000
+        ],
+        "num_classes": 2
+    },
     "params": {
         "teacher": {
             "C": 8000,
