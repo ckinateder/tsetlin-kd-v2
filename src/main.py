@@ -115,17 +115,10 @@ if __name__ == "__main__":
         kwargs["folderpath"] = one_off_dir
         kwargs["save_all"] = True
         distillation_experiment(dataset, name, params, **kwargs)
-    
-
-    print("Updating charts")
-    # update all charts
-    for fpath in os.listdir(one_off_dir):
-        output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
-        plot_results(output, os.path.join(one_off_dir, fpath))
-
+   
     exit()
-
-    # information theory experiments
+    
+    # activation maps
     for fpath in os.listdir(one_off_dir):
         output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
         if output["experiment_name"] == "IMDB":
@@ -136,9 +129,33 @@ if __name__ == "__main__":
         teacher_model = load_pkl(os.path.join(one_off_dir, fpath, "teacher_baseline.pkl"))
         student_model = load_pkl(os.path.join(one_off_dir, fpath, "student_baseline.pkl"))
 
-        samples = np.random.randint(0, len(dataset.X_test), size=4)
+        samples = np.random.randint(0, len(dataset.X_train), size=4)
         print(samples)
         visualize_activation_maps(teacher_model, student_model, distilled_model, 
-                                dataset.X_test[samples], dataset.Y_test[samples], dataset.image_shape, os.path.join(one_off_dir, fpath, output["experiment_name"]+"_activation_maps.png"))
+                                dataset.X_train[samples], dataset.Y_train[samples], dataset.image_shape, os.path.join(one_off_dir, fpath, output["experiment_name"]+"_activation_maps.png"))
 
-        #info_theory_experiment(output, dataset, distilled_model, teacher_model, student_model)
+    print("Updating charts")
+    # update all charts
+    for fpath in os.listdir(one_off_dir):
+        # modify output
+        print(fpath)
+        output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
+        results = pd.DataFrame(output["results"])
+        output["analysis"]["avg_acc_test_distilled"] = results[ACC_TEST_DISTILLED].mean()
+        output["analysis"]["std_acc_test_distilled"] = results[ACC_TEST_DISTILLED].std()
+
+        output["analysis"]["avg_acc_train_distilled"] = results[ACC_TRAIN_DISTILLED].mean()
+        output["analysis"]["std_acc_train_distilled"] = results[ACC_TRAIN_DISTILLED].std()
+
+        post_teacher_results = results.iloc[output["params"]["teacher"]["epochs"]:]
+        output["analysis"]["avg_time_train_distilled"] = post_teacher_results[TIME_TRAIN_DISTILLED].mean()
+        output["analysis"]["avg_time_test_distilled"] = post_teacher_results[TIME_TEST_DISTILLED].mean()
+
+        output["analysis"]["inference_time_teacher"] = post_teacher_results[TIME_TEST_TEACHER].mean()
+        output["analysis"]["inference_time_student"] = post_teacher_results[TIME_TEST_STUDENT].mean()
+        output["analysis"]["inference_time_distilled"] = post_teacher_results[TIME_TEST_DISTILLED].mean()
+        save_json(output, os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
+
+        output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
+        
+        plot_results(output, os.path.join(one_off_dir, fpath))

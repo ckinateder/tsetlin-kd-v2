@@ -27,9 +27,11 @@ def visualize_activation_maps(teacher_model, student_model, distilled_model, sam
     plt.rcParams['mathtext.fontset'] = 'cm'  # For math text
     plt.rcParams['font.size'] = 14
 
-    correct_color = 'green'
-    incorrect_color = 'red'
+    correct_color = "lightgray"#'green'
+    incorrect_color = "lightgray"#'red'
     line_width = 1
+
+    # invert the orignal image
 
     # Get number of samples
     num_samples = len(samples)
@@ -48,7 +50,7 @@ def visualize_activation_maps(teacher_model, student_model, distilled_model, sam
         correct = sample_class_idx == true_labels[i]
 
         # Display original image
-        axes[i, 0].imshow(sample.reshape(image_shape), cmap='gray')
+        axes[i, 0].imshow((sample.reshape(image_shape)), cmap='gray')
         axes[i, 0].set_xticks([])
         axes[i, 0].set_yticks([])
         for spine in axes[i, 0].spines.values():

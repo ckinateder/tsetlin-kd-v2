@@ -139,10 +139,11 @@ def plot_results(output: dict, fpath: str):
     plt.rcParams['font.size'] = 14
 
     # plot test results and save
+    analysis = output["analysis"]
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-    plt.axhline(results[ACC_TEST_DISTILLED].mean(), color="blue", linestyle=":", alpha=0.4, label="_Distilled Avg")
-    plt.axhline(results[ACC_TEST_TEACHER].mean(), color="orange", linestyle=":", alpha=0.4, label="_Teacher Avg")
-    plt.axhline(results[ACC_TEST_STUDENT].mean(), color="green", linestyle=":", alpha=0.4, label="_Student Avg")
+    plt.axhline(analysis["avg_acc_test_distilled"], color="blue", linestyle=":", alpha=0.4, label="_Distilled Avg")
+    plt.axhline(analysis["avg_acc_test_teacher"], color="orange", linestyle=":", alpha=0.4, label="_Teacher Avg")
+    plt.axhline(analysis["avg_acc_test_student"], color="green", linestyle=":", alpha=0.4, label="_Student Avg")
     plt.plot(results[ACC_TEST_DISTILLED], label="Distilled")
     plt.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=alpha)
     plt.plot(results[ACC_TEST_STUDENT], label="Student", alpha=alpha)
@@ -159,9 +160,9 @@ def plot_results(output: dict, fpath: str):
     
     # plot train results and save
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-    plt.axhline(results[ACC_TRAIN_DISTILLED].mean(), color="blue", linestyle=":", alpha=0.4, label="_Distilled Avg")
-    plt.axhline(results[ACC_TRAIN_TEACHER].mean(), color="orange", linestyle=":", alpha=0.4, label="_Teacher Avg")
-    plt.axhline(results[ACC_TRAIN_STUDENT].mean(), color="green", linestyle=":", alpha=0.4, label="_Student Avg")
+    plt.axhline(analysis["avg_acc_train_distilled"], color="blue", linestyle=":", alpha=0.4, label="_Distilled Avg")
+    plt.axhline(analysis["avg_acc_train_teacher"], color="orange", linestyle=":", alpha=0.4, label="_Teacher Avg")
+    plt.axhline(analysis["avg_acc_train_student"], color="green", linestyle=":", alpha=0.4, label="_Student Avg")
     plt.plot(results[ACC_TRAIN_DISTILLED], label="Distilled")
     plt.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=alpha)
     plt.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=alpha)
@@ -180,7 +181,7 @@ def plot_results(output: dict, fpath: str):
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
     plt.grid(linestyle='dotted', zorder=0)
     labels = ["Teacher", "Student", "Distilled"]
-    data = [output["analysis"]["avg_time_test_teacher"], output["analysis"]["avg_time_test_student"], output["analysis"]["avg_time_test_distilled"]]
+    data = [analysis["avg_time_test_teacher"], analysis["avg_time_test_student"], analysis["avg_time_test_distilled"]]
     colors = ["orange", "green", "blue"]
     plt.bar(labels, data, color=colors, zorder=10)
     # get y tick size
@@ -200,7 +201,7 @@ def plot_results(output: dict, fpath: str):
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
     plt.grid(linestyle='dotted', zorder=0)
     labels = ["Teacher", "Student", "Distilled"]
-    data = [output["analysis"]["avg_time_train_teacher"], output["analysis"]["avg_time_train_student"], output["analysis"]["avg_time_train_distilled"]]
+    data = [analysis["avg_time_train_teacher"], analysis["avg_time_train_student"], analysis["avg_time_train_distilled"]]
     colors = ["orange", "green", "blue"]
     plt.bar(labels, data, color=colors, zorder=10)
     # get y tick size
@@ -214,72 +215,6 @@ def plot_results(output: dict, fpath: str):
     #plt.xlabel("Model")
     plt.ylabel("Training Time (s)")
     plt.savefig(os.path.join(fpath, experiment_name+"_"+TRAIN_TIME_PNG_PATH))
-    plt.close()
-
-    # Create a 2x2 subplot figure combining all plots
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(PLOT_FIGSIZE[0]*subplot_scale, PLOT_FIGSIZE[1]*subplot_scale), dpi=PLOT_DPI)
-    fig.suptitle(f"Results Overview - {experiment_name}")
-
-    # Test accuracy plot
-    ax1.axhline(results[ACC_TEST_DISTILLED].mean(), color="blue", linestyle=":", alpha=0.4, label="_Distilled Avg")
-    ax1.axhline(results[ACC_TEST_TEACHER].mean(), color="orange", linestyle=":", alpha=0.4, label="_Teacher Avg")
-    ax1.axhline(results[ACC_TEST_STUDENT].mean(), color="green", linestyle=":", alpha=0.4, label="_Student Avg")
-    ax1.plot(results[ACC_TEST_DISTILLED], label="Distilled")
-    ax1.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=alpha)
-    ax1.plot(results[ACC_TEST_STUDENT], label="Student", alpha=alpha)
-    ax1.set_xlabel("Epoch")
-    ax1.set_ylabel("Accuracy (%)")
-    if len(results) < 100:
-        ax1.set_xticks(range(0, len(results), 10))
-    else:
-        ax1.set_xticks(range(0, len(results), ((len(results)//100)+1)*10))
-    ax1.legend(loc="lower right")
-    ax1.grid(linestyle='dotted')
-    ax1.set_title("Test Accuracy")
-
-    # Train accuracy plot
-    ax2.axhline(results[ACC_TRAIN_DISTILLED].mean(), color="blue", linestyle=":", alpha=0.4, label="_Distilled Avg")
-    ax2.axhline(results[ACC_TRAIN_TEACHER].mean(), color="orange", linestyle=":", alpha=0.4, label="_Teacher Avg")
-    ax2.axhline(results[ACC_TRAIN_STUDENT].mean(), color="green", linestyle=":", alpha=0.4, label="_Student Avg")
-    ax2.plot(results[ACC_TRAIN_DISTILLED], label="Distilled")
-    ax2.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=alpha)
-    ax2.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=alpha)
-    ax2.set_xlabel("Epoch")
-    ax2.set_ylabel("Accuracy (%)")
-    if len(results) < 100:
-        ax2.set_xticks(range(0, len(results), 10))
-    else:
-        ax2.set_xticks(range(0, len(results), ((len(results)//100)+1)*10))
-    ax2.legend(loc="lower right")
-    ax2.grid(linestyle='dotted')
-    ax2.set_title("Train Accuracy")
-
-    # Test time bar plot
-    ax3.grid(linestyle='dotted', zorder=0)
-    data = [output["analysis"]["avg_time_test_teacher"], output["analysis"]["avg_time_test_student"], output["analysis"]["avg_time_test_distilled"]]
-    bars = ax3.bar(labels, data, color=colors, zorder=10)
-    yticks = ax3.get_yticks()
-    offset = yticks[0] * 0.1
-    ax3.set_yticks(np.arange(0, yticks.max()*1.1, yticks[1]-yticks[0]))
-    for bar, val in zip(bars, data):
-        ax3.text(bar.get_x() + bar.get_width()/2, val+offset, f"{val:.3f} s", ha="center", va="bottom")
-    ax3.set_ylabel("Inference Time (s)")
-    ax3.set_title("Average Test Time")
-
-    # Train time bar plot
-    ax4.grid(linestyle='dotted', zorder=0)
-    data = [output["analysis"]["avg_time_train_teacher"], output["analysis"]["avg_time_train_student"], output["analysis"]["avg_time_train_distilled"]]
-    bars = ax4.bar(labels, data, color=colors, zorder=10)
-    yticks = ax4.get_yticks()
-    offset = yticks[0] * 0.1
-    ax4.set_yticks(np.arange(0, yticks.max()*1.1, yticks[1]-yticks[0]))
-    for bar, val in zip(bars, data):
-        ax4.text(bar.get_x() + bar.get_width()/2, val+offset, f"{val:.3f} s", ha="center", va="bottom")
-    ax4.set_ylabel("Training Time (s)")
-    ax4.set_title("Average Training Time")
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(fpath, experiment_name+"_combined_results.png"))
     plt.close()
 
 def distillation_experiment(
@@ -544,6 +479,11 @@ def distillation_experiment(
             "avg_time_test_teacher": results[TIME_TEST_TEACHER].mean(),
             "avg_time_test_student": results[TIME_TEST_STUDENT].mean(),
             "avg_time_test_distilled": post_teacher_results[TIME_TEST_DISTILLED].mean(),
+
+            # inference time for each epoch
+            "inference_time_teacher": post_teacher_results[TIME_TEST_TEACHER].mean(),
+            "inference_time_student": post_teacher_results[TIME_TEST_STUDENT].mean(),
+            "inference_time_distilled": post_teacher_results[TIME_TEST_DISTILLED].mean(),
 
             "total_time": total_time,
         },
