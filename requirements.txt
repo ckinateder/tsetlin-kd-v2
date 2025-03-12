@@ -74,7 +74,7 @@ Pygments==2.18.0
 pyparsing==3.2.0
 PySocks==1.7.1
 python-dateutil==2.9.0.post0
-pyTsetlinMachineParallel @ git+https://github.com/ckinateder/pyTsetlinMachineParallel.git@c6ff73bd7554f0e04c8c373e2d8394d32d44ece6
+pyTsetlinMachineParallel @ git+https://github.com/ckinateder/pyTsetlinMachineParallel.git@cf65cf23d45cf88389c517a17474718c9a2aca3a
 pytz==2024.2
 pyzmq==26.2.0
 requests==2.32.3

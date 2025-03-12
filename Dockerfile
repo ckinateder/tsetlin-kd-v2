@@ -1,7 +1,7 @@
 FROM python:3.10.16-slim-bullseye
 
 # dependencies 
-RUN apt update && apt install -y build-essential git libgl1 libglib2.0-0 curl wget fontconfig fonts-cmu
+RUN apt update && apt install -y build-essential git libgl1 libglib2.0-0 curl wget fontconfig
 
 # install git-lfs
 RUN curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
@@ -19,6 +19,9 @@ RUN dpkg -i ttf-mscorefonts-installer_3.8.1_all.deb
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip ipykernel
 RUN pip install --no-cache-dir -r /app/requirements.txt
+
+RUN apt-get install -qq fonts-cmu
+RUN rm ~/.cache/matplotlib -rf 
 
 # set workdir
 WORKDIR /app
