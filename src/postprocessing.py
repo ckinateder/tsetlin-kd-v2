@@ -478,7 +478,7 @@ if __name__ == "__main__":
     
     make_paper_2_tables([
         j("combined_results", "EMNIST_tC1000_sC100_tT100_sT100_ts4.0_ss4.0_te60_se120_temp4.0_a0.5_z0.2"),
+        j("combined_results", "MNIST_tC1000_sC100_tT10_sT10_ts4.0_ss4.0_te60_se120_temp3.0_a0.5_z0.3"),
+        j("combined_results", "KMNIST_tC2000_sC200_tT100_sT100_ts8.2_ss8.2_te60_se120_temp4.0_a0.5_z0.3"),
         j("combined_results", "IMDB_tC8000_sC4000_tT6000_sT6000_ts7.0_ss7.0_te30_se60_temp3.0_a0.5_z0.2"),
-        j("combined_results", "MNIST_tC1000_sC100_tT10_sT10_ts4.0_ss4.0_te60_se120_temp3.0_a0.5_z0.2"),
-        j("combined_results", "KMNIST_tC2000_sC200_tT100_sT100_ts8.2_ss8.2_te60_se120_temp4.0_a0.5_z0.2"),
     ])

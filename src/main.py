@@ -68,7 +68,7 @@ if __name__ == "__main__":
     #run distilled experiments
     # this goes (dataset, name, params, kwargs)
     distilled_experiments = [
-        (kmnist_dataset, "KMNIST-transfer", 
+        (kmnist_dataset, "KMNIST", 
             {
                 "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 60 },
                 "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 120 },
@@ -78,17 +78,17 @@ if __name__ == "__main__":
             },
             {"overwrite": False}
         ),
-        (mnist_dataset, "MNIST-transfer", 
+        (mnist_dataset, "MNIST-big", 
             {
-                "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 60 },
-                "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 120 },
+                "teacher": { "C": 4000, "T": 100, "s": 4.0, "epochs": 60 },
+                "student": { "C": 400, "T": 100, "s": 4.0, "epochs": 120 },
                 "temperature": 3.0,
                 "alpha": 0.5,
                 "z": 0.3,
             },
             {"overwrite": False}
         ),
-        (emnist_dataset, "EMNIST-transfer", 
+        (emnist_dataset, "EMNIST", 
             {
                 "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 60 },
                 "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 120 },
@@ -98,7 +98,7 @@ if __name__ == "__main__":
             },
             {"overwrite": False}
         ),  
-        (imdb_dataset, "IMDB-transfer", 
+        (imdb_dataset, "IMDB", 
             {
                 "teacher": { "C": 8000, "T": 6000, "s": 7.0, "epochs": 30 },
                 "student": { "C": 4000, "T": 6000, "s": 7.0, "epochs": 60 },
