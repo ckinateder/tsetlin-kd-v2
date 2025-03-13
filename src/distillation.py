@@ -186,18 +186,21 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
 
     # Plot configuration
     alpha = 0.7
-    avg_alpha = 0.4
-    distilled_color = "blue"
-    teacher_color = "orange"
-    student_color = "green"
-    distilled_ds_color = "purple"
-    line_thickness = 1
+    avg_alpha = 0.7
+    distilled_color = "tab:blue"
+    teacher_color = "tab:orange"
+    student_color = "tab:green"
+    distilled_ds_color = "tab:purple"
+    line_thickness = 1.2
+    default_font_size = 14
+    legend_font_size = 13
+    font_family = "CMU Serif"
 
     # Set font to Times New Roman for all plots
-    plt.rcParams['font.family'] = 'CMU Serif'
-    plt.rcParams['font.serif'] = ['CMU Serif']
+    plt.rcParams['font.family'] = font_family
+    plt.rcParams['font.serif'] = font_family
     plt.rcParams['mathtext.fontset'] = 'cm'  # For math text
-    plt.rcParams['font.size'] = 14
+    plt.rcParams['font.size'] = default_font_size
 
     # plot test results and save
     analysis = output["analysis"]
@@ -207,18 +210,18 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         plt.axhline(analysis["avg_acc_test_distilled_ds"], color=distilled_ds_color, linestyle=":", alpha=avg_alpha, label="_Distilled DS Avg")
     plt.axhline(analysis["avg_acc_test_teacher"], color=teacher_color, linestyle=":", alpha=avg_alpha, label="_Teacher Avg")
     plt.axhline(analysis["avg_acc_test_student"], color=student_color, linestyle=":", alpha=avg_alpha, label="_Student Avg")
+    plt.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=alpha, color=teacher_color, linewidth=line_thickness)
+    plt.plot(results[ACC_TEST_STUDENT], label="Student", alpha=alpha, color=student_color, linewidth=line_thickness)
     plt.plot(results[ACC_TEST_DISTILLED], label="Distilled", color=distilled_color, linewidth=line_thickness)
     if downsample is not None:
         plt.plot(results[ACC_TEST_DISTILLED_DS], label="Downsampled", color=distilled_ds_color, linewidth=line_thickness)
-    plt.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=alpha, color=teacher_color, linewidth=line_thickness)
-    plt.plot(results[ACC_TEST_STUDENT], label="Student", alpha=alpha, color=student_color, linewidth=line_thickness)
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy (%)")
     if len(results) < 100:
         plt.xticks(range(0, len(results), 10))
     else:
         plt.xticks(range(0, len(results), ((len(results)//100)+1)*10))
-    plt.legend(loc="lower right")
+    plt.legend(loc="lower right", fontsize=legend_font_size)
     plt.grid(linestyle='dotted')
     plt.savefig(os.path.join(fpath, experiment_name+"_"+TEST_ACCURACY_PNG_PATH))
     plt.close()
@@ -230,25 +233,27 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         plt.axhline(analysis["avg_acc_train_distilled_ds"], color=distilled_ds_color, linestyle=":", alpha=avg_alpha, label="_Distilled DS Avg")
     plt.axhline(analysis["avg_acc_train_teacher"], color=teacher_color, linestyle=":", alpha=avg_alpha, label="_Teacher Avg")
     plt.axhline(analysis["avg_acc_train_student"], color=student_color, linestyle=":", alpha=avg_alpha, label="_Student Avg")
+    plt.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=alpha, color=teacher_color, linewidth=line_thickness)
+    plt.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=alpha, color=student_color, linewidth=line_thickness)
     plt.plot(results[ACC_TRAIN_DISTILLED], label="Distilled", color=distilled_color, linewidth=line_thickness)
     if downsample is not None:
         plt.plot(results[ACC_TRAIN_DISTILLED_DS], label="Downsampled", color=distilled_ds_color, linewidth=line_thickness)
-    plt.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=alpha, color=teacher_color, linewidth=line_thickness)
-    plt.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=alpha, color=student_color, linewidth=line_thickness)
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy (%)")
     if len(results) < 100:
         plt.xticks(range(0, len(results), 10))
     else:
         plt.xticks(range(0, len(results), ((len(results)//100)+1)*10))
-    plt.legend(loc="lower right")
+    plt.legend(loc="lower right", fontsize=legend_font_size)
     plt.grid(linestyle='dotted')
     plt.savefig(os.path.join(fpath, experiment_name+"_"+TRAIN_ACCURACY_PNG_PATH))
     plt.close()
 
+    ## BAR CHARTs
+
     # plot bar chart of test time for each model
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-    plt.grid(linestyle='dotted', zorder=0)
+    plt.grid(linestyle='dotted', zorder=0, axis="y")
     labels = ["Teacher", "Student", "Distilled"]
     data = [analysis["avg_time_test_teacher"], analysis["avg_time_test_student"], analysis["avg_time_test_distilled"]]
     colors = [teacher_color, student_color, distilled_color]
@@ -274,7 +279,7 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
 
     # plot bar chart of training time for each model
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-    plt.grid(linestyle='dotted', zorder=0)
+    plt.grid(linestyle='dotted', zorder=0, axis="y")
     labels = ["Teacher", "Student", "Distilled"]
     data = [analysis["avg_time_train_teacher"], analysis["avg_time_train_student"], analysis["avg_time_train_distilled"]]
     colors = [teacher_color, student_color, distilled_color]
@@ -653,7 +658,6 @@ def clause_distillation_experiment(
     folderpath: str = DEFAULT_FOLDERPATH,
     save_all: bool = False,
     overwrite: bool = False,
-    make_activation_maps: bool = True,
 ) -> dict:
     """
     Run a distillation experiment comparing teacher, student, and distilled models.
@@ -719,7 +723,7 @@ def clause_distillation_experiment(
             results = pd.read_csv(os.path.join(folderpath, experiment_id, RESULTS_CSV_PATH))
             output = load_json(os.path.join(folderpath, experiment_id, OUTPUT_JSON_PATH))
             # plot results
-            plot_results(output, os.path.join(folderpath, experiment_id))
+            plot_results(output, os.path.join(folderpath, experiment_id), output["params"]["downsample"])
             return output, results
         else:
             print(f"Experiment {experiment_id} already exists, but some files are missing, continuing") 

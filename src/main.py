@@ -54,8 +54,14 @@ distilled:
 
 def remake_plots(parent_dir):
     for fpath in os.listdir(parent_dir):
+        print(fpath)
+        if not os.path.exists(os.path.join(parent_dir, fpath, OUTPUT_JSON_PATH)):
+            continue
         output = load_json(os.path.join(parent_dir, fpath, OUTPUT_JSON_PATH))
-        plot_results(output, os.path.join(parent_dir, fpath))
+        if "downsample" in output["params"]:
+            plot_results(output, os.path.join(parent_dir, fpath), output["params"]["downsample"])
+        else:
+            plot_results(output, os.path.join(parent_dir, fpath))
 
 if __name__ == "__main__":
     # load datasets.
@@ -68,20 +74,27 @@ if __name__ == "__main__":
     print("Datasets loaded")
         
     one_off_dir = os.path.join("results")
+    clause_dir = os.path.join(one_off_dir, "clause")
+    distribution_dir = os.path.join(one_off_dir, "distribution")
+
+    print(f"Remaking all plots in {distribution_dir}...")
+    remake_plots(distribution_dir)
+    print(f"Remaking all plots in {clause_dir}...")
+    remake_plots(clause_dir)
     
     clause_distilled_experiments = [
         (mnist_dataset, "MNIST", 
             {
-                "teacher": { "C": 800, "T": 10, "s": 7.0, "epochs": 60 },
-                "student": { "C": 100, "T": 10, "s": 7.0, "epochs": 120 },
+                "teacher": { "C": 800, "T": 10, "s": 7.0, "epochs": 120 },
+                "student": { "C": 100, "T": 10, "s": 7.0, "epochs": 240 },
                 "downsample": 0.15,
             },
             {"overwrite": False}
         ),
         (kmnist_dataset, "KMNIST", 
             {
-                "teacher": { "C": 400, "T": 100, "s": 8.2, "epochs": 60 },
-                "student": { "C": 100, "T": 100, "s": 8.2, "epochs": 120 },
+                "teacher": { "C": 400, "T": 100, "s": 5, "epochs": 120 },
+                "student": { "C": 100, "T": 100, "s": 5, "epochs": 240 },
                 "downsample": 0.22,
             },
             {"overwrite": False}
@@ -98,7 +111,7 @@ if __name__ == "__main__":
 
     print("Running clause-based distilled experiments")
     for dataset, name, params, kwargs in clause_distilled_experiments:
-        kwargs["folderpath"] = os.path.join(one_off_dir, "clause")
+        kwargs["folderpath"] = clause_dir
         kwargs["save_all"] = True
         clause_distillation_experiment(dataset, name, params, **kwargs)
 
@@ -127,8 +140,8 @@ if __name__ == "__main__":
         ),
         (emnist_dataset, "EMNIST", 
             {
-                "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 120 },
-                "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 240 },
+                "teacher": { "C": 1000, "T": 100, "s": 7.0, "epochs": 120 },
+                "student": { "C": 100, "T": 100, "s": 7.0, "epochs": 240 },
                 "temperature": 4.0,
                 "alpha": 0.5,
                 "z": 0.2,
@@ -149,7 +162,7 @@ if __name__ == "__main__":
     
     print("Running distribution-based distilled experiments")
     for dataset, name, params, kwargs in distribution_distilled_experiments:
-        kwargs["folderpath"] = os.path.join(one_off_dir, "distribution")
+        kwargs["folderpath"] = distribution_dir
         kwargs["save_all"] = True
         distribution_distillation_experiment(dataset, name, params, **kwargs)
 
