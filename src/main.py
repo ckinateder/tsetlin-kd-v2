@@ -52,6 +52,11 @@ distilled:
     ),
 """
 
+def remake_plots(parent_dir):
+    for fpath in os.listdir(parent_dir):
+        output = load_json(os.path.join(parent_dir, fpath, OUTPUT_JSON_PATH))
+        plot_results(output, os.path.join(parent_dir, fpath))
+
 if __name__ == "__main__":
     # load datasets.
     print("Loading datasets...")

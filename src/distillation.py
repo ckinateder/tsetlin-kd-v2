@@ -164,16 +164,33 @@ def validate_params(params: dict, experiment_name: str, distillation_type: str) 
 
     return exid
 
-def plot_results(output: dict, fpath: str):
+def plot_results(output: dict, fpath: str, downsample: float | None = None):
+    """
+    Plot the results of a distillation experiment.
+    
+    This function generates and saves plots showing the accuracy of teacher, student, and distilled models
+    on both test and training datasets. It also plots inference times for comparison.
+    
+    Args:
+        output (dict): Dictionary containing experiment results, including metrics and analysis.
+        fpath (str): File path where the plots should be saved.
+        downsample (float | None, optional): Downsampling rate used in clause-based distillation.
+            If provided, additional plots for the downsampled model will be generated. Defaults to None.
+    
+    Returns:
+        None: The function saves plots to the specified file path but does not return any values.
+    """
     # load results
     results = pd.DataFrame(output["results"])
     experiment_name = output["experiment_name"]
 
     # Plot configuration
     alpha = 0.7
+    avg_alpha = 0.4
     distilled_color = "blue"
     teacher_color = "orange"
     student_color = "green"
+    distilled_ds_color = "purple"
     line_thickness = 1
 
     # Set font to Times New Roman for all plots
@@ -185,12 +202,16 @@ def plot_results(output: dict, fpath: str):
     # plot test results and save
     analysis = output["analysis"]
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-    plt.axhline(analysis["avg_acc_test_distilled"], color=distilled_color, linestyle=":", alpha=0.4, label="_Distilled Avg")
-    plt.axhline(analysis["avg_acc_test_teacher"], color=teacher_color, linestyle=":", alpha=0.4, label="_Teacher Avg")
-    plt.axhline(analysis["avg_acc_test_student"], color=student_color, linestyle=":", alpha=0.4, label="_Student Avg")
-    plt.plot(results[ACC_TEST_DISTILLED], label="Distilled", linewidth=line_thickness)
-    plt.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=alpha, linewidth=line_thickness)
-    plt.plot(results[ACC_TEST_STUDENT], label="Student", alpha=alpha, linewidth=line_thickness)
+    plt.axhline(analysis["avg_acc_test_distilled"], color=distilled_color, linestyle=":", alpha=avg_alpha, label="_Distilled Avg")
+    if downsample is not None:
+        plt.axhline(analysis["avg_acc_test_distilled_ds"], color=distilled_ds_color, linestyle=":", alpha=avg_alpha, label="_Distilled DS Avg")
+    plt.axhline(analysis["avg_acc_test_teacher"], color=teacher_color, linestyle=":", alpha=avg_alpha, label="_Teacher Avg")
+    plt.axhline(analysis["avg_acc_test_student"], color=student_color, linestyle=":", alpha=avg_alpha, label="_Student Avg")
+    plt.plot(results[ACC_TEST_DISTILLED], label="Distilled", color=distilled_color, linewidth=line_thickness)
+    if downsample is not None:
+        plt.plot(results[ACC_TEST_DISTILLED_DS], label="Downsampled", color=distilled_ds_color, linewidth=line_thickness)
+    plt.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=alpha, color=teacher_color, linewidth=line_thickness)
+    plt.plot(results[ACC_TEST_STUDENT], label="Student", alpha=alpha, color=student_color, linewidth=line_thickness)
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy (%)")
     if len(results) < 100:
@@ -204,12 +225,16 @@ def plot_results(output: dict, fpath: str):
     
     # plot train results and save
     plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-    plt.axhline(analysis["avg_acc_train_distilled"], color=distilled_color, linestyle=":", alpha=0.4, label="_Distilled Avg")
-    plt.axhline(analysis["avg_acc_train_teacher"], color=teacher_color, linestyle=":", alpha=0.4, label="_Teacher Avg")
-    plt.axhline(analysis["avg_acc_train_student"], color=student_color, linestyle=":", alpha=0.4, label="_Student Avg")
-    plt.plot(results[ACC_TRAIN_DISTILLED], label="Distilled", linewidth=line_thickness)
-    plt.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=alpha, linewidth=line_thickness)
-    plt.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=alpha, linewidth=line_thickness)
+    plt.axhline(analysis["avg_acc_train_distilled"], color=distilled_color, linestyle=":", alpha=avg_alpha, label="_Distilled Avg")
+    if downsample is not None:
+        plt.axhline(analysis["avg_acc_train_distilled_ds"], color=distilled_ds_color, linestyle=":", alpha=avg_alpha, label="_Distilled DS Avg")
+    plt.axhline(analysis["avg_acc_train_teacher"], color=teacher_color, linestyle=":", alpha=avg_alpha, label="_Teacher Avg")
+    plt.axhline(analysis["avg_acc_train_student"], color=student_color, linestyle=":", alpha=avg_alpha, label="_Student Avg")
+    plt.plot(results[ACC_TRAIN_DISTILLED], label="Distilled", color=distilled_color, linewidth=line_thickness)
+    if downsample is not None:
+        plt.plot(results[ACC_TRAIN_DISTILLED_DS], label="Downsampled", color=distilled_ds_color, linewidth=line_thickness)
+    plt.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=alpha, color=teacher_color, linewidth=line_thickness)
+    plt.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=alpha, color=student_color, linewidth=line_thickness)
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy (%)")
     if len(results) < 100:
@@ -227,6 +252,12 @@ def plot_results(output: dict, fpath: str):
     labels = ["Teacher", "Student", "Distilled"]
     data = [analysis["avg_time_test_teacher"], analysis["avg_time_test_student"], analysis["avg_time_test_distilled"]]
     colors = [teacher_color, student_color, distilled_color]
+
+    if downsample is not None:
+        data.append(analysis["avg_time_test_distilled_ds"])
+        labels.append("Downsampled")
+        colors.append(distilled_ds_color)
+
     plt.bar(labels, data, color=colors, zorder=10)
     # get y tick size
     yticks = plt.yticks()[0]
@@ -247,6 +278,12 @@ def plot_results(output: dict, fpath: str):
     labels = ["Teacher", "Student", "Distilled"]
     data = [analysis["avg_time_train_teacher"], analysis["avg_time_train_student"], analysis["avg_time_train_distilled"]]
     colors = [teacher_color, student_color, distilled_color]
+
+    if downsample is not None:
+        data.append(analysis["avg_time_train_distilled_ds"])
+        labels.append("Downsampled")
+        colors.append(distilled_ds_color)
+
     plt.bar(labels, data, color=colors, zorder=10)
     # get y tick size
     yticks = plt.yticks()[0]
@@ -500,6 +537,7 @@ def distribution_distillation_experiment(
             "Y_test": Y_test.shape,
             "num_classes": len(np.unique(Y_train)),
         },
+        "type": "distribution",
         "params": params.to_dict(),
         "experiment_name": experiment_name,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -832,48 +870,54 @@ def clause_distillation_experiment(
             # average accuracy on the training set
             "avg_acc_train_teacher": results[ACC_TRAIN_TEACHER].mean(),
             "avg_acc_train_student": results[ACC_TRAIN_STUDENT].mean(),
-            "avg_acc_train_distilled": results[ACC_TRAIN_DISTILLED].mean(),\
+            "avg_acc_train_distilled": results[ACC_TRAIN_DISTILLED].mean(),
+            "avg_acc_train_distilled_ds": results[ACC_TRAIN_DISTILLED_DS].mean(),
 
             # standard deviation of accuracy on the training set
             "std_acc_train_teacher": results[ACC_TRAIN_TEACHER].std(),
             "std_acc_train_student": results[ACC_TRAIN_STUDENT].std(),
             "std_acc_train_distilled": results[ACC_TRAIN_DISTILLED].std(),
-
+            "std_acc_train_distilled_ds": results[ACC_TRAIN_DISTILLED_DS].std(),
             # final accuracy on the test set
             "final_acc_test_distilled": results[ACC_TEST_DISTILLED].iloc[-1],
             "final_acc_test_teacher": results[ACC_TEST_TEACHER].iloc[-1],
             "final_acc_test_student": results[ACC_TEST_STUDENT].iloc[-1],
-
+            "final_acc_test_distilled_ds": results[ACC_TEST_DISTILLED_DS].iloc[-1],
             # final accuracy on the training set
             "final_acc_train_distilled": results[ACC_TRAIN_DISTILLED].iloc[-1],
             "final_acc_train_teacher": results[ACC_TRAIN_TEACHER].iloc[-1],
             "final_acc_train_student": results[ACC_TRAIN_STUDENT].iloc[-1],
+            "final_acc_train_distilled_ds": results[ACC_TRAIN_DISTILLED_DS].iloc[-1],
 
             # sum of all training epoch times
             "sum_time_train_teacher": results[TIME_TRAIN_TEACHER].sum(),
             "sum_time_train_student": results[TIME_TRAIN_STUDENT].sum(),
             "sum_time_train_distilled": results[TIME_TRAIN_DISTILLED].sum(),
+            "sum_time_train_distilled_ds": results[TIME_TRAIN_DISTILLED_DS].sum(),
 
             # sum of all test set evaluation times
             "sum_time_test_teacher": results[TIME_TEST_TEACHER].sum(),
             "sum_time_test_student": results[TIME_TEST_STUDENT].sum(),
             "sum_time_test_distilled": results[TIME_TEST_DISTILLED].sum(),
+            "sum_time_test_distilled_ds": results[TIME_TEST_DISTILLED_DS].sum(),
 
             # average time for each training epoch
             "avg_time_train_teacher": results[TIME_TRAIN_TEACHER].mean(),
             "avg_time_train_student": results[TIME_TRAIN_STUDENT].mean(),
-            "avg_time_train_distilled": post_teacher_results[TIME_TRAIN_DISTILLED].mean(),
+            "avg_time_train_distilled": results[TIME_TRAIN_DISTILLED].mean(),
+            "avg_time_train_distilled_ds": post_teacher_results[TIME_TRAIN_DISTILLED_DS].mean(),
 
             # average time for each test set evaluation
             "avg_time_test_teacher": results[TIME_TEST_TEACHER].mean(),
             "avg_time_test_student": results[TIME_TEST_STUDENT].mean(),
             "avg_time_test_distilled": post_teacher_results[TIME_TEST_DISTILLED].mean(),
+            "avg_time_test_distilled_ds": post_teacher_results[TIME_TEST_DISTILLED_DS].mean(),
 
             # inference time for each epoch
             "inference_time_teacher": post_teacher_results[TIME_TEST_TEACHER].mean(),
             "inference_time_student": post_teacher_results[TIME_TEST_STUDENT].mean(),
             "inference_time_distilled": post_teacher_results[TIME_TEST_DISTILLED].mean(),
-
+            "inference_time_distilled_ds": post_teacher_results[TIME_TEST_DISTILLED_DS].mean(),
             "total_time": total_time,
         },
         "data": {
@@ -887,8 +931,11 @@ def clause_distillation_experiment(
             "num_clauses_dropped": num_clauses_dropped,
             "L_D": X_train_downsampled.shape[1],
             "reduction_percentage": reduction_percentage,
+            "test_transform_time": test_transform_time,
+            "train_transform_time": train_transform_time,
         },
         "params": params.to_dict(),
+        "type": "clause",
         "experiment_name": experiment_name,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "id": experiment_id,
@@ -901,6 +948,6 @@ def clause_distillation_experiment(
     results.to_csv(os.path.join(fpath, RESULTS_CSV_PATH))
 
     # plot results
-    plot_results(output, fpath)
+    plot_results(output, fpath, downsample=params.downsample)
 
     return output, results
