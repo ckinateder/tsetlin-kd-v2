@@ -1,4 +1,4 @@
-# tsetlin-kd
+# tsetlin-kd-v2
 
 This is a demonstration of [knowledge distillation](https://arxiv.org/abs/1503.02531) using [Tsetlin Machines](https://arxiv.org/abs/1804.01508). This code is based on the [parallel Python implementation of a tsetlin machine](https://github.com/cair/pyTsetlinMachineParallel).
 
@@ -7,13 +7,13 @@ This is a demonstration of [knowledge distillation](https://arxiv.org/abs/1503.0
 ### Build Docker Image
 
 ```bash
-docker build -t tsetlin-kd .
+docker build -t tsetlin-kd-v2 .
 ```
 
 ### Run Docker Container
 
 ```bash
-docker run -it --rm  -v $(pwd):/app --name tskd tsetlin-kd bash
+docker run -it --rm  -v $(pwd):/app --name tskd tsetlin-kd-v2 bash
 ```
 
 > **Note**: Ignore CUDA-related errors if you're not using GPU:
@@ -37,76 +37,28 @@ docker run -it --rm  -v $(pwd):/app --name tskd tsetlin-kd bash
 python3 src/main.py
 ```
 
-### Experiment Types
+### Parameters
 
-### 1. Distilled Experiments
-Requires the following parameters:
-- **Dataset**: Input dataset
-- **Name**: Experiment name
-- **Params**:
-  - `teacher_num_clauses`: Number of clauses in teacher model
-  - `student_num_clauses`: Number of clauses in student model
-  - `T`: Number of possible states in Tsetlin Machine
-  - `s`: Number of clauses per feature
-  - `teacher_epochs`: Training epochs for teacher model
-  - `student_epochs`: Training epochs for student model
-  - `downsample`: Downsample rate (0.0-1.0)
-- **Kwargs**:
-  - `overwrite`: Whether to overwrite existing experiments
+Basic parameters per experiment: 
 
-Output is saved in `experiments/<experiment_name>/`:
-- JSON file with experiment results
-- CSV file with accuracy results
-- Accuracy graph
-
-The distilled experiment goes through the following steps:
-
-1. Train the student model for `combined_epochs`
-2. Train the teacher model and save a checkpoint after `teacher_epochs`
-3. Load the teacher model at `teacher_epochs`
-4. Transform the X data through the teacher model, return the clauses
-5. Downsample the transformed data
-6. Train the distilled model for `student_epochs` 
-7. Make the output graphs
-
-### 2. Downsample Experiments
-Requires:
-- Dataset
-- Name
-- Params (same as distilled experiments)
-- List of downsample rates
-
-Output is saved in `experiments/<experiment_name>/`:
-- CSV file with downsample results
-- Multiple visualization graphs:
-  - `downsample_results_final_acc.png`: Final accuracy vs downsample rates
-  - `downsample_results_avg_acc.png`: Average accuracy vs downsample rates
-  - `downsample_results_total_training_time.png`: Total training time vs downsample rates
-  - `downsample_results_avg_training_time.png`: Average training time vs downsample rates
-  - `downsample_results_reduction_percentage.png`: Reduction percentage vs downsample rates
-  - `downsample_results_mutual_information.png`: Mutual information vs downsample rates
-
-### Example Configuration
 ```python
-# Example from main.py
-distilled_experiments = [
-    (kmnist_dataset, "KMNIST", {
-        "teacher_num_clauses": 1600,
-        "student_num_clauses": 200,
-        "T": 600,
+DISTILLED_DEFAULTS_NESTED = {
+    "teacher": {
+        "C": 1000,
+        "T": 10,
         "s": 5,
-        "teacher_epochs": 20,
-        "student_epochs": 60,
-        "downsample": 0.02
-    }, {"overwrite": False}),
-    # ... other experiments ...
-]
+        "epochs": 30,
+    },
+    "student": {
+        "C": 100,
+        "T": 10,
+        "s": 5,
+        "epochs": 60,
+    },
+    "temperature": 4.0,
+    "alpha": 0.5,
+    "z": 0.2,
+    "weighted_clauses": True,
+    "number_of_state_bits": 8,
+}
 ```
-
-
-### Run the main file
-
-```bash
-python3 src/main.py
-```
-

@@ -1,4 +1,3 @@
-#from stats import entropy, normalize, softmax, joint_probs, mutual_information, kl_divergence
 import numpy as np
 from time import time
 import pandas as pd
@@ -217,7 +216,7 @@ def plot_results(output: dict, fpath: str):
     plt.savefig(os.path.join(fpath, experiment_name+"_"+TRAIN_TIME_PNG_PATH))
     plt.close()
 
-def distillation_experiment(
+def distribution_distillation_experiment(
     dataset: Dataset,
     experiment_name: str,
     params: dict = DISTILLED_DEFAULTS_NESTED,
@@ -225,10 +224,6 @@ def distillation_experiment(
     save_all: bool = False,
     overwrite: bool = False,
     make_activation_maps: bool = True,
-    baseline_teacher_model: MultiClassTsetlinMachine | None = None,
-    baseline_student_model: MultiClassTsetlinMachine | None = None,
-    pretrained_teacher_model: MultiClassTsetlinMachine | None = None,
-    prefilled_results: pd.DataFrame | None = None,
 ) -> dict:
     """
     Run a distillation experiment comparing teacher, student, and distilled models.
@@ -299,6 +294,8 @@ def distillation_experiment(
             # load the results
             results = pd.read_csv(os.path.join(folderpath, experiment_id, RESULTS_CSV_PATH))
             output = load_json(os.path.join(folderpath, experiment_id, OUTPUT_JSON_PATH))
+            # plot results
+            plot_results(output, os.path.join(folderpath, experiment_id))
             return output, results
         else:
             print(f"Experiment {experiment_id} already exists, but some files are missing, continuing") 
@@ -315,53 +312,32 @@ def distillation_experiment(
         params.student.C, params.student.T, params.student.s, number_of_state_bits=params.number_of_state_bits, weighted_clauses=params.weighted_clauses)
 
     # create a results dataframe
-    if prefilled_results is None: 
-        results = pd.DataFrame(columns=RESULTS_COLUMNS, index=range(params.combined_epochs))
-    else:
-        results = prefilled_results
-        assert results.columns.tolist() == RESULTS_COLUMNS, \
-            f"Prefilled results columns do not match expected columns: {results.columns.tolist()} != {RESULTS_COLUMNS}"
-        assert results.index.to_list() == list(range(params.combined_epochs)), \
-            f"Prefilled results index does not match expected index: {results.index.to_list()} != {range(params.combined_epochs)}"
-
-        # make sure it has no nan values
-        assert not results.isna().any().any(), "Prefilled results has nan values"
-
-        # delete entries after params['teacher_epochs'] for 'acc_test_distilled', 'time_train_distilled', 'time_test_distilled' columns
-        results.loc[params.teacher.epochs:, ACC_TEST_DISTILLED] = np.nan
-        results.loc[params.teacher.epochs:, ACC_TRAIN_DISTILLED] = np.nan
-        results.loc[params.teacher.epochs:, TIME_TRAIN_DISTILLED] = np.nan 
-        results.loc[params.teacher.epochs:, TIME_TEST_DISTILLED] = np.nan
-        print(f"Prefilled results loaded")
-
+    results = pd.DataFrame(columns=RESULTS_COLUMNS, index=range(params.combined_epochs))
+    
     # train baselines
     # train baseline teacher
-    if isinstance(baseline_teacher_model, MultiClassTsetlinMachine):
-        print(f"Loading pretrained baseline teacher model")
-        baseline_teacher_tm = baseline_teacher_model
-    else:
-        print(f"Creating a baseline teacher with {params.teacher.C} clauses and training on original data")
-        start = time()
-        bt_pbar = tqdm(range(params.combined_epochs), desc="Teacher", leave=False, dynamic_ncols=True)
-        best_acc = 0
-        best_acc_epoch = 0
-        for i in bt_pbar:
-            train_result, test_result, train_time, test_time = train_step(baseline_teacher_tm, X_train, Y_train, X_test, Y_test, i)
-            results.loc[i, ACC_TRAIN_TEACHER], results.loc[i, TIME_TRAIN_TEACHER] = train_result, train_time
-            results.loc[i, ACC_TEST_TEACHER], results.loc[i, TIME_TEST_TEACHER] = test_result, test_time
-            bt_pbar.set_description(f"Teacher: {results[ACC_TEST_TEACHER].mean():.2f} +/- {results[ACC_TEST_TEACHER].std():.2f}%")
+    print(f"Creating a baseline teacher with {params.teacher.C} clauses and training on original data")
+    start = time()
+    bt_pbar = tqdm(range(params.combined_epochs), desc="Teacher", leave=False, dynamic_ncols=True)
+    best_acc = 0
+    best_acc_epoch = 0
+    for i in bt_pbar:
+        train_result, test_result, train_time, test_time = train_step(baseline_teacher_tm, X_train, Y_train, X_test, Y_test, i)
+        results.loc[i, ACC_TRAIN_TEACHER], results.loc[i, TIME_TRAIN_TEACHER] = train_result, train_time
+        results.loc[i, ACC_TEST_TEACHER], results.loc[i, TIME_TEST_TEACHER] = test_result, test_time
+        bt_pbar.set_description(f"Teacher: {results[ACC_TEST_TEACHER].mean():.2f} +/- {results[ACC_TEST_TEACHER].std():.2f}%")
 
-            if i <= params.teacher.epochs - 1 and test_result > best_acc:
-                save_pkl(baseline_teacher_tm, teacher_model_path)
-                best_acc = test_result
-                best_acc_epoch = i
+        if i <= params.teacher.epochs - 1 and test_result > best_acc:
+            save_pkl(baseline_teacher_tm, teacher_model_path)
+            best_acc = test_result
+            best_acc_epoch = i
 
-            if i == params.teacher.epochs - 1:
-                tqdm.write(f"Saved teacher model to {teacher_model_path} @ epoch {best_acc_epoch} (best acc: {best_acc:.2f}%)")
+        if i == params.teacher.epochs - 1:
+            tqdm.write(f"Saved teacher model to {teacher_model_path} @ epoch {best_acc_epoch} (best acc: {best_acc:.2f}%)")
 
-        bt_pbar.close()
-        end = time()
-        print(f'Baseline teacher training time: {end-start:.2f} s')
+    bt_pbar.close()
+    end = time()
+    print(f'Baseline teacher training time: {end-start:.2f} s')
 
     # copy first teacher_epochs results to distilled results
     results.loc[:params.teacher.epochs, ACC_TEST_DISTILLED] = results.loc[:params.teacher.epochs, ACC_TEST_TEACHER]
@@ -370,32 +346,23 @@ def distillation_experiment(
     results.loc[:params.teacher.epochs, TIME_TEST_DISTILLED] = results.loc[:params.teacher.epochs, TIME_TEST_TEACHER]
 
     # train baseline student
-    if isinstance(baseline_student_model, MultiClassTsetlinMachine):
-        print(f"Loading pretrained baseline student model")
-        baseline_student_tm = baseline_student_model
-    else:
-        print(f"Creating a baseline student with {params.student.C} clauses and training on original data")
-        start = time()
-        bs_pbar = tqdm(range(params.combined_epochs), desc="Student", leave=False, dynamic_ncols=True)
-        for i in bs_pbar:
-            train_result, test_result, train_time, test_time = train_step(baseline_student_tm, X_train, Y_train, X_test, Y_test, i)
-            results.loc[i, ACC_TRAIN_STUDENT], results.loc[i, TIME_TRAIN_STUDENT] = train_result, train_time
-            results.loc[i, ACC_TEST_STUDENT], results.loc[i, TIME_TEST_STUDENT] = test_result, test_time
-            bs_pbar.set_description(f"Student: {results[ACC_TEST_STUDENT].mean():.2f} +/- {results[ACC_TEST_STUDENT].std():.2f}%")
+    print(f"Creating a baseline student with {params.student.C} clauses and training on original data")
+    start = time()
+    bs_pbar = tqdm(range(params.combined_epochs), desc="Student", leave=False, dynamic_ncols=True)
+    for i in bs_pbar:
+        train_result, test_result, train_time, test_time = train_step(baseline_student_tm, X_train, Y_train, X_test, Y_test, i)
+        results.loc[i, ACC_TRAIN_STUDENT], results.loc[i, TIME_TRAIN_STUDENT] = train_result, train_time
+        results.loc[i, ACC_TEST_STUDENT], results.loc[i, TIME_TEST_STUDENT] = test_result, test_time
+        bs_pbar.set_description(f"Student: {results[ACC_TEST_STUDENT].mean():.2f} +/- {results[ACC_TEST_STUDENT].std():.2f}%")
 
-        bs_pbar.close()
-        end = time()
-        print(f'Baseline student training time: {end-start:.2f} s')
+    bs_pbar.close()
+    end = time()
+    print(f'Baseline student training time: {end-start:.2f} s')
 
-    # train distilled model
-    if isinstance(pretrained_teacher_model, MultiClassTsetlinMachine):
-        print(f"Loading pretrained teacher model")
-        teacher_tm = pretrained_teacher_model
-    else:
-        print(f"Loading teacher model from {teacher_model_path}, trained for {params.teacher.epochs} epochs")
-        teacher_tm = load_pkl(teacher_model_path)
-        if not save_all:
-            rm_file(teacher_model_path) # remove the teacher model file. we don't need it anymore
+    print(f"Loading teacher model from {teacher_model_path}, trained for {params.teacher.epochs} epochs")
+    teacher_tm = load_pkl(teacher_model_path)
+    if not save_all:
+        rm_file(teacher_model_path) # remove the teacher model file. we don't need it anymore
 
     # GET soft labels
     print(f"Initializing student with {params.student.C} clauses from teacher and z={params.z}")

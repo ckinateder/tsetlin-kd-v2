@@ -1,4 +1,4 @@
-from distillation import distillation_experiment, plot_results
+from distillation import distribution_distillation_experiment, plot_results
 from activation_maps import visualize_activation_maps
 import os
 from stats import info_theory_experiment
@@ -70,8 +70,8 @@ if __name__ == "__main__":
     distilled_experiments = [
         (mnist_dataset, "MNIST", 
             {
-                "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 60 },
-                "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 120 },
+                "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 120 },
+                "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 240 },
                 "temperature": 3.0,
                 "alpha": 0.5,
                 "z": 0.3,
@@ -90,8 +90,8 @@ if __name__ == "__main__":
         ),
         (emnist_dataset, "EMNIST", 
             {
-                "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 60 },
-                "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 120 },
+                "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 120 },
+                "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 240 },
                 "temperature": 4.0,
                 "alpha": 0.5,
                 "z": 0.2,
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     for dataset, name, params, kwargs in distilled_experiments:
         kwargs["folderpath"] = one_off_dir
         kwargs["save_all"] = True
-        distillation_experiment(dataset, name, params, **kwargs)
+        distribution_distillation_experiment(dataset, name, params, **kwargs)
    
     exit()
     
