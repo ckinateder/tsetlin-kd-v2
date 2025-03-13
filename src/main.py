@@ -68,21 +68,21 @@ if __name__ == "__main__":
     #run distilled experiments
     # this goes (dataset, name, params, kwargs)
     distilled_experiments = [
-        (kmnist_dataset, "KMNIST", 
+        (mnist_dataset, "MNIST", 
             {
-                "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 60 },
-                "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 120 },
-                "temperature": 4.0,
+                "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 60 },
+                "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 120 },
+                "temperature": 3.0,
                 "alpha": 0.5,
                 "z": 0.3,
             },
             {"overwrite": False}
         ),
-        (mnist_dataset, "MNIST-big", 
+        (kmnist_dataset, "KMNIST", 
             {
-                "teacher": { "C": 4000, "T": 100, "s": 4.0, "epochs": 60 },
-                "student": { "C": 400, "T": 100, "s": 4.0, "epochs": 120 },
-                "temperature": 3.0,
+                "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 120 },
+                "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 240 },
+                "temperature": 4.0,
                 "alpha": 0.5,
                 "z": 0.3,
             },

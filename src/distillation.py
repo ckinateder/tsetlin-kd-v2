@@ -287,7 +287,7 @@ def distillation_experiment(
     if not overwrite and os.path.exists(os.path.join(folderpath, experiment_id)):
         # Check if experiment files exist, and if save_all, check model files exist too
         basic_files_exist = all(os.path.exists(os.path.join(folderpath, experiment_id, f)) 
-                              for f in [OUTPUT_JSON_PATH, RESULTS_CSV_PATH, TEST_ACCURACY_PNG_PATH, TRAIN_ACCURACY_PNG_PATH, TEST_TIME_PNG_PATH])
+                              for f in [OUTPUT_JSON_PATH, RESULTS_CSV_PATH])
         
         model_files_exist = not save_all or all(os.path.exists(os.path.join(folderpath, experiment_id, f)) 
                                                for f in [TEACHER_BASELINE_MODEL_PATH, 
