@@ -1,7 +1,6 @@
-from distillation import distribution_distillation_experiment, plot_results
+from distillation import distribution_distillation_experiment, plot_results, clause_distillation_experiment
 from activation_maps import visualize_activation_maps
 import os
-from stats import info_theory_experiment
 from datasets import MNISTDataset, FashionMNISTDataset, KMNISTDataset, IMDBDataset, EMNISTLettersDataset, OracleMNISTDataset
 from util import load_or_create, load_json, save_json, load_pkl
 from __init__ import *
@@ -65,9 +64,42 @@ if __name__ == "__main__":
         
     one_off_dir = os.path.join("results")
     
+    clause_distilled_experiments = [
+        (mnist_dataset, "MNIST", 
+            {
+                "teacher": { "C": 800, "T": 10, "s": 7.0, "epochs": 60 },
+                "student": { "C": 100, "T": 10, "s": 7.0, "epochs": 120 },
+                "downsample": 0.15,
+            },
+            {"overwrite": False}
+        ),
+        (kmnist_dataset, "KMNIST", 
+            {
+                "teacher": { "C": 400, "T": 100, "s": 8.2, "epochs": 60 },
+                "student": { "C": 100, "T": 100, "s": 8.2, "epochs": 120 },
+                "downsample": 0.22,
+            },
+            {"overwrite": False}
+        ),
+        (imdb_dataset, "IMDB", 
+            {
+                "teacher": { "C": 10000, "T": 6000, "s": 5.0, "epochs": 30 },
+                "student": { "C": 2000, "T": 6000, "s": 5.0, "epochs": 90 },
+                "downsample": 0.25,
+            },
+            {"overwrite": False}
+        ),
+    ]
+
+    print("Running clause-based distilled experiments")
+    for dataset, name, params, kwargs in clause_distilled_experiments:
+        kwargs["folderpath"] = os.path.join(one_off_dir, "clause")
+        kwargs["save_all"] = True
+        clause_distillation_experiment(dataset, name, params, **kwargs)
+
     #run distilled experiments
     # this goes (dataset, name, params, kwargs)
-    distilled_experiments = [
+    distribution_distilled_experiments = [
         (mnist_dataset, "MNIST", 
             {
                 "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 120 },
@@ -110,14 +142,16 @@ if __name__ == "__main__":
         ),
     ]
     
-    print("Running distilled experiments")
-    for dataset, name, params, kwargs in distilled_experiments:
-        kwargs["folderpath"] = one_off_dir
+    print("Running distribution-based distilled experiments")
+    for dataset, name, params, kwargs in distribution_distilled_experiments:
+        kwargs["folderpath"] = os.path.join(one_off_dir, "distribution")
         kwargs["save_all"] = True
         distribution_distillation_experiment(dataset, name, params, **kwargs)
+
    
     exit()
     
+    print("Updating charts")
     # activation maps
     for fpath in os.listdir(one_off_dir):
         output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
@@ -130,32 +164,6 @@ if __name__ == "__main__":
         student_model = load_pkl(os.path.join(one_off_dir, fpath, "student_baseline.pkl"))
 
         samples = np.random.randint(0, len(dataset.X_train), size=4)
-        print(samples)
+        plot_results(output, os.path.join(one_off_dir, fpath))
         visualize_activation_maps(teacher_model, student_model, distilled_model, 
                                 dataset.X_train[samples], dataset.Y_train[samples], dataset.image_shape, os.path.join(one_off_dir, fpath, output["experiment_name"]+"_activation_maps.png"))
-
-    print("Updating charts")
-    # update all charts
-    for fpath in os.listdir(one_off_dir):
-        # modify output
-        print(fpath)
-        output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
-        results = pd.DataFrame(output["results"])
-        output["analysis"]["avg_acc_test_distilled"] = results[ACC_TEST_DISTILLED].mean()
-        output["analysis"]["std_acc_test_distilled"] = results[ACC_TEST_DISTILLED].std()
-
-        output["analysis"]["avg_acc_train_distilled"] = results[ACC_TRAIN_DISTILLED].mean()
-        output["analysis"]["std_acc_train_distilled"] = results[ACC_TRAIN_DISTILLED].std()
-
-        post_teacher_results = results.iloc[output["params"]["teacher"]["epochs"]:]
-        output["analysis"]["avg_time_train_distilled"] = post_teacher_results[TIME_TRAIN_DISTILLED].mean()
-        output["analysis"]["avg_time_test_distilled"] = post_teacher_results[TIME_TEST_DISTILLED].mean()
-
-        output["analysis"]["inference_time_teacher"] = post_teacher_results[TIME_TEST_TEACHER].mean()
-        output["analysis"]["inference_time_student"] = post_teacher_results[TIME_TEST_STUDENT].mean()
-        output["analysis"]["inference_time_distilled"] = post_teacher_results[TIME_TEST_DISTILLED].mean()
-        save_json(output, os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
-
-        output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
-        
-        plot_results(output, os.path.join(one_off_dir, fpath))

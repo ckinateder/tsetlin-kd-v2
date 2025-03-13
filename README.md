@@ -29,20 +29,18 @@ docker run -it --rm  -v $(pwd):/app --name tskd tsetlin-kd-v2 bash
 > To enable the following instructions: AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
 > ```
 
-## Usage
+## Design
 
-### Quick Start
+There are two main experiments:
 
-```bash
-python3 src/main.py
-```
+1. Distribution-based knowledge distillation
+2. Clause-based knowledge distillation
 
-### Parameters
+### Distribution-based knowledge distillation
 
-Basic parameters per experiment: 
-
+The default parameters for this experiment are:
 ```python
-DISTILLED_DEFAULTS_NESTED = {
+D_DISTILLED_DEFAULTS = {
     "teacher": {
         "C": 1000,
         "T": 10,
@@ -62,3 +60,19 @@ DISTILLED_DEFAULTS_NESTED = {
     "number_of_state_bits": 8,
 }
 ```
+
+This experiment is a standard knowledge distillation experiment where we use a teacher model to distill a student model. The teacher and student models are both Tsetlin Machines. The distillation occurs as follows:
+
+1. The teacher is trained on the training set with a checkpoint saved at teacher epochs.
+2. The student is trained on the training set for a baseline.
+3. The distilled model is created with the same parameters as the student. 
+4. The distilled model is initialized with the most important clauses from the teacher.
+5. Soft labels are computed for the training set using the teacher.
+6. The distilled model is trained on the training set using the soft labels from the teacher.
+
+### Clause-based knowledge distillation
+
+
+
+
+
