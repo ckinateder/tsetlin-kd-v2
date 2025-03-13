@@ -6,6 +6,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from util import load_pkl, load_json, save_json
+from __init__ import  OUTPUT_JSON_PATH, PLOT_FIGSIZE, PLOT_DPI, ACC_TEST_DISTILLED, ACC_TRAIN_DISTILLED
 import os 
 from __init__ import  OUTPUT_JSON_PATH, PLOT_FIGSIZE, PLOT_DPI
 def iterate_over_file_in_folder(folder="experiments", file_extension=".json"):
@@ -241,7 +242,7 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
 def j(*args):
     return os.path.join(*args)
 if __name__ == "__main__":
-
+    from distillation import plot_results
     """
     make_paper_1_tables([
        (j("combined_results", "ckd", "IMDB-Downsample-Take-2", "ds_tnc10000_snc2000_T6000_s4.0_te30_se90_downsample0"),
@@ -254,11 +255,23 @@ if __name__ == "__main__":
         j("combined_results", "ckd", "MNIST3D-Downsample-Take-2", "ds_tnc1500_snc250_T100_s3.0_te20_se70_downsample0.15")),
     ])
     """
-    print(os.listdir("combined_results"))
-    
+
     make_paper_2_tables([
-        j("distribution", "combined_results", "EMNIST_tC1000_sC100_tT100_sT100_ts4.0_ss4.0_te60_se120_temp4.0_a0.5_z0.2"),
-        j("distribution", "combined_results", "MNIST_tC1000_sC100_tT10_sT10_ts4.0_ss4.0_te60_se120_temp3.0_a0.5_z0.3"),
-        j("distribution", "combined_results", "KMNIST_tC2000_sC200_tT100_sT100_ts8.2_ss8.2_te60_se120_temp4.0_a0.5_z0.3"),
-        j("distribution", "combined_results", "IMDB_tC8000_sC4000_tT6000_sT6000_ts7.0_ss7.0_te30_se60_temp3.0_a0.5_z0.2"),
+        j("combined_results", "distribution", "EMNIST_tC1000_sC100_tT100_sT100_ts4.0_ss4.0_te60_se120_temp4.0_a0.5_z0.2"),
+        j("combined_results", "distribution", "MNIST_tC1000_sC100_tT10_sT10_ts4.0_ss4.0_te120_se240_temp3.0_a0.5_z0.3"),
+        j("combined_results", "distribution", "KMNIST_tC2000_sC200_tT100_sT100_ts8.2_ss8.2_te120_se240_temp4.0_a0.5_z0.3"),
+        j("combined_results", "distribution", "IMDB_tC8000_sC4000_tT6000_sT6000_ts7.0_ss7.0_te30_se60_temp3.0_a0.5_z0.2"),
     ])
+
+"""
+    for folder in os.listdir("combined_results/distribution"):
+        output = load_json(os.path.join("combined_results", "distribution", folder, OUTPUT_JSON_PATH))
+        print(output["experiment_name"])
+        results = pd.DataFrame(output["results"])
+        output["analysis"]["avg_acc_test_distilled"] = results[ACC_TEST_DISTILLED].mean()
+        output["analysis"]["std_acc_test_distilled"] = results[ACC_TEST_DISTILLED].std()
+        output["analysis"]["avg_acc_train_distilled"] = results[ACC_TRAIN_DISTILLED].mean()
+        output["analysis"]["std_acc_train_distilled"] = results[ACC_TRAIN_DISTILLED].std()
+        save_json(output, os.path.join("combined_results", "distribution", folder, OUTPUT_JSON_PATH))
+        plot_results(output, os.path.join("combined_results", "distribution", folder))
+"""

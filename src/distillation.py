@@ -351,7 +351,7 @@ def distribution_distillation_experiment(
         params.student.C, params.student.T, params.student.s, number_of_state_bits=params.number_of_state_bits, weighted_clauses=params.weighted_clauses)
 
     # create a results dataframe
-    results = pd.DataFrame(columns=RESULTS_COLUMNS, index=range(params.combined_epochs))
+    results = pd.DataFrame(columns=DISTRIBUTION_RESULTS_COLUMNS, index=range(params.combined_epochs))
     
     # train baselines
     # train baseline teacher
@@ -439,22 +439,22 @@ def distribution_distillation_experiment(
             # average accuracy on the test set
             "avg_acc_test_teacher": results[ACC_TEST_TEACHER].mean(), 
             "avg_acc_test_student": results[ACC_TEST_STUDENT].mean(),
-            "avg_acc_test_distilled": post_teacher_results[ACC_TEST_DISTILLED].mean(),
+            "avg_acc_test_distilled": results[ACC_TEST_DISTILLED].mean(),
 
             # standard deviation of accuracy on the test set
             "std_acc_test_teacher": results[ACC_TEST_TEACHER].std(),
             "std_acc_test_student": results[ACC_TEST_STUDENT].std(),
-            "std_acc_test_distilled": post_teacher_results[ACC_TEST_DISTILLED].std(),
+            "std_acc_test_distilled": results[ACC_TEST_DISTILLED].std(),
 
             # average accuracy on the training set
             "avg_acc_train_teacher": results[ACC_TRAIN_TEACHER].mean(),
             "avg_acc_train_student": results[ACC_TRAIN_STUDENT].mean(),
-            "avg_acc_train_distilled": post_teacher_results[ACC_TRAIN_DISTILLED].mean(),\
+            "avg_acc_train_distilled": results[ACC_TRAIN_DISTILLED].mean(),\
 
             # standard deviation of accuracy on the training set
             "std_acc_train_teacher": results[ACC_TRAIN_TEACHER].std(),
             "std_acc_train_student": results[ACC_TRAIN_STUDENT].std(),
-            "std_acc_train_distilled": post_teacher_results[ACC_TRAIN_DISTILLED].std(),
+            "std_acc_train_distilled": results[ACC_TRAIN_DISTILLED].std(),
 
             # final accuracy on the test set
             "final_acc_test_distilled": results[ACC_TEST_DISTILLED].iloc[-1],
@@ -696,9 +696,11 @@ def clause_distillation_experiment(
         params.teacher.C, params.teacher.T, params.teacher.s, number_of_state_bits=params.number_of_state_bits, weighted_clauses=params.weighted_clauses)
     distilled_tm = MultiClassTsetlinMachine(
         params.student.C, params.student.T, params.student.s, number_of_state_bits=params.number_of_state_bits, weighted_clauses=params.weighted_clauses)
+    distilled_downsampled_tm = MultiClassTsetlinMachine(
+        params.student.C, params.student.T, params.student.s, number_of_state_bits=params.number_of_state_bits, weighted_clauses=params.weighted_clauses)
 
     # create a results dataframe
-    results = pd.DataFrame(columns=RESULTS_COLUMNS, index=range(params.combined_epochs))
+    results = pd.DataFrame(columns=CLAUSE_RESULTS_COLUMNS, index=range(params.combined_epochs))
     
     # train baselines
     # train baseline teacher
@@ -763,6 +765,20 @@ def clause_distillation_experiment(
     test_transform_time = e-s
     print(f"Got clause outputs for X_test in {test_transform_time:.2f}s")
 
+    start = time()
+    print(f"Training distilled model for {params.student.epochs} epochs")
+    dt_pbar = tqdm(range(params.teacher.epochs, params.combined_epochs), desc="Distilled", leave=False, dynamic_ncols=True)
+    for i in dt_pbar:
+        train_result, test_result, train_time, test_time = train_step(distilled_tm, X_train_transformed, Y_train, X_test_transformed, Y_test, i)
+        results.loc[i, ACC_TRAIN_DISTILLED], results.loc[i, TIME_TRAIN_DISTILLED] = train_result, train_time
+        results.loc[i, ACC_TEST_DISTILLED], results.loc[i, TIME_TEST_DISTILLED] = test_result, test_time
+        dt_pbar.set_description(f"Distilled: {results[ACC_TEST_DISTILLED].mean():.2f} +/- {results[ACC_TEST_DISTILLED].std():.2f}%")
+
+    dt_pbar.close()
+    end = time()
+
+    print(f'Teacher-student (no downsampling) training time: {end-start:.2f} s')
+
     # downsample clauses
     if params.downsample > 0:
         print(f"Downsampling clauses with downsample rate {params.downsample}")
@@ -775,25 +791,25 @@ def clause_distillation_experiment(
         X_train_downsampled = X_train_transformed
         X_test_downsampled = X_test_transformed
 
-    start = time()
+    # train distilled downsampled
     print(f"Training distilled model for {params.student.epochs} epochs")
     dt_pbar = tqdm(range(params.teacher.epochs, params.combined_epochs), desc="Distilled", leave=False, dynamic_ncols=True)
     for i in dt_pbar:
-        train_result, test_result, train_time, test_time = train_step(distilled_tm, X_train_downsampled, Y_train, X_test_downsampled, Y_test, i)
-        results.loc[i, ACC_TRAIN_DISTILLED], results.loc[i, TIME_TRAIN_DISTILLED] = train_result, train_time
-        results.loc[i, ACC_TEST_DISTILLED], results.loc[i, TIME_TEST_DISTILLED] = test_result, test_time
-        dt_pbar.set_description(f"Distilled: {results[ACC_TEST_DISTILLED].mean():.2f} +/- {results[ACC_TEST_DISTILLED].std():.2f}%")
+        train_result, test_result, train_time, test_time = train_step(distilled_downsampled_tm, X_train_downsampled, Y_train, X_test_downsampled, Y_test, i)
+        results.loc[i, ACC_TRAIN_DISTILLED_DS], results.loc[i, TIME_TRAIN_DISTILLED_DS] = train_result, train_time
+        results.loc[i, ACC_TEST_DISTILLED_DS], results.loc[i, TIME_TEST_DISTILLED_DS] = test_result, test_time
+        dt_pbar.set_description(f"Distilled (ds): {results[ACC_TEST_DISTILLED_DS].mean():.2f} +/- {results[ACC_TEST_DISTILLED_DS].std():.2f}%")
 
     dt_pbar.close()
     end = time()
 
-    print(f'Teacher-student training time: {end-start:.2f} s')
+    print(f'Teacher-student (downsampled) training time: {end-start:.2f} s')
 
     if save_all:
         save_pkl(baseline_teacher_tm, os.path.join(folderpath, experiment_id, TEACHER_BASELINE_MODEL_PATH))
         save_pkl(baseline_student_tm, os.path.join(folderpath, experiment_id, STUDENT_BASELINE_MODEL_PATH))
         save_pkl(distilled_tm, os.path.join(folderpath, experiment_id, DISTILLED_MODEL_PATH))
-
+        save_pkl(distilled_downsampled_tm, os.path.join(folderpath, experiment_id, DISTILLED_DS_MODEL_PATH))
     total_time = time() - exp_start
 
     # THIS IS DONE BECAUSE the teacher model will skew inference time when it doesn't actually affect reality
@@ -804,22 +820,24 @@ def clause_distillation_experiment(
             # average accuracy on the test set
             "avg_acc_test_teacher": results[ACC_TEST_TEACHER].mean(), 
             "avg_acc_test_student": results[ACC_TEST_STUDENT].mean(),
-            "avg_acc_test_distilled": post_teacher_results[ACC_TEST_DISTILLED].mean(),
+            "avg_acc_test_distilled": results[ACC_TEST_DISTILLED].mean(),
+            "avg_acc_test_distilled_ds": results[ACC_TEST_DISTILLED_DS].mean(),
 
             # standard deviation of accuracy on the test set
             "std_acc_test_teacher": results[ACC_TEST_TEACHER].std(),
             "std_acc_test_student": results[ACC_TEST_STUDENT].std(),
-            "std_acc_test_distilled": post_teacher_results[ACC_TEST_DISTILLED].std(),
+            "std_acc_test_distilled": results[ACC_TEST_DISTILLED].std(),
+            "std_acc_test_distilled_ds": results[ACC_TEST_DISTILLED_DS].std(),
 
             # average accuracy on the training set
             "avg_acc_train_teacher": results[ACC_TRAIN_TEACHER].mean(),
             "avg_acc_train_student": results[ACC_TRAIN_STUDENT].mean(),
-            "avg_acc_train_distilled": post_teacher_results[ACC_TRAIN_DISTILLED].mean(),\
+            "avg_acc_train_distilled": results[ACC_TRAIN_DISTILLED].mean(),\
 
             # standard deviation of accuracy on the training set
             "std_acc_train_teacher": results[ACC_TRAIN_TEACHER].std(),
             "std_acc_train_student": results[ACC_TRAIN_STUDENT].std(),
-            "std_acc_train_distilled": post_teacher_results[ACC_TRAIN_DISTILLED].std(),
+            "std_acc_train_distilled": results[ACC_TRAIN_DISTILLED].std(),
 
             # final accuracy on the test set
             "final_acc_test_distilled": results[ACC_TEST_DISTILLED].iloc[-1],
