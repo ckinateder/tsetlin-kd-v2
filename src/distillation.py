@@ -185,8 +185,9 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
     experiment_name = output["experiment_name"]
 
     # Plot configuration
-    alpha = 0.6
+    alpha = 0.7
     avg_alpha = 0.7
+    minor_alpha = 0.2
     distilled_color = "tab:blue"
     teacher_color = "tab:orange"
     student_color = "tab:green"
@@ -201,6 +202,37 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
     plt.rcParams['font.serif'] = font_family
     plt.rcParams['mathtext.fontset'] = 'cm'  # For math text
     plt.rcParams['font.size'] = default_font_size
+
+    def get_label_position(x, y, xlim, ylim, offset=5):
+        """Calculate optimal label position to avoid plot overflow."""
+        # Get the current axis limits
+        x_min, x_max = xlim
+        y_min, y_max = ylim
+        
+        # Calculate the width and height of the plot
+        x_range = x_max - x_min
+        y_range = y_max - y_min
+        
+        # Calculate the relative position of the point
+        x_rel = (x - x_min) / x_range
+        y_rel = (y - y_min) / y_range
+        
+        # Determine the best position for the label
+        if x_rel > 0.7:  # Point is on the right side
+            x_offset = -offset
+            ha = 'right'
+        else:  # Point is on the left side
+            x_offset = offset
+            ha = 'left'
+            
+        if y_rel > 0.7:  # Point is on the top
+            y_offset = -offset
+            va = 'top'
+        else:  # Point is on the bottom
+            y_offset = offset
+            va = 'bottom'
+            
+        return x_offset, y_offset, ha, va
 
     # plot test results and save
     analysis = output["analysis"]
@@ -222,7 +254,9 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
     else:
         plt.xticks(range(0, len(results), ((len(results)//100)+1)*10))
     plt.legend(loc="lower right", fontsize=legend_font_size)
-    plt.grid(linestyle='dotted')
+    plt.grid(linestyle='dotted', which='major')
+    plt.grid(linestyle='dotted', which='minor', alpha=minor_alpha)
+    plt.minorticks_on()
     plt.savefig(os.path.join(fpath, experiment_name+"_"+TEST_ACCURACY_PNG_PATH))
     plt.close()
     
@@ -245,7 +279,9 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
     else:
         plt.xticks(range(0, len(results), ((len(results)//100)+1)*10))
     plt.legend(loc="lower right", fontsize=legend_font_size)
-    plt.grid(linestyle='dotted')
+    plt.grid(linestyle='dotted', which='major')
+    plt.grid(linestyle='dotted', which='minor', alpha=minor_alpha)
+    plt.minorticks_on()
     plt.savefig(os.path.join(fpath, experiment_name+"_"+TRAIN_ACCURACY_PNG_PATH))
     plt.close()
 
@@ -301,6 +337,88 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
     #plt.xlabel("Model")
     plt.ylabel("Training Time (s)")
     plt.savefig(os.path.join(fpath, experiment_name+"_"+TRAIN_TIME_PNG_PATH))
+    plt.close()
+
+    # New plots combining accuracy and time
+
+    # Test set efficiency plot
+    plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
+    plt.grid(linestyle='dotted', which='major')
+    plt.grid(linestyle='dotted', which='minor', alpha=minor_alpha)
+    plt.minorticks_on()
+    
+    # Create data points for each model
+    models = [
+        ("Teacher", analysis["avg_acc_test_teacher"], analysis["avg_time_test_teacher"], teacher_color),
+        ("Student", analysis["avg_acc_test_student"], analysis["avg_time_test_student"], student_color),
+        ("Distilled", analysis["avg_acc_test_distilled"], analysis["avg_time_test_distilled"], distilled_color)
+    ]
+    
+    if downsample is not None:
+        models.append(("Downsampled", analysis["avg_acc_test_distilled_ds"], analysis["avg_time_test_distilled_ds"], distilled_ds_color))
+    
+    # Plot points first
+    for name, acc, time, color in models:
+        plt.scatter(time, acc, color=color, s=100, zorder=5)
+    
+    # Get the current axis limits
+    xlim = plt.xlim()
+    ylim = plt.ylim()
+    
+    # Add labels with optimal positioning
+    for name, acc, time, color in models:
+        x_offset, y_offset, ha, va = get_label_position(time, acc, xlim, ylim)
+        plt.annotate(name, (time, acc), 
+                    xytext=(x_offset, y_offset), 
+                    textcoords='offset points',
+                    fontsize=legend_font_size,
+                    ha=ha,
+                    va=va)
+    
+    plt.xlabel("Average Inference Time (s)")
+    plt.ylabel("Average Test Accuracy (%)")
+    plt.title("Model Efficiency on Test Set")
+    plt.savefig(os.path.join(fpath, experiment_name+"_test_efficiency.png"))
+    plt.close()
+
+    # Training set efficiency plot
+    plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
+    plt.grid(linestyle='dotted', which='major')
+    plt.grid(linestyle='dotted', which='minor', alpha=minor_alpha)
+    plt.minorticks_on()
+    
+    # Create data points for each model
+    models = [
+        ("Teacher", analysis["avg_acc_train_teacher"], analysis["avg_time_train_teacher"], teacher_color),
+        ("Student", analysis["avg_acc_train_student"], analysis["avg_time_train_student"], student_color),
+        ("Distilled", analysis["avg_acc_train_distilled"], analysis["avg_time_train_distilled"], distilled_color)
+    ]
+    
+    if downsample is not None:
+        models.append(("Downsampled", analysis["avg_acc_train_distilled_ds"], analysis["avg_time_train_distilled_ds"], distilled_ds_color))
+    
+    # Plot points first
+    for name, acc, time, color in models:
+        plt.scatter(time, acc, color=color, s=100, zorder=5)
+    
+    # Get the current axis limits
+    xlim = plt.xlim()
+    ylim = plt.ylim()
+    
+    # Add labels with optimal positioning
+    for name, acc, time, color in models:
+        x_offset, y_offset, ha, va = get_label_position(time, acc, xlim, ylim)
+        plt.annotate(name, (time, acc), 
+                    xytext=(x_offset, y_offset), 
+                    textcoords='offset points',
+                    fontsize=legend_font_size,
+                    ha=ha,
+                    va=va)
+    
+    plt.xlabel("Average Training Time (s)")
+    plt.ylabel("Average Training Accuracy (%)")
+    plt.title("Model Efficiency on Training Set")
+    plt.savefig(os.path.join(fpath, experiment_name+"_train_efficiency.png"))
     plt.close()
 
 def distribution_distillation_experiment(
@@ -769,11 +887,15 @@ def clause_distillation_experiment(
     end = time()
     print(f'Baseline teacher training time: {end-start:.2f} s')
 
-    # copy first teacher_epochs results to distilled results
+    # copy first teacher_epochs results to distilled results and distilled downsampled results
     results.loc[:params.teacher.epochs, ACC_TEST_DISTILLED] = results.loc[:params.teacher.epochs, ACC_TEST_TEACHER]
     results.loc[:params.teacher.epochs, ACC_TRAIN_DISTILLED] = results.loc[:params.teacher.epochs, ACC_TRAIN_TEACHER]
     results.loc[:params.teacher.epochs, TIME_TRAIN_DISTILLED] = results.loc[:params.teacher.epochs, TIME_TRAIN_TEACHER]
     results.loc[:params.teacher.epochs, TIME_TEST_DISTILLED] = results.loc[:params.teacher.epochs, TIME_TEST_TEACHER]
+    results.loc[:params.teacher.epochs, ACC_TEST_DISTILLED_DS] = results.loc[:params.teacher.epochs, ACC_TEST_TEACHER]
+    results.loc[:params.teacher.epochs, ACC_TRAIN_DISTILLED_DS] = results.loc[:params.teacher.epochs, ACC_TRAIN_TEACHER]
+    results.loc[:params.teacher.epochs, TIME_TEST_DISTILLED_DS] = results.loc[:params.teacher.epochs, TIME_TEST_TEACHER]
+    results.loc[:params.teacher.epochs, TIME_TRAIN_DISTILLED_DS] = results.loc[:params.teacher.epochs, TIME_TRAIN_TEACHER]
 
     # train baseline student
     print(f"Creating a baseline student with {params.student.C} clauses and training on original data")
@@ -909,13 +1031,13 @@ def clause_distillation_experiment(
             "avg_time_train_teacher": results[TIME_TRAIN_TEACHER].mean(),
             "avg_time_train_student": results[TIME_TRAIN_STUDENT].mean(),
             "avg_time_train_distilled": results[TIME_TRAIN_DISTILLED].mean(),
-            "avg_time_train_distilled_ds": post_teacher_results[TIME_TRAIN_DISTILLED_DS].mean(),
+            "avg_time_train_distilled_ds": results[TIME_TRAIN_DISTILLED_DS].mean(),
 
             # average time for each test set evaluation
             "avg_time_test_teacher": results[TIME_TEST_TEACHER].mean(),
             "avg_time_test_student": results[TIME_TEST_STUDENT].mean(),
-            "avg_time_test_distilled": post_teacher_results[TIME_TEST_DISTILLED].mean(),
-            "avg_time_test_distilled_ds": post_teacher_results[TIME_TEST_DISTILLED_DS].mean(),
+            "avg_time_test_distilled": results[TIME_TEST_DISTILLED].mean(),
+            "avg_time_test_distilled_ds": results[TIME_TEST_DISTILLED_DS].mean(),
 
             # inference time for each epoch
             "inference_time_teacher": post_teacher_results[TIME_TEST_TEACHER].mean(),
