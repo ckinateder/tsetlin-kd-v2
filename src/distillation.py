@@ -185,7 +185,7 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
     experiment_name = output["experiment_name"]
 
     # Plot configuration
-    alpha = 0.7
+    alpha = 0.6
     avg_alpha = 0.7
     distilled_color = "tab:blue"
     teacher_color = "tab:orange"
@@ -210,11 +210,11 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         plt.axhline(analysis["avg_acc_test_distilled_ds"], color=distilled_ds_color, linestyle=":", alpha=avg_alpha, label="_Distilled DS Avg")
     plt.axhline(analysis["avg_acc_test_teacher"], color=teacher_color, linestyle=":", alpha=avg_alpha, label="_Teacher Avg")
     plt.axhline(analysis["avg_acc_test_student"], color=student_color, linestyle=":", alpha=avg_alpha, label="_Student Avg")
-    plt.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=alpha, color=teacher_color, linewidth=line_thickness)
-    plt.plot(results[ACC_TEST_STUDENT], label="Student", alpha=alpha, color=student_color, linewidth=line_thickness)
     plt.plot(results[ACC_TEST_DISTILLED], label="Distilled", color=distilled_color, linewidth=line_thickness)
     if downsample is not None:
         plt.plot(results[ACC_TEST_DISTILLED_DS], label="Downsampled", color=distilled_ds_color, linewidth=line_thickness)
+    plt.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=alpha, color=teacher_color, linewidth=line_thickness)
+    plt.plot(results[ACC_TEST_STUDENT], label="Student", alpha=alpha, color=student_color, linewidth=line_thickness)
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy (%)")
     if len(results) < 100:
@@ -233,11 +233,11 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         plt.axhline(analysis["avg_acc_train_distilled_ds"], color=distilled_ds_color, linestyle=":", alpha=avg_alpha, label="_Distilled DS Avg")
     plt.axhline(analysis["avg_acc_train_teacher"], color=teacher_color, linestyle=":", alpha=avg_alpha, label="_Teacher Avg")
     plt.axhline(analysis["avg_acc_train_student"], color=student_color, linestyle=":", alpha=avg_alpha, label="_Student Avg")
-    plt.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=alpha, color=teacher_color, linewidth=line_thickness)
-    plt.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=alpha, color=student_color, linewidth=line_thickness)
     plt.plot(results[ACC_TRAIN_DISTILLED], label="Distilled", color=distilled_color, linewidth=line_thickness)
     if downsample is not None:
         plt.plot(results[ACC_TRAIN_DISTILLED_DS], label="Downsampled", color=distilled_ds_color, linewidth=line_thickness)
+    plt.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=alpha, color=teacher_color, linewidth=line_thickness)
+    plt.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=alpha, color=student_color, linewidth=line_thickness)
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy (%)")
     if len(results) < 100:
