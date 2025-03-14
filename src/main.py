@@ -103,6 +103,14 @@ if __name__ == "__main__":
             {
                 "teacher": { "C": 10000, "T": 6000, "s": 5.0, "epochs": 30 },
                 "student": { "C": 2000, "T": 6000, "s": 5.0, "epochs": 90 },
+                "downsample": 0.15,
+            },
+            {"overwrite": False}
+        ),
+        (emnist_dataset, "EMNIST", 
+            {
+                "teacher": { "C": 400, "T": 100, "s": 4.0, "epochs": 120 },
+                "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 240 },
                 "downsample": 0.25,
             },
             {"overwrite": False}
@@ -113,7 +121,11 @@ if __name__ == "__main__":
     for dataset, name, params, kwargs in clause_distilled_experiments:
         kwargs["folderpath"] = clause_dir
         kwargs["save_all"] = True
-        clause_distillation_experiment(dataset, name, params, **kwargs)
+        try:
+            clause_distillation_experiment(dataset, name, params, **kwargs)
+        except Exception as e:
+            print(f"Error running clause distillation experiment for {name}: {e}")
+            continue
 
     #run distilled experiments
     # this goes (dataset, name, params, kwargs)
@@ -122,6 +134,16 @@ if __name__ == "__main__":
             {
                 "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 120 },
                 "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 240 },
+                "temperature": 3.0,
+                "alpha": 0.5,
+                "z": 0.3,
+            },
+            {"overwrite": False}
+        ),
+        (mnist_dataset, "MNIST-big", 
+            {
+                "teacher": { "C": 4000, "T": 50, "s": 10.0, "epochs": 120 },
+                "student": { "C": 400, "T": 50, "s": 10.0, "epochs": 240 },
                 "temperature": 3.0,
                 "alpha": 0.5,
                 "z": 0.3,
@@ -140,8 +162,18 @@ if __name__ == "__main__":
         ),
         (emnist_dataset, "EMNIST", 
             {
-                "teacher": { "C": 1000, "T": 100, "s": 7.0, "epochs": 120 },
-                "student": { "C": 100, "T": 100, "s": 7.0, "epochs": 240 },
+                "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 120 },
+                "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 240 },
+                "temperature": 4.0,
+                "alpha": 0.5,
+                "z": 0.2,
+            },
+            {"overwrite": False}
+        ),  
+        (emnist_dataset, "EMNIST", 
+            {
+                "teacher": { "C": 1000, "T": 50, "s": 5.0, "epochs": 120 },
+                "student": { "C": 100, "T": 50, "s": 5.0, "epochs": 240 },
                 "temperature": 4.0,
                 "alpha": 0.5,
                 "z": 0.2,

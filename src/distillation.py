@@ -183,15 +183,18 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
     # load results
     results = pd.DataFrame(output["results"])
     experiment_name = output["experiment_name"]
+    analysis = output["analysis"]
 
     # Plot configuration
     alpha = 0.7
     avg_alpha = 0.7
     minor_alpha = 0.2
-    distilled_color = "tab:blue"
-    teacher_color = "tab:orange"
-    student_color = "tab:green"
-    distilled_ds_color = "tab:purple"
+    colors = {
+        "distilled": "tab:blue",
+        "teacher": "tab:orange",
+        "student": "tab:green",
+        "distilled_ds": "tab:purple"
+    }
     line_thickness = 1.2
     default_font_size = 14
     legend_font_size = 13
@@ -205,19 +208,13 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
 
     def get_label_position(x, y, xlim, ylim, offset=5):
         """Calculate optimal label position to avoid plot overflow."""
-        # Get the current axis limits
         x_min, x_max = xlim
         y_min, y_max = ylim
-        
-        # Calculate the width and height of the plot
         x_range = x_max - x_min
         y_range = y_max - y_min
-        
-        # Calculate the relative position of the point
         x_rel = (x - x_min) / x_range
         y_rel = (y - y_min) / y_range
         
-        # Determine the best position for the label
         if x_rel > 0.7:  # Point is on the right side
             x_offset = -offset
             ha = 'right'
@@ -234,192 +231,122 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
             
         return x_offset, y_offset, ha, va
 
-    # plot test results and save
-    analysis = output["analysis"]
-    plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-    plt.axhline(analysis["avg_acc_test_distilled"], color=distilled_color, linestyle=":", alpha=avg_alpha, label="_Distilled Avg")
-    if downsample is not None:
-        plt.axhline(analysis["avg_acc_test_distilled_ds"], color=distilled_ds_color, linestyle=":", alpha=avg_alpha, label="_Distilled DS Avg")
-    plt.axhline(analysis["avg_acc_test_teacher"], color=teacher_color, linestyle=":", alpha=avg_alpha, label="_Teacher Avg")
-    plt.axhline(analysis["avg_acc_test_student"], color=student_color, linestyle=":", alpha=avg_alpha, label="_Student Avg")
-    plt.plot(results[ACC_TEST_DISTILLED], label="Distilled", color=distilled_color, linewidth=line_thickness)
-    if downsample is not None:
-        plt.plot(results[ACC_TEST_DISTILLED_DS], label="Downsampled", color=distilled_ds_color, linewidth=line_thickness)
-    plt.plot(results[ACC_TEST_TEACHER], label="Teacher", alpha=alpha, color=teacher_color, linewidth=line_thickness)
-    plt.plot(results[ACC_TEST_STUDENT], label="Student", alpha=alpha, color=student_color, linewidth=line_thickness)
-    plt.xlabel("Epoch")
-    plt.ylabel("Accuracy (%)")
-    if len(results) < 100:
-        plt.xticks(range(0, len(results), 10))
-    else:
-        plt.xticks(range(0, len(results), ((len(results)//100)+1)*10))
-    plt.legend(loc="lower right", fontsize=legend_font_size)
-    plt.grid(linestyle='dotted', which='major')
-    plt.grid(linestyle='dotted', which='minor', alpha=minor_alpha)
-    plt.minorticks_on()
-    plt.savefig(os.path.join(fpath, experiment_name+"_"+TEST_ACCURACY_PNG_PATH))
-    plt.close()
-    
-    # plot train results and save
-    plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-    plt.axhline(analysis["avg_acc_train_distilled"], color=distilled_color, linestyle=":", alpha=avg_alpha, label="_Distilled Avg")
-    if downsample is not None:
-        plt.axhline(analysis["avg_acc_train_distilled_ds"], color=distilled_ds_color, linestyle=":", alpha=avg_alpha, label="_Distilled DS Avg")
-    plt.axhline(analysis["avg_acc_train_teacher"], color=teacher_color, linestyle=":", alpha=avg_alpha, label="_Teacher Avg")
-    plt.axhline(analysis["avg_acc_train_student"], color=student_color, linestyle=":", alpha=avg_alpha, label="_Student Avg")
-    plt.plot(results[ACC_TRAIN_DISTILLED], label="Distilled", color=distilled_color, linewidth=line_thickness)
-    if downsample is not None:
-        plt.plot(results[ACC_TRAIN_DISTILLED_DS], label="Downsampled", color=distilled_ds_color, linewidth=line_thickness)
-    plt.plot(results[ACC_TRAIN_TEACHER], label="Teacher", alpha=alpha, color=teacher_color, linewidth=line_thickness)
-    plt.plot(results[ACC_TRAIN_STUDENT], label="Student", alpha=alpha, color=student_color, linewidth=line_thickness)
-    plt.xlabel("Epoch")
-    plt.ylabel("Accuracy (%)")
-    if len(results) < 100:
-        plt.xticks(range(0, len(results), 10))
-    else:
-        plt.xticks(range(0, len(results), ((len(results)//100)+1)*10))
-    plt.legend(loc="lower right", fontsize=legend_font_size)
-    plt.grid(linestyle='dotted', which='major')
-    plt.grid(linestyle='dotted', which='minor', alpha=minor_alpha)
-    plt.minorticks_on()
-    plt.savefig(os.path.join(fpath, experiment_name+"_"+TRAIN_ACCURACY_PNG_PATH))
-    plt.close()
+    def setup_grid():
+        """Setup grid with major and minor lines."""
+        plt.grid(linestyle='dotted', which='major')
+        plt.grid(linestyle='dotted', which='minor', alpha=minor_alpha)
+        plt.minorticks_on()
 
-    ## BAR CHARTs
+    def plot_accuracy_curves(metric_type: str):
+        """Plot accuracy curves for a given metric type (train/test)."""
+        plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
+        
+        # Plot average lines
+        for model in ["distilled", "teacher", "student"]:
+            if downsample is not None and model == "distilled":
+                plt.axhline(analysis[f"avg_acc_{metric_type}_distilled_ds"], 
+                          color=colors["distilled_ds"], linestyle=":", 
+                          alpha=avg_alpha, label="_Distilled DS Avg")
+            plt.axhline(analysis[f"avg_acc_{metric_type}_{model}"], 
+                      color=colors[model], linestyle=":", 
+                      alpha=avg_alpha, label=f"_{model.capitalize()} Avg")
+        
+        # Plot curves
+        for model in ["distilled", "teacher", "student"]:
+            if downsample is not None and model == "distilled":
+                plt.plot(results[f"acc_{metric_type}_distilled_ds"], 
+                        label="Downsampled", color=colors["distilled_ds"], 
+                        linewidth=line_thickness)
+            plt.plot(results[f"acc_{metric_type}_{model}"], 
+                    label=model.capitalize(), color=colors[model], 
+                    alpha=alpha if model != "distilled" else 1.0, 
+                    linewidth=line_thickness)
+        
+        plt.xlabel("Epoch")
+        plt.ylabel("Accuracy (%)")
+        if len(results) < 100:
+            plt.xticks(range(0, len(results), 10))
+        else:
+            plt.xticks(range(0, len(results), ((len(results)//100)+1)*10))
+        plt.legend(loc="lower right", fontsize=legend_font_size)
+        setup_grid()
+        plt.savefig(os.path.join(fpath, experiment_name+f"_{metric_type}_accuracy.png"))
+        plt.close()
 
-    # plot bar chart of test time for each model
-    plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-    plt.grid(linestyle='dotted', zorder=0, axis="y")
-    labels = ["Teacher", "Student", "Distilled"]
-    data = [analysis["avg_time_test_teacher"], analysis["avg_time_test_student"], analysis["avg_time_test_distilled"]]
-    colors = [teacher_color, student_color, distilled_color]
+    def plot_time_bars(metric_type: str):
+        """Plot time bars for a given metric type (train/test)."""
+        plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
+        plt.grid(linestyle='dotted', zorder=0, axis="y")
+        
+        labels = ["Teacher", "Student", "Distilled"]
+        data = [analysis[f"avg_time_{metric_type}_teacher"], analysis[f"avg_time_{metric_type}_student"], analysis[f"avg_time_{metric_type}_distilled"]]
+        bar_colors = [colors["teacher"], colors["student"], colors["distilled"]]
 
-    if downsample is not None:
-        data.append(analysis["avg_time_test_distilled_ds"])
-        labels.append("Downsampled")
-        colors.append(distilled_ds_color)
+        if downsample is not None:
+            data.append(analysis[f"avg_time_{metric_type}_distilled_ds"])
+            labels.append("Downsampled")
+            bar_colors.append(colors["distilled_ds"])
 
-    plt.bar(labels, data, color=colors, zorder=10)
-    # get y tick size
-    yticks = plt.yticks()[0]
-    offset = yticks[0] * 0.1
-    plt.yticks(np.arange(0, yticks.max()*1.1, yticks[1]-yticks[0]))
-    # add text on top of each bar
-    for i, label in enumerate(labels):
-        plt.text(i, data[i]+offset, f"{data[i]:.3f} s", ha="center", va="bottom")
-    # take default y ticks and set 10% higher
-    #plt.xlabel("Model")
-    plt.ylabel("Inference Time (s)")
-    plt.savefig(os.path.join(fpath, experiment_name+"_"+TEST_TIME_PNG_PATH))
-    plt.close()
+        plt.bar(labels, data, color=bar_colors, zorder=10)
+        yticks = plt.yticks()[0]
+        offset = yticks[0] * 0.1
+        plt.yticks(np.arange(0, yticks.max()*1.1, yticks[1]-yticks[0]))
+        
+        for i, (label, value) in enumerate(zip(labels, data)):
+            plt.text(i, value+offset, f"{value:.3f} s", ha="center", va="bottom")
+        
+        plt.ylabel(f"{metric_type.capitalize()} Time (s)")
+        plt.savefig(os.path.join(fpath, experiment_name+f"_{metric_type}_time.png"))
+        plt.close()
 
-    # plot bar chart of training time for each model
-    plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-    plt.grid(linestyle='dotted', zorder=0, axis="y")
-    labels = ["Teacher", "Student", "Distilled"]
-    data = [analysis["avg_time_train_teacher"], analysis["avg_time_train_student"], analysis["avg_time_train_distilled"]]
-    colors = [teacher_color, student_color, distilled_color]
+    def plot_efficiency(metric_type: str):
+        """Plot efficiency curves for a given metric type (train/test)."""
+        plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
+        setup_grid()
+        
+        # Create data points for each model
+        models = [
+            ("Teacher", analysis[f"avg_acc_{metric_type}_teacher"], 
+             analysis[f"avg_time_{metric_type}_teacher"], colors["teacher"]),
+            ("Student", analysis[f"avg_acc_{metric_type}_student"], 
+             analysis[f"avg_time_{metric_type}_student"], colors["student"]),
+            ("Distilled", analysis[f"avg_acc_{metric_type}_distilled"], 
+             analysis[f"avg_time_{metric_type}_distilled"], colors["distilled"])
+        ]
+        
+        if downsample is not None:
+            models.append(("Downsampled", analysis[f"avg_acc_{metric_type}_distilled_ds"], 
+                          analysis[f"avg_time_{metric_type}_distilled_ds"], colors["distilled_ds"]))
+        
+        # Plot points first
+        for name, acc, time, color in models:
+            plt.scatter(time, acc, color=color, s=100, zorder=5)
+        
+        # Get the current axis limits
+        xlim = plt.xlim()
+        ylim = plt.ylim()
+        
+        # Add labels with optimal positioning
+        for name, acc, time, color in models:
+            x_offset, y_offset, ha, va = get_label_position(time, acc, xlim, ylim)
+            plt.annotate(name, (time, acc), 
+                        xytext=(x_offset, y_offset), 
+                        textcoords='offset points',
+                        fontsize=legend_font_size,
+                        ha=ha,
+                        va=va)
+        
+        plt.xlabel(f"Average {metric_type.capitalize()} Time (s)")
+        plt.ylabel(f"Average {metric_type.capitalize()} Accuracy (%)")
+        #plt.title(f"Model Efficiency on {metric_type.capitalize()} Set")
+        plt.savefig(os.path.join(fpath, experiment_name+f"_{metric_type}_efficiency.png"))
+        plt.close()
 
-    if downsample is not None:
-        data.append(analysis["avg_time_train_distilled_ds"])
-        labels.append("Downsampled")
-        colors.append(distilled_ds_color)
-
-    plt.bar(labels, data, color=colors, zorder=10)
-    # get y tick size
-    yticks = plt.yticks()[0]
-    offset = yticks[0] * 0.1
-    plt.yticks(np.arange(0, yticks.max()*1.1, yticks[1]-yticks[0]))
-    # add text on top of each bar
-    for i, label in enumerate(labels):
-        plt.text(i, data[i]+offset, f"{data[i]:.3f} s", ha="center", va="bottom")
-    # take default y ticks and set 10% higher
-    #plt.xlabel("Model")
-    plt.ylabel("Training Time (s)")
-    plt.savefig(os.path.join(fpath, experiment_name+"_"+TRAIN_TIME_PNG_PATH))
-    plt.close()
-
-    # New plots combining accuracy and time
-
-    # Test set efficiency plot
-    plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-    plt.grid(linestyle='dotted', which='major')
-    plt.grid(linestyle='dotted', which='minor', alpha=minor_alpha)
-    plt.minorticks_on()
-    
-    # Create data points for each model
-    models = [
-        ("Teacher", analysis["avg_acc_test_teacher"], analysis["avg_time_test_teacher"], teacher_color),
-        ("Student", analysis["avg_acc_test_student"], analysis["avg_time_test_student"], student_color),
-        ("Distilled", analysis["avg_acc_test_distilled"], analysis["avg_time_test_distilled"], distilled_color)
-    ]
-    
-    if downsample is not None:
-        models.append(("Downsampled", analysis["avg_acc_test_distilled_ds"], analysis["avg_time_test_distilled_ds"], distilled_ds_color))
-    
-    # Plot points first
-    for name, acc, time, color in models:
-        plt.scatter(time, acc, color=color, s=100, zorder=5)
-    
-    # Get the current axis limits
-    xlim = plt.xlim()
-    ylim = plt.ylim()
-    
-    # Add labels with optimal positioning
-    for name, acc, time, color in models:
-        x_offset, y_offset, ha, va = get_label_position(time, acc, xlim, ylim)
-        plt.annotate(name, (time, acc), 
-                    xytext=(x_offset, y_offset), 
-                    textcoords='offset points',
-                    fontsize=legend_font_size,
-                    ha=ha,
-                    va=va)
-    
-    plt.xlabel("Average Inference Time (s)")
-    plt.ylabel("Average Test Accuracy (%)")
-    plt.title("Model Efficiency on Test Set")
-    plt.savefig(os.path.join(fpath, experiment_name+"_test_efficiency.png"))
-    plt.close()
-
-    # Training set efficiency plot
-    plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-    plt.grid(linestyle='dotted', which='major')
-    plt.grid(linestyle='dotted', which='minor', alpha=minor_alpha)
-    plt.minorticks_on()
-    
-    # Create data points for each model
-    models = [
-        ("Teacher", analysis["avg_acc_train_teacher"], analysis["avg_time_train_teacher"], teacher_color),
-        ("Student", analysis["avg_acc_train_student"], analysis["avg_time_train_student"], student_color),
-        ("Distilled", analysis["avg_acc_train_distilled"], analysis["avg_time_train_distilled"], distilled_color)
-    ]
-    
-    if downsample is not None:
-        models.append(("Downsampled", analysis["avg_acc_train_distilled_ds"], analysis["avg_time_train_distilled_ds"], distilled_ds_color))
-    
-    # Plot points first
-    for name, acc, time, color in models:
-        plt.scatter(time, acc, color=color, s=100, zorder=5)
-    
-    # Get the current axis limits
-    xlim = plt.xlim()
-    ylim = plt.ylim()
-    
-    # Add labels with optimal positioning
-    for name, acc, time, color in models:
-        x_offset, y_offset, ha, va = get_label_position(time, acc, xlim, ylim)
-        plt.annotate(name, (time, acc), 
-                    xytext=(x_offset, y_offset), 
-                    textcoords='offset points',
-                    fontsize=legend_font_size,
-                    ha=ha,
-                    va=va)
-    
-    plt.xlabel("Average Training Time (s)")
-    plt.ylabel("Average Training Accuracy (%)")
-    plt.title("Model Efficiency on Training Set")
-    plt.savefig(os.path.join(fpath, experiment_name+"_train_efficiency.png"))
-    plt.close()
+    # Generate all plots
+    for metric_type in ["train", "test"]:
+        plot_accuracy_curves(metric_type)
+        plot_time_bars(metric_type)
+        plot_efficiency(metric_type)
 
 def distribution_distillation_experiment(
     dataset: Dataset,
