@@ -288,11 +288,12 @@ if __name__ == "__main__":
     make_paper_1_tables([
         j("combined_results", "clause", "MNIST_tC800_sC100_tT10_sT10_ts7.0_ss7.0_te120_se240_ds0.15"),
         j("combined_results", "clause", "KMNIST_tC400_sC100_tT100_sT100_ts5_ss5_te120_se240_ds0.22"),
-        j("combined_results", "clause", "IMDB_tC10000_sC2000_tT6000_sT6000_ts5.0_ss5.0_te30_se90_ds0.15")
+        j("combined_results", "clause", "IMDB_tC10000_sC2000_tT6000_sT6000_ts5.0_ss5.0_te30_se90_ds0.15"),
+        j("combined_results", "clause", "EMNIST_tC400_sC100_tT100_sT100_ts4.0_ss4.0_te120_se240_ds0.25")
     ])
 
     make_paper_2_tables([
-        j("combined_results", "distribution", "EMNIST_tC1000_sC100_tT100_sT100_ts4.0_ss4.0_te60_se120_temp4.0_a0.5_z0.2"),
+        j("combined_results", "distribution", "EMNIST_tC1000_sC100_tT100_sT100_ts4.0_ss4.0_te120_se240_temp4.0_a0.5_z0.2"),
         j("combined_results", "distribution", "MNIST_tC1000_sC100_tT10_sT10_ts4.0_ss4.0_te120_se240_temp3.0_a0.5_z0.3"),
         j("combined_results", "distribution", "KMNIST_tC2000_sC200_tT100_sT100_ts8.2_ss8.2_te120_se240_temp4.0_a0.5_z0.3"),
         j("combined_results", "distribution", "IMDB_tC8000_sC4000_tT6000_sT6000_ts7.0_ss7.0_te30_se60_temp3.0_a0.5_z0.2"),

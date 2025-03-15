@@ -140,7 +140,7 @@ if __name__ == "__main__":
             },
             {"overwrite": False}
         ),
-        (mnist_dataset, "MNIST-big", 
+        (mnist_dataset, "MNIST", 
             {
                 "teacher": { "C": 4000, "T": 50, "s": 10.0, "epochs": 120 },
                 "student": { "C": 400, "T": 50, "s": 10.0, "epochs": 240 },
@@ -169,17 +169,7 @@ if __name__ == "__main__":
                 "z": 0.2,
             },
             {"overwrite": False}
-        ),  
-        (emnist_dataset, "EMNIST", 
-            {
-                "teacher": { "C": 1000, "T": 50, "s": 5.0, "epochs": 120 },
-                "student": { "C": 100, "T": 50, "s": 5.0, "epochs": 240 },
-                "temperature": 4.0,
-                "alpha": 0.5,
-                "z": 0.2,
-            },
-            {"overwrite": False}
-        ),  
+        ),
         (imdb_dataset, "IMDB", 
             {
                 "teacher": { "C": 8000, "T": 6000, "s": 7.0, "epochs": 30 },
