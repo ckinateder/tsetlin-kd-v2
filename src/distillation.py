@@ -206,28 +206,34 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
     plt.rcParams['mathtext.fontset'] = 'cm'  # For math text
     plt.rcParams['font.size'] = default_font_size
 
-    def get_label_position(x, y, xlim, ylim, offset=5):
+    def get_label_position(x, y, xlim, ylim, offset=15):
         """Calculate optimal label position to avoid plot overflow."""
         x_min, x_max = xlim
         y_min, y_max = ylim
         x_range = x_max - x_min
-        y_range = y_max - y_min
         x_rel = (x - x_min) / x_range
-        y_rel = (y - y_min) / y_range
         
-        if x_rel > 0.7:  # Point is on the right side
-            x_offset = -offset
-            ha = 'right'
-        else:  # Point is on the left side
+        # More conservative positioning that accounts for boundaries
+        if x_rel < 0.3:  # Point is on the left side
             x_offset = offset
+            y_offset = -offset/2  # Slightly above
             ha = 'left'
-            
-        if y_rel > 0.7:  # Point is on the top
-            y_offset = -offset
-            va = 'top'
-        else:  # Point is on the bottom
-            y_offset = offset
-            va = 'bottom'
+        elif x_rel > 0.7:  # Point is on the right side
+            x_offset = -offset
+            y_offset = offset/2  # Slightly below
+            ha = 'right'
+        else:  # Point is in the middle
+            # Choose the side with more space
+            if x - x_min > x_max - x:
+                x_offset = -offset
+                y_offset = -offset/2  # Slightly below
+                ha = 'right'
+            else:
+                x_offset = offset
+                y_offset = offset/2  # Slightly above
+                ha = 'left'
+        
+        va = 'center'
             
         return x_offset, y_offset, ha, va
 
@@ -299,7 +305,7 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         plt.savefig(os.path.join(fpath, experiment_name+f"_{metric_type}_time.png"))
         plt.close()
 
-    def plot_efficiency(metric_type: str):
+    def plot_efficiency(metric_type: str, polygon_alpha: float = 0.08):
         """Plot efficiency curves for a given metric type (train/test)."""
         plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
         setup_grid()
@@ -320,25 +326,131 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         
         # Plot points first
         for name, acc, time, color in models:
-            plt.scatter(time, acc, color=color, s=100, zorder=5)
+            plt.scatter(time, acc, color=color, s=100, zorder=10)
+        
+        # Extract teacher and student data for the line
+        teacher_data = next(m for m in models if m[0] == "Teacher")
+        student_data = next(m for m in models if m[0] == "Student")
+        
+        teacher_time, teacher_acc = teacher_data[2], teacher_data[1]
+        student_time, student_acc = student_data[2], student_data[1]
         
         # Get the current axis limits
         xlim = plt.xlim()
         ylim = plt.ylim()
         
-        # Add labels with optimal positioning
+        # Add some padding to the plot limits
+        x_padding = (xlim[1] - xlim[0]) * 0.1
+        y_padding = (ylim[1] - ylim[0]) * 0.1
+        xlim = (xlim[0] - x_padding, xlim[1] + x_padding)
+        ylim = (ylim[0] - y_padding, ylim[1] + y_padding)
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+
+        # Calculate the slope and intercept of the line connecting teacher and student
+        if teacher_time != student_time:  # Avoid division by zero
+            slope = (teacher_acc - student_acc) / (teacher_time - student_time)
+            intercept = teacher_acc - slope * teacher_time
+            
+            # Create points for the line that covers the entire plot
+            x_line = np.array([xlim[0], xlim[1]])
+            y_line = slope * x_line + intercept
+            
+            # Plot the line connecting teacher and student
+            plt.plot(x_line, y_line, '--', color='black', linewidth=1.5, zorder=5)
+            
+            # Create polygons for shading the regions
+            if slope > 0:
+                # Line goes from bottom-left to top-right
+                # Positive gains region (left of the line)
+                left_polygon = plt.Polygon([
+                    [xlim[0], ylim[0]],  # Bottom-left corner
+                    [xlim[0], ylim[1]],  # Top-left corner
+                    [xlim[1], slope * xlim[1] + intercept],  # Right intersection
+                    [xlim[0], slope * xlim[0] + intercept],  # Left intersection
+                ], color='green', alpha=polygon_alpha, zorder=1)
+                
+                # Negative gains region (right of the line)
+                right_polygon = plt.Polygon([
+                    [xlim[0], slope * xlim[0] + intercept],  # Left intersection
+                    [xlim[1], slope * xlim[1] + intercept],  # Right intersection
+                    [xlim[1], ylim[0]],  # Bottom-right corner
+                ], color='red', alpha=polygon_alpha, zorder=1)
+            else:
+                # Line goes from top-left to bottom-right
+                # Positive gains region (left of the line)
+                left_polygon = plt.Polygon([
+                    [xlim[0], ylim[0]],  # Bottom-left corner
+                    [xlim[1], ylim[0]],  # Bottom-right corner
+                    [xlim[1], slope * xlim[1] + intercept],  # Right intersection
+                    [xlim[0], slope * xlim[0] + intercept],  # Left intersection
+                ], color='green', alpha=polygon_alpha, zorder=1)
+                
+                # Negative gains region (right of the line)
+                right_polygon = plt.Polygon([
+                    [xlim[0], slope * xlim[0] + intercept],  # Left intersection
+                    [xlim[1], slope * xlim[1] + intercept],  # Right intersection
+                    [xlim[1], ylim[1]],  # Top-right corner
+                    [xlim[0], ylim[1]],  # Top-left corner
+                ], color='red', alpha=polygon_alpha, zorder=1)
+            
+            # Add the polygons to the plot
+            plt.gca().add_patch(left_polygon)
+            plt.gca().add_patch(right_polygon)
+            
+            # Add legend text explaining the regions
+            plt.text(0.05, 0.95, "Positive Gains", transform=plt.gca().transAxes, 
+                    fontsize=12, color='green', horizontalalignment='left', verticalalignment='top')
+            plt.text(0.95, 0.05, "Negative Gains", transform=plt.gca().transAxes,
+                    fontsize=12, color='red', horizontalalignment='right', verticalalignment='bottom')
+        
+        # Function to check if a point is near the line
+        def is_near_line(x, y, threshold=0.1):
+            if teacher_time == student_time:  # Vertical line case
+                return abs(x - teacher_time) < threshold
+            else:
+                # Distance from point to line: |ax + by + c|/sqrt(a² + b²)
+                a = slope
+                b = -1
+                c = intercept
+                distance = abs(a*x + b*y + c) / np.sqrt(a**2 + b**2)
+                return distance < threshold
+                
+        # Add labels with positioning that avoids the line
         for name, acc, time, color in models:
+            # Get default position
             x_offset, y_offset, ha, va = get_label_position(time, acc, xlim, ylim)
+            
+            # Adjust if near the line
+            if 'slope' in locals() and is_near_line(time, acc, threshold=0.15):
+                # Calculate relative position more precisely
+                x_rel = (time - xlim[0]) / (xlim[1] - xlim[0])
+                
+                if x_rel < 0.3:  # Point is on the left side
+                    x_offset = 12
+                    ha = 'left'
+                elif x_rel > 0.7:  # Point is on the right side
+                    x_offset = -12
+                    ha = 'right'
+                else:  # Point is in the middle
+                    # Choose the side with more space
+                    if time - xlim[0] > xlim[1] - time:
+                        x_offset = -12
+                        ha = 'right'
+                    else:
+                        x_offset = 12
+                        ha = 'left'
+            
             plt.annotate(name, (time, acc), 
                         xytext=(x_offset, y_offset), 
                         textcoords='offset points',
                         fontsize=legend_font_size,
                         ha=ha,
-                        va=va)
+                        va='center',
+                        zorder=15)
         
         plt.xlabel(f"Average {metric_type.capitalize()} Time (s)")
         plt.ylabel(f"Average {metric_type.capitalize()} Accuracy (%)")
-        #plt.title(f"Model Efficiency on {metric_type.capitalize()} Set")
         plt.savefig(os.path.join(fpath, experiment_name+f"_{metric_type}_efficiency.png"))
         plt.close()
 

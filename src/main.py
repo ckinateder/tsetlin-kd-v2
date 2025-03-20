@@ -73,7 +73,7 @@ if __name__ == "__main__":
     emnist_dataset = load_or_create(os.path.join("data", "emnist_dataset.pkl"), EMNISTLettersDataset)
     print("Datasets loaded")
         
-    one_off_dir = os.path.join("results")
+    one_off_dir = os.path.join("combined_results")
     clause_dir = os.path.join(one_off_dir, "clause")
     distribution_dir = os.path.join(one_off_dir, "distribution")
 
@@ -81,6 +81,8 @@ if __name__ == "__main__":
     remake_plots(distribution_dir)
     print(f"Remaking all plots in {clause_dir}...")
     remake_plots(clause_dir)
+
+    exit()
     
     clause_distilled_experiments = [
         (mnist_dataset, "MNIST", 
