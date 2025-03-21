@@ -281,23 +281,183 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
         with open(latex_path, "w") as f:
             f.write(latex_table)
         
+def make_combined_graphs(exps: list[tuple[str, str]]):
+    """
+    Create combined bar graphs for multiple experiments showing accuracy and time comparisons.
+    
+    Args:
+        exps: list of experiment directory paths
+    """
+    # Set up matplotlib configuration
+    plt.rcParams['font.family'] = 'CMU Serif'
+    plt.rcParams['font.serif'] = 'CMU Serif'
+    plt.rcParams['mathtext.fontset'] = 'cm'
+    plt.rcParams['font.size'] = 14
+    
+    # Colors for different models
+    colors = {
+        "distilled": "tab:blue",
+        "teacher": "tab:orange",
+        "student": "tab:green"
+    }
+    
+    # Process data for each experiment
+    experiment_data = []
+    for exp in exps:
+        print(exp)
+        exp_output = load_json(os.path.join(exp, OUTPUT_JSON_PATH))
+        
+        # Extract dataset name (e.g., "MNIST" from "MNIST_tC800_sC100...")
+        dataset_name = exp_output["experiment_name"].split('_')[0]
+        
+        # Calculate means for accuracy and time
+        data = {
+            "name": dataset_name,
+            "train": {
+                "teacher": {
+                    "acc": exp_output["analysis"]["avg_acc_train_teacher"],
+                    "time": exp_output["analysis"]["avg_time_train_teacher"]
+                },
+                "student": {
+                    "acc": exp_output["analysis"]["avg_acc_train_student"],
+                    "time": exp_output["analysis"]["avg_time_train_student"]
+                },
+                "distilled": {
+                    "acc": exp_output["analysis"]["avg_acc_train_distilled"],
+                    "time": exp_output["analysis"]["avg_time_train_distilled"]
+                }
+            },
+            "test": {
+                "teacher": {
+                    "acc": exp_output["analysis"]["avg_acc_test_teacher"],
+                    "time": exp_output["analysis"]["avg_time_test_teacher"]
+                },
+                "student": {
+                    "acc": exp_output["analysis"]["avg_acc_test_student"],
+                    "time": exp_output["analysis"]["avg_time_test_student"]
+                },
+                "distilled": {
+                    "acc": exp_output["analysis"]["avg_acc_test_distilled"],
+                    "time": exp_output["analysis"]["avg_time_test_distilled"]
+                }
+            }
+        }
+        print(data)
+        experiment_data.append(data)
+    
+    # Create plots for both train and test, and for both accuracy and time
+    for phase in ["train", "test"]:
+        for metric in ["acc", "time"]:
+            plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
+            
+            # Calculate bar positions
+            n_experiments = len(experiment_data)
+            n_models = 3  # teacher, student, distilled
+            bar_width = 0.25
+            spacing = 0.5  # Space between experiment groups
+            bar_spacing = 0.01  # 1px spacing between bars (in data coordinates)
+            
+            # Calculate positions for each bar
+            positions = []
+            for i in range(n_experiments):
+                base_pos = i * (n_models * bar_width + spacing)
+                positions.append({
+                    "teacher": base_pos,
+                    "student": base_pos + bar_width + bar_spacing,  # Add spacing after first bar
+                    "distilled": base_pos + 2 * (bar_width + bar_spacing)  # Add spacing after second bar
+                })
+            
+            # Plot bars
+            for model in ["teacher", "student", "distilled"]:
+                if metric == "time":
+                    # Normalize time values relative to teacher for each experiment
+                    means = []
+                    for data in experiment_data:
+                        teacher_time = data[phase]["teacher"]["time"]
+                        model_time = data[phase][model]["time"]
+                        means.append(model_time / teacher_time)  # Relative to teacher
+                else:
+                    means = [data[phase][model][metric] for data in experiment_data]
+                
+                pos = [pos[model] for pos in positions]
+                
+                bars = plt.bar(pos, means, bar_width, 
+                             label=model.capitalize(),
+                             color=colors[model],
+                             zorder=10)  # Set zorder to 10 to put bars above grid
+                
+            
+            # Customize plot
+            plt.grid(True, linestyle='dotted', which='major', axis='y', zorder=0)
+            plt.grid(True, linestyle='dotted', which='minor', axis='y', alpha=0.2, zorder=0)
+            plt.minorticks_on()
+            
+            plt.xlabel('Dataset')
+            if metric == "acc":
+                plt.ylabel(f'{phase.capitalize()} Average Accuracy (%)')
+            else:
+                plt.ylabel(f'{phase.capitalize()} Time (normalized)')
+            
+            # Set x-axis ticks and labels
+            plt.xticks([pos["student"] for pos in positions], 
+                      [data["name"] for data in experiment_data],
+                      rotation=0)
+            
+            # Adjust y-axis range to focus on the relevant region
+            if metric == "time":
+                # For time, set y-axis to show relative speedup/slowdown
+                plt.ylim(0, 1.1)  # Show from 0x to 2x teacher's time
+            else:
+                # For accuracy, use the original range calculation
+                y_min = min(min(data[phase][model][metric] for model in ["teacher", "student", "distilled"]) 
+                           for data in experiment_data)
+                y_max = max(max(data[phase][model][metric] for model in ["teacher", "student", "distilled"]) 
+                           for data in experiment_data)
+                y_range = y_max - y_min
+                plt.ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
+            
+            # Add a horizontal line at y=1 for time plots to show teacher baseline
+            if metric == "time":
+                plt.axhline(y=1, color='black', linestyle='--', alpha=0.3, zorder=5)
+            
+            # Adjust layout to prevent label cutoff
+            plt.tight_layout()
+            
+            # Add legend
+            plt.legend(loc='upper right').set_zorder(100)
+
+            # Save plot
+            output_dir = os.path.join("assets", "paper_2")
+            os.makedirs(output_dir, exist_ok=True)
+            plt.savefig(os.path.join(output_dir, f"combined_{phase}_{metric}.png"))
+            plt.close()
+
 def j(*args):
     return os.path.join(*args)
 if __name__ == "__main__":
-
-    make_paper_1_tables([
+    # Paper 1 experiments
+    paper1_exps = [
         j("combined_results", "clause", "MNIST_tC800_sC100_tT10_sT10_ts7.0_ss7.0_te120_se240_ds0.15"),
         j("combined_results", "clause", "KMNIST_tC400_sC100_tT100_sT100_ts5_ss5_te120_se240_ds0.22"),
+        j("combined_results", "clause", "EMNIST_tC400_sC100_tT100_sT100_ts4.0_ss4.0_te120_se240_ds0.25"),
         j("combined_results", "clause", "IMDB_tC10000_sC2000_tT6000_sT6000_ts5.0_ss5.0_te30_se90_ds0.15"),
-        j("combined_results", "clause", "EMNIST_tC400_sC100_tT100_sT100_ts4.0_ss4.0_te120_se240_ds0.25")
-    ])
+    ]
 
-    make_paper_2_tables([
-        j("combined_results", "distribution", "EMNIST_tC1000_sC100_tT100_sT100_ts4.0_ss4.0_te120_se240_temp4.0_a0.5_z0.2"),
+    # Paper 2 experiments
+    paper2_exps = [
         j("combined_results", "distribution", "MNIST_tC1000_sC100_tT10_sT10_ts4.0_ss4.0_te120_se240_temp3.0_a0.5_z0.3"),
         j("combined_results", "distribution", "KMNIST_tC2000_sC200_tT100_sT100_ts8.2_ss8.2_te120_se240_temp4.0_a0.5_z0.3"),
+        j("combined_results", "distribution", "EMNIST_tC1000_sC100_tT100_sT100_ts4.0_ss4.0_te120_se240_temp4.0_a0.5_z0.2"),
         j("combined_results", "distribution", "IMDB_tC8000_sC4000_tT6000_sT6000_ts7.0_ss7.0_te30_se60_temp3.0_a0.5_z0.2"),
-    ])
+    ]
+
+    # Generate tables
+    make_paper_1_tables(paper1_exps)
+    make_paper_2_tables(paper2_exps)
+
+    # Generate combined graphs
+    #make_combined_graphs(paper1_exps)
+    make_combined_graphs(paper2_exps)
 
 """
     for folder in os.listdir("combined_results/distribution"):

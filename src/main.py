@@ -64,15 +64,6 @@ def remake_plots(parent_dir):
             plot_results(output, os.path.join(parent_dir, fpath))
 
 if __name__ == "__main__":
-    # load datasets.
-    print("Loading datasets...")
-    kmnist_dataset = load_or_create(os.path.join("data", "kmnist_dataset.pkl"), KMNISTDataset)
-    mnist_dataset = load_or_create(os.path.join("data", "mnist_dataset.pkl"), MNISTDataset)
-    fashion_mnist_dataset = load_or_create(os.path.join("data", "fashion_mnist_dataset.pkl"), FashionMNISTDataset)
-    imdb_dataset = load_or_create(os.path.join("data", "imdb_dataset.pkl"), IMDBDataset)
-    emnist_dataset = load_or_create(os.path.join("data", "emnist_dataset.pkl"), EMNISTLettersDataset)
-    print("Datasets loaded")
-        
     one_off_dir = os.path.join("combined_results")
     clause_dir = os.path.join(one_off_dir, "clause")
     distribution_dir = os.path.join(one_off_dir, "distribution")
@@ -84,6 +75,15 @@ if __name__ == "__main__":
 
     exit()
     
+    # load datasets.
+    print("Loading datasets...")
+    kmnist_dataset = load_or_create(os.path.join("data", "kmnist_dataset.pkl"), KMNISTDataset)
+    mnist_dataset = load_or_create(os.path.join("data", "mnist_dataset.pkl"), MNISTDataset)
+    fashion_mnist_dataset = load_or_create(os.path.join("data", "fashion_mnist_dataset.pkl"), FashionMNISTDataset)
+    imdb_dataset = load_or_create(os.path.join("data", "imdb_dataset.pkl"), IMDBDataset)
+    emnist_dataset = load_or_create(os.path.join("data", "emnist_dataset.pkl"), EMNISTLettersDataset)
+    print("Datasets loaded")
+        
     clause_distilled_experiments = [
         (mnist_dataset, "MNIST", 
             {
