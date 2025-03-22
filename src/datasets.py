@@ -13,6 +13,7 @@ from abc import ABC, abstractmethod
 from torchvision.datasets import KMNIST, EMNIST
 from torchvision import transforms
 from __init__ import DATASET_FOLDERPATH
+import matplotlib.pyplot as plt
 
 def prepare_imdb_data(
     max_ngram: int = 2,
@@ -317,8 +318,49 @@ class MNIST3DDataset(Dataset):
         self.X_train = self.X_train.reshape(self.X_train.shape[0], 16*16*16)
         self.X_test = self.X_test.reshape(self.X_test.shape[0], 16*16*16)
 
+def make_figure_showing_binarization():
+
+    plt.rcParams['font.family'] = 'CMU Serif'
+    plt.rcParams['font.serif'] = 'CMU Serif'
+    plt.rcParams['mathtext.fontset'] = 'cm'
+    plt.rcParams['font.size'] = 14
+    (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
+    fig, axs = plt.subplots(1, 2, figsize=(7, 5))
+    sample = X_train[0]
+    binarized = np.where(sample > 75, 1, 0)
+
+    fig = plt.figure(figsize=(8, 5))
+    grid = plt.GridSpec(1, 2, wspace=0.5)
+    ax1 = fig.add_subplot(grid[0])
+    ax2 = fig.add_subplot(grid[1])
+
+    ax1.imshow(sample, cmap="gray")
+    ax1.set_title("Original Image")
+    ax1.axis('off')
+    
+    ax2.imshow(binarized, cmap="gray")
+    ax2.set_title("Binarized Image")
+    ax2.axis('off')
+
+    arrowprops = dict(arrowstyle="->", linewidth=2, color='red')
+    arrow1_2 = plt.annotate('', xy=(0, 0.5), xycoords=ax2.transAxes, xytext=(1, 0.5), textcoords=ax1.transAxes, arrowprops=arrowprops)
+    
+    plt.text(0.51, 0.52, 'Binarization', transform=fig.transFigure, fontsize=12, color='red', ha='center', va='center')
+    
+    plt.savefig("assets/diagrams/binarization.png", dpi=300, bbox_inches="tight")
+    """
+    axs[0].imshow(sample, cmap="gray")
+    axs[0].set_title("Original Image")
+    axs[0].axis('off')
+    axs[1].imshow(binarized, cmap="gray")
+    axs[1].set_title("Binarized Image (threshold=75)")
+    axs[1].axis('off')
+    plt.savefig("assets/diagrams/binarization.png", dpi=300, bbox_inches="tight")
+    """
 
 if __name__ == "__main__":
+    make_figure_showing_binarization()
+    exit()
     import json
     for d in [
         MNISTDataset(),

@@ -261,7 +261,7 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         for model in ["distilled", "teacher", "student"]:
             if downsample is not None and model == "distilled":
                 plt.plot(results[f"acc_{metric_type}_distilled_ds"], 
-                        label="Downsampled", color=colors["distilled_ds"], 
+                        label="Distilled w/ PCD", color=colors["distilled_ds"], 
                         linewidth=line_thickness)
             plt.plot(results[f"acc_{metric_type}_{model}"], 
                     label=model.capitalize(), color=colors[model], 
@@ -290,7 +290,7 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
 
         if downsample is not None:
             data.append(analysis[f"avg_time_{metric_type}_distilled_ds"])
-            labels.append("Downsampled")
+            labels.append("Distilled w/ PCD")
             bar_colors.append(colors["distilled_ds"])
 
         plt.bar(labels, data, color=bar_colors, zorder=10)
@@ -321,7 +321,7 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         ]
         
         if downsample is not None:
-            models.append(("Downsampled", analysis[f"avg_acc_{metric_type}_distilled_ds"], 
+            models.append(("Distilled w/ PCD", analysis[f"avg_acc_{metric_type}_distilled_ds"], 
                           analysis[f"avg_time_{metric_type}_distilled_ds"], colors["distilled_ds"]))
         
         # Plot points first
@@ -440,13 +440,16 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
                     else:
                         x_offset = 12
                         ha = 'left'
+            # Special case for Downsampled point
+            #if name == "Distilled w/ PCD":
+            #    x_offset*=1.5
             
             plt.annotate(name, (time, acc), 
                         xytext=(x_offset, y_offset), 
                         textcoords='offset points',
                         fontsize=legend_font_size,
                         ha=ha,
-                        va='center',
+                        va=va,
                         zorder=15)
         
         plt.xlabel(f"Average {metric_type.capitalize()} Time (s)")

@@ -76,7 +76,7 @@ def make_paper_1_tables(exps: list[tuple[str, str]]):
             "$\\mathcal{T}'_T$": f'{exp_output["analysis"]["avg_time_train_teacher"]:.2f}',
             "$\\mathcal{T}'_S$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f}',
             "$\\mathcal{T}'_D$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f}',
-            "$\\mathcal{T}'^{down}_D$": f'{exp_output["analysis"]["avg_time_train_distilled_ds"]:.2f}'
+            "$\\mathcal{T}'_{PCD}$": f'{exp_output["analysis"]["avg_time_train_distilled_ds"]:.2f}'
         }
         train_table = train_table._append(new_row, ignore_index=True)
         
@@ -89,7 +89,7 @@ def make_paper_1_tables(exps: list[tuple[str, str]]):
             "$\\mathcal{T}_T$": f'{exp_output["analysis"]["avg_time_test_teacher"]:.2f}',
             "$\\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f}',
             "$\\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f}',
-            "$\\mathcal{T}'^{down}_D$": f'{exp_output["analysis"]["avg_time_test_distilled_ds"]:.2f}'
+            "$\\mathcal{T}'_{PCD}$": f'{exp_output["analysis"]["avg_time_test_distilled_ds"]:.2f}'
         }
         test_table = test_table._append(new_row, ignore_index=True)
 
@@ -98,29 +98,29 @@ def make_paper_1_tables(exps: list[tuple[str, str]]):
         {
             "name": "hyperparam_table",
             "file_name": "hyperparam_table",
-            "caption": "Hyperparameters",
-            "label": "tab:hyperparams",
+            "caption": "Experiment Hyperparameters (CKD)",
+            "label": "tab:hyperparams-ckd",
             "column_format": "l"*len(hyperparam_table.columns)
         },
         {
             "name": "dataset_size_table",
             "file_name": "dataset_size_table",
             "caption": "Dataset Size",
-            "label": "tab:dataset-size",
+            "label": "tab:dataset-size-ckd",
             "column_format": "l"*len(dataset_size_table.columns)
         },
         {
             "name": "train_table",
             "file_name": "train_table",
-            "caption": "Train Table",
-            "label": "tab:train-table",
+            "caption": "Training Results (CKD)",
+            "label": "tab:train-table-ckd",
             "column_format": "l"+("c"*(len(train_table.columns)-1))
         },
         {
             "name": "test_table",
             "file_name": "test_table",
-            "caption": "Test Table",
-            "label": "tab:test-table",
+            "caption": "Testing Results (CKD)",
+            "label": "tab:test-table-ckd",
             "column_format": "l"+("c"*(len(test_table.columns)-1))
         }
     ]
@@ -169,7 +169,6 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
     test_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$\\mathcal{T}_T$", "$Acc_S$", "$\\mathcal{T}_S$", "$Acc_D$", "$\\mathcal{T}_D$"], index=[])
 
     for exp in exps:
-        print(exp)
         exp_output = load_json(os.path.join(exp, OUTPUT_JSON_PATH))
 
         # get row name
@@ -230,29 +229,29 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
         {
             "name": "hyperparam_table",
             "file_name": "hyperparam_table",
-            "caption": "Hyperparameters",
-            "label": "tab:hyperparams",
+            "caption": "Experiment Hyperparameters (DKD)",
+            "label": "tab:hyperparams-dkd",
             "column_format": "l"*len(hyperparam_table.columns)
         },
         {
             "name": "dataset_size_table",
             "file_name": "dataset_size_table",
-            "caption": "Dataset Size",
-            "label": "tab:dataset-size",
+            "caption": "Dataset Size (DKD)",
+            "label": "tab:dataset-size-dkd",
             "column_format": "l"*len(dataset_size_table.columns)
         },
         {
             "name": "train_table",
             "file_name": "train_table",
-            "caption": "Train Table",
-            "label": "tab:train-table",
+            "caption": "Training Results (DKD)",
+            "label": "tab:train-table-dkd",
             "column_format": "l"+("c"*(len(train_table.columns)-1))
         },
         {
             "name": "test_table",
             "file_name": "test_table",
-            "caption": "Test Table",
-            "label": "tab:test-table",
+            "caption": "Testing Results (DKD)",
+            "label": "tab:test-table-dkd",
             "column_format": "l"+("c"*(len(test_table.columns)-1))
         }
     ]
@@ -281,7 +280,7 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
         with open(latex_path, "w") as f:
             f.write(latex_table)
         
-def make_combined_graphs(exps: list[tuple[str, str]]):
+def make_combined_graphs(exps: list[tuple[str, str]], output_dir: str):
     """
     Create combined bar graphs for multiple experiments showing accuracy and time comparisons.
     
@@ -297,6 +296,7 @@ def make_combined_graphs(exps: list[tuple[str, str]]):
     # Colors for different models
     colors = {
         "distilled": "tab:blue",
+        "Distilled w/ PCD": "tab:purple",
         "teacher": "tab:orange",
         "student": "tab:green"
     }
@@ -304,6 +304,7 @@ def make_combined_graphs(exps: list[tuple[str, str]]):
     # Process data for each experiment
     experiment_data = []
     for exp in exps:
+        downsampled = False
         print(exp)
         exp_output = load_json(os.path.join(exp, OUTPUT_JSON_PATH))
         
@@ -342,13 +343,22 @@ def make_combined_graphs(exps: list[tuple[str, str]]):
                 }
             }
         }
-        print(data)
+        if "downsample_info" in exp_output:
+            data["train"]["Distilled w/ PCD"] = {
+                "acc": exp_output["analysis"]["avg_acc_train_distilled_ds"],
+                "time": exp_output["analysis"]["avg_time_train_distilled_ds"]
+            }
+            data["test"]["Distilled w/ PCD"] = {
+                "acc": exp_output["analysis"]["avg_acc_test_distilled_ds"],
+                "time": exp_output["analysis"]["avg_time_test_distilled_ds"]
+            }
+            downsampled = True
         experiment_data.append(data)
     
     # Create plots for both train and test, and for both accuracy and time
     for phase in ["train", "test"]:
         for metric in ["acc", "time"]:
-            plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
+            plt.figure(figsize=(8,4.5), dpi=PLOT_DPI)
             
             # Calculate bar positions
             n_experiments = len(experiment_data)
@@ -366,9 +376,15 @@ def make_combined_graphs(exps: list[tuple[str, str]]):
                     "student": base_pos + bar_width + bar_spacing,  # Add spacing after first bar
                     "distilled": base_pos + 2 * (bar_width + bar_spacing)  # Add spacing after second bar
                 })
+                if downsampled:
+                    positions[-1]["Distilled w/ PCD"] = base_pos + 3 * (bar_width + bar_spacing)  # Add spacing after third bar
             
             # Plot bars
-            for model in ["teacher", "student", "distilled"]:
+
+            models = ["teacher", "student", "distilled", "Distilled w/ PCD"]
+            if not downsampled:
+                models.remove("Distilled w/ PCD")
+            for model in models:
                 if metric == "time":
                     # Normalize time values relative to teacher for each experiment
                     means = []
@@ -378,11 +394,10 @@ def make_combined_graphs(exps: list[tuple[str, str]]):
                         means.append(model_time / teacher_time)  # Relative to teacher
                 else:
                     means = [data[phase][model][metric] for data in experiment_data]
-                
                 pos = [pos[model] for pos in positions]
                 
                 bars = plt.bar(pos, means, bar_width, 
-                             label=model.capitalize(),
+                             label=model.capitalize() if model != "Distilled w/ PCD" else "Distilled w/ PCD",
                              color=colors[model],
                              zorder=10)  # Set zorder to 10 to put bars above grid
                 
@@ -394,9 +409,9 @@ def make_combined_graphs(exps: list[tuple[str, str]]):
             
             plt.xlabel('Dataset')
             if metric == "acc":
-                plt.ylabel(f'{phase.capitalize()} Average Accuracy (%)')
+                plt.ylabel(f'Average {phase.capitalize()} Accuracy (%)')
             else:
-                plt.ylabel(f'{phase.capitalize()} Time (normalized)')
+                plt.ylabel(f'Average {phase.capitalize()} Time (normalized)')
             
             # Set x-axis ticks and labels
             plt.xticks([pos["student"] for pos in positions], 
@@ -406,12 +421,16 @@ def make_combined_graphs(exps: list[tuple[str, str]]):
             # Adjust y-axis range to focus on the relevant region
             if metric == "time":
                 # For time, set y-axis to show relative speedup/slowdown
-                plt.ylim(0, 1.1)  # Show from 0x to 2x teacher's time
+                #plt.ylim(0, 1.2)  # Show from 0x to 2x teacher's time
+                # get current y-axis limits
+                y_min, y_max = plt.ylim()
+                # set y-axis limits to show from 0x to 2x teacher's time
+                plt.ylim(0, 1.2 * y_max)
             else:
                 # For accuracy, use the original range calculation
-                y_min = min(min(data[phase][model][metric] for model in ["teacher", "student", "distilled"]) 
+                y_min = min(min(data[phase][model][metric] for model in models) 
                            for data in experiment_data)
-                y_max = max(max(data[phase][model][metric] for model in ["teacher", "student", "distilled"]) 
+                y_max = max(max(data[phase][model][metric] for model in models) 
                            for data in experiment_data)
                 y_range = y_max - y_min
                 plt.ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
@@ -424,12 +443,12 @@ def make_combined_graphs(exps: list[tuple[str, str]]):
             plt.tight_layout()
             
             # Add legend
-            plt.legend(loc='upper right').set_zorder(100)
+            # plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1), ncol=3).set_zorder(100)
+            plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1), ncol=2).set_zorder(100)
 
             # Save plot
-            output_dir = os.path.join("assets", "paper_2")
             os.makedirs(output_dir, exist_ok=True)
-            plt.savefig(os.path.join(output_dir, f"combined_{phase}_{metric}.png"))
+            plt.savefig(os.path.join(output_dir, f"combined_{phase}_{metric}.png"), bbox_inches="tight")
             plt.close()
 
 def j(*args):
@@ -456,8 +475,11 @@ if __name__ == "__main__":
     make_paper_2_tables(paper2_exps)
 
     # Generate combined graphs
-    #make_combined_graphs(paper1_exps)
-    make_combined_graphs(paper2_exps)
+    print("tables done")
+    make_combined_graphs(paper1_exps, "assets/paper_1")
+    print("paper 1 graphs done")
+    make_combined_graphs(paper2_exps, "paper_2")
+    print("paper 2 graphs done")
 
 """
     for folder in os.listdir("combined_results/distribution"):
