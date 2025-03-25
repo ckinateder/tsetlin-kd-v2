@@ -1,4 +1,4 @@
-from distillation import distribution_distillation_experiment, plot_results, clause_distillation_experiment
+from distillation import distribution_distillation_experiment, plot_results, clause_distillation_experiment, aggregate_distribution_distillation_experiment
 from activation_maps import visualize_activation_maps
 import os
 from datasets import MNISTDataset, FashionMNISTDataset, KMNISTDataset, IMDBDataset, EMNISTLettersDataset, OracleMNISTDataset
@@ -67,13 +67,7 @@ if __name__ == "__main__":
     one_off_dir = os.path.join("combined_results")
     clause_dir = os.path.join(one_off_dir, "clause")
     distribution_dir = os.path.join(one_off_dir, "distribution")
-
-    print(f"Remaking all plots in {distribution_dir}...")
-    remake_plots(distribution_dir)
-    print(f"Remaking all plots in {clause_dir}...")
-    remake_plots(clause_dir)
-
-    exit()
+    aggregate_distribution_dir = os.path.join(one_off_dir, "aggregate_distribution")
     
     # load datasets.
     print("Loading datasets...")
@@ -84,6 +78,81 @@ if __name__ == "__main__":
     emnist_dataset = load_or_create(os.path.join("data", "emnist_dataset.pkl"), EMNISTLettersDataset)
     print("Datasets loaded")
         
+    #run distilled experiments
+    # this goes (dataset, name, params, kwargs)
+    distribution_distilled_experiments = [
+        (mnist_dataset, "MNIST", 
+            {
+                "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 120 },
+                "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 240 },
+                "temperature": 3.0,
+                "alpha": 0.5,
+                "z": 0.3,
+            },
+            {"overwrite": False}
+        ),
+        (kmnist_dataset, "KMNIST", 
+            {
+                "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 120 },
+                "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 240 },
+                "temperature": 4.0,
+                "alpha": 0.5,
+                "z": 0.3,
+            },
+            {"overwrite": False}
+        ),
+        (emnist_dataset, "EMNIST", 
+            {
+                "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 120 },
+                "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 240 },
+                "temperature": 4.0,
+                "alpha": 0.5,
+                "z": 0.2,
+            },
+            {"overwrite": False}
+        ),
+        (imdb_dataset, "IMDB", 
+            {
+                "teacher": { "C": 8000, "T": 6000, "s": 7.0, "epochs": 30 },
+                "student": { "C": 4000, "T": 6000, "s": 7.0, "epochs": 60 },
+                "temperature": 3.0,
+                "alpha": 0.5,
+                "z": 0.2,
+            },
+            {"overwrite": False, "make_activation_maps": False}
+        ),
+    ]
+    
+    print("Running distribution-based distilled experiments")
+    for dataset, name, params, kwargs in distribution_distilled_experiments:
+        kwargs["folderpath"] = distribution_dir
+        kwargs["save_all"] = True
+        aggregate_distribution_distillation_experiment(aggregate_distribution_dir, name, 10, dataset, name, params, **kwargs)
+
+    print(f"Remaking all plots in {distribution_dir}...")
+    remake_plots(distribution_dir)
+    print(f"Remaking all plots in {clause_dir}...")
+    remake_plots(clause_dir)
+   
+    exit()
+    
+    print("Updating charts")
+    # activation maps
+    for fpath in os.listdir(one_off_dir):
+        output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
+        if output["experiment_name"] == "IMDB":
+            continue
+        # get dataset from output
+        dataset = locals()[output["experiment_name"].lower()+"_dataset"]
+        distilled_model = load_pkl(os.path.join(one_off_dir, fpath, "distilled.pkl"))
+        teacher_model = load_pkl(os.path.join(one_off_dir, fpath, "teacher_baseline.pkl"))
+        student_model = load_pkl(os.path.join(one_off_dir, fpath, "student_baseline.pkl"))
+
+        samples = np.random.randint(0, len(dataset.X_train), size=4)
+        plot_results(output, os.path.join(one_off_dir, fpath))
+        visualize_activation_maps(teacher_model, student_model, distilled_model, 
+                                dataset.X_train[samples], dataset.Y_train[samples], dataset.image_shape, os.path.join(one_off_dir, fpath, output["experiment_name"]+"_activation_maps.png"))
+    exit()
     clause_distilled_experiments = [
         (mnist_dataset, "MNIST", 
             {
@@ -128,84 +197,3 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Error running clause distillation experiment for {name}: {e}")
             continue
-
-    #run distilled experiments
-    # this goes (dataset, name, params, kwargs)
-    distribution_distilled_experiments = [
-        (mnist_dataset, "MNIST", 
-            {
-                "teacher": { "C": 1000, "T": 10, "s": 4.0, "epochs": 120 },
-                "student": { "C": 100, "T": 10, "s": 4.0, "epochs": 240 },
-                "temperature": 3.0,
-                "alpha": 0.5,
-                "z": 0.3,
-            },
-            {"overwrite": False}
-        ),
-        (mnist_dataset, "MNIST", 
-            {
-                "teacher": { "C": 4000, "T": 50, "s": 10.0, "epochs": 120 },
-                "student": { "C": 400, "T": 50, "s": 10.0, "epochs": 240 },
-                "temperature": 3.0,
-                "alpha": 0.5,
-                "z": 0.3,
-            },
-            {"overwrite": False}
-        ),
-        (kmnist_dataset, "KMNIST", 
-            {
-                "teacher": { "C": 2000, "T": 100, "s": 8.2, "epochs": 120 },
-                "student": { "C": 200, "T": 100, "s": 8.2, "epochs": 240 },
-                "temperature": 4.0,
-                "alpha": 0.5,
-                "z": 0.3,
-            },
-            {"overwrite": False}
-        ),
-        (emnist_dataset, "EMNIST", 
-            {
-                "teacher": { "C": 1000, "T": 100, "s": 4.0, "epochs": 120 },
-                "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 240 },
-                "temperature": 4.0,
-                "alpha": 0.5,
-                "z": 0.2,
-            },
-            {"overwrite": False}
-        ),
-        (imdb_dataset, "IMDB", 
-            {
-                "teacher": { "C": 8000, "T": 6000, "s": 7.0, "epochs": 30 },
-                "student": { "C": 4000, "T": 6000, "s": 7.0, "epochs": 60 },
-                "temperature": 3.0,
-                "alpha": 0.5,
-                "z": 0.2,
-            },
-            {"overwrite": False, "make_activation_maps": False}
-        ),
-    ]
-    
-    print("Running distribution-based distilled experiments")
-    for dataset, name, params, kwargs in distribution_distilled_experiments:
-        kwargs["folderpath"] = distribution_dir
-        kwargs["save_all"] = True
-        distribution_distillation_experiment(dataset, name, params, **kwargs)
-
-   
-    exit()
-    
-    print("Updating charts")
-    # activation maps
-    for fpath in os.listdir(one_off_dir):
-        output = load_json(os.path.join(one_off_dir, fpath, OUTPUT_JSON_PATH))
-        if output["experiment_name"] == "IMDB":
-            continue
-        # get dataset from output
-        dataset = locals()[output["experiment_name"].lower()+"_dataset"]
-        distilled_model = load_pkl(os.path.join(one_off_dir, fpath, "distilled.pkl"))
-        teacher_model = load_pkl(os.path.join(one_off_dir, fpath, "teacher_baseline.pkl"))
-        student_model = load_pkl(os.path.join(one_off_dir, fpath, "student_baseline.pkl"))
-
-        samples = np.random.randint(0, len(dataset.X_train), size=4)
-        plot_results(output, os.path.join(one_off_dir, fpath))
-        visualize_activation_maps(teacher_model, student_model, distilled_model, 
-                                dataset.X_train[samples], dataset.Y_train[samples], dataset.image_shape, os.path.join(one_off_dir, fpath, output["experiment_name"]+"_activation_maps.png"))

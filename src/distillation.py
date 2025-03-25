@@ -98,7 +98,7 @@ def train_step(model: MultiClassTsetlinMachine,
     tqdm.write(f'Testing time: {stop_testing-start_testing:.2f} s, Test accuracy: {test_result:.2f}%')
     return train_result, test_result, stop_training-start_training, stop_testing-start_testing
 
-def validate_params(params: dict, experiment_name: str, distillation_type: str) -> str:
+def validate_params(params: dict, experiment_name: str, distillation_type: str, _agg_num: int = 0) -> str:
     """
     Validate the parameters for the experiment.
     Example valid params:
@@ -161,6 +161,9 @@ def validate_params(params: dict, experiment_name: str, distillation_type: str) 
             f"te{params['teacher']['epochs']}_se{params['student']['epochs']}_ds{params['downsample']}" 
     else:
         raise ValueError(f"Invalid distillation type: {distillation_type}")
+    
+    if _agg_num > 0:
+        exid += f"_n{_agg_num}"
 
     return exid
 
@@ -471,6 +474,7 @@ def distribution_distillation_experiment(
     save_all: bool = False,
     overwrite: bool = False,
     make_activation_maps: bool = True,
+    _agg_num: int = 0, # ignore for solo experiments
 ) -> dict:
     """
     Run a distillation experiment comparing teacher, student, and distilled models.
@@ -732,6 +736,31 @@ def distribution_distillation_experiment(
 
     return output, results
 
+def aggregate_distribution_distillation_experiment(
+    top_level_folderpath: str,
+    top_name: str,
+    num_experiments: int,
+    dataset: Dataset,
+    experiment_name: str,
+    params: dict = DISTRIB_DISTILLED_DEFAULTS,
+    folderpath: str = DEFAULT_FOLDERPATH,
+    save_all: bool = False,
+    overwrite: bool = False,
+    make_activation_maps: bool = True,
+) -> dict:
+    """
+    Aggregate distribution distillation experiments.
+    """
+    # check that the folderpath + top_name exists, if not, create it
+    if not os.path.exists(os.path.join(top_level_folderpath, top_name)):
+        os.makedirs(os.path.join(top_level_folderpath, top_name))
+    
+    # run each experiment
+    for i in range(1, num_experiments+1):
+        params["_agg_num"] = i
+        output, results = distribution_distillation_experiment(dataset, experiment_name, params, folderpath, save_all, overwrite, make_activation_maps, _agg_num=i)
+
+
 def get_downsample_indices(X:np.ndarray, downsample: float, symmetric: bool = True) -> np.ndarray:
     """
     Downsample clauses by removing those that are too active or too inactive.
@@ -809,7 +838,6 @@ def downsample_clauses(X_train_transformed:np.ndarray, X_test_transformed:np.nda
     print(f"Dropped {num_clauses_dropped} clauses from {X_train_transformed.shape[1]} clauses, {reduction_percentage:.2f}% reduction")
     
     return X_train_reduced, X_test_reduced, num_clauses_dropped
-
 
 def clause_distillation_experiment(
     dataset: Dataset,
