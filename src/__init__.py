@@ -6,6 +6,8 @@ DISTILLED_DS_MODEL_PATH = "distilled_ds.pkl"
 
 OUTPUT_JSON_PATH = "output.json"
 RESULTS_CSV_PATH = "results.csv"
+AGGREGATED_OUTPUT_JSON_PATH = "aggregated_output.json"
+
 TEST_ACCURACY_PNG_PATH = "test_accuracy.png"
 TRAIN_ACCURACY_PNG_PATH = "train_accuracy.png"
 TEST_TIME_PNG_PATH = "test_time.png"

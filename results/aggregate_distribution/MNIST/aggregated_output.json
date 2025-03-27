@@ -1,0 +1,81 @@
+{
+    "experiment_name": "MNIST",
+    "num_experiments": 10,
+    "params": {
+        "teacher": {
+            "C": 1000,
+            "T": 10,
+            "s": 4.0,
+            "epochs": 120
+        },
+        "student": {
+            "C": 100,
+            "T": 10,
+            "s": 4.0,
+            "epochs": 240
+        },
+        "temperature": 3.0,
+        "alpha": 0.5,
+        "z": 0.3,
+        "weighted_clauses": true,
+        "number_of_state_bits": 8,
+        "combined_epochs": 360
+    },
+    "data": {
+        "X_train": [
+            60000,
+            784
+        ],
+        "Y_train": [
+            60000
+        ],
+        "X_test": [
+            10000,
+            784
+        ],
+        "Y_test": [
+            10000
+        ],
+        "num_classes": 10
+    },
+    "analysis": {
+        "avg_acc_test_teacher": 95.19668333333334,
+        "avg_acc_test_student": 90.36703055555554,
+        "avg_acc_test_distilled": 93.96327222222222,
+        "std_acc_test_teacher": 0.059590673667977594,
+        "std_acc_test_student": 0.13513117417359524,
+        "std_acc_test_distilled": 0.0597271499546249,
+        "avg_acc_train_teacher": 97.64777453703705,
+        "avg_acc_train_student": 90.63237962962963,
+        "avg_acc_train_distilled": 95.25364953703703,
+        "std_acc_train_teacher": 0.06978629498228558,
+        "std_acc_train_student": 0.12736654407379944,
+        "std_acc_train_distilled": 0.06955447802056683,
+        "avg_time_train_teacher": 0.6951045742962096,
+        "avg_time_train_student": 0.2635062151485019,
+        "avg_time_train_distilled": 0.23717952152093252,
+        "std_time_train_teacher": 0.010598845998303167,
+        "std_time_train_student": 0.0010715795235398074,
+        "std_time_train_distilled": 0.00038277845422638276,
+        "avg_time_test_teacher": 0.3731207449568642,
+        "avg_time_test_student": 0.05680905732843611,
+        "avg_time_test_distilled": 0.06150603820880255,
+        "std_time_test_teacher": 0.014810769885039658,
+        "std_time_test_student": 0.000878304557490831,
+        "std_time_test_distilled": 0.0007572920628831115,
+        "avg_time_train_teacher_normalized": 1.0,
+        "avg_time_train_student_normalized": 0.3790885931304665,
+        "avg_time_train_distilled_normalized": 0.3412141572526346,
+        "std_time_train_teacher_normalized": 0.015247843835633565,
+        "std_time_train_student_normalized": 0.0015416090803671914,
+        "std_time_train_distilled_normalized": 0.0005506775072138554,
+        "avg_time_test_teacher_normalized": 1.0,
+        "avg_time_test_student_normalized": 0.15225381621438308,
+        "avg_time_test_distilled_normalized": 0.16484218323458041,
+        "std_time_test_teacher_normalized": 0.03969430830427804,
+        "std_time_test_student_normalized": 0.0023539419058363287,
+        "std_time_test_distilled_normalized": 0.0020296166137068116,
+        "avg_total_time": 1506.5869240760803,
+        "std_total_time": 42.450168278988016
+    }
+}

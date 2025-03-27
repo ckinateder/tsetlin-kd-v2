@@ -64,7 +64,7 @@ def remake_plots(parent_dir):
             plot_results(output, os.path.join(parent_dir, fpath))
 
 if __name__ == "__main__":
-    one_off_dir = os.path.join("combined_results")
+    one_off_dir = os.path.join("results")
     clause_dir = os.path.join(one_off_dir, "clause")
     distribution_dir = os.path.join(one_off_dir, "distribution")
     aggregate_distribution_dir = os.path.join(one_off_dir, "aggregate_distribution")
@@ -125,9 +125,10 @@ if __name__ == "__main__":
     
     print("Running distribution-based distilled experiments")
     for dataset, name, params, kwargs in distribution_distilled_experiments:
-        kwargs["folderpath"] = distribution_dir
+        kwargs["folderpath"] = aggregate_distribution_dir
         kwargs["save_all"] = True
-        aggregate_distribution_distillation_experiment(aggregate_distribution_dir, name, 10, dataset, name, params, **kwargs)
+        kwargs["overwrite"] = False
+        aggregate_distribution_distillation_experiment(10, dataset, name, params, **kwargs)
 
     print(f"Remaking all plots in {distribution_dir}...")
     remake_plots(distribution_dir)

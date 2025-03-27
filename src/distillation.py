@@ -30,6 +30,7 @@ DISTRIB_DISTILLED_DEFAULTS = {
     "z": 0.2,
     "weighted_clauses": True,
     "number_of_state_bits": 8,
+    "_agg_num": 0,
 }
 
 CLAUSE_DISTILLED_DEFAULTS = {
@@ -98,7 +99,7 @@ def train_step(model: MultiClassTsetlinMachine,
     tqdm.write(f'Testing time: {stop_testing-start_testing:.2f} s, Test accuracy: {test_result:.2f}%')
     return train_result, test_result, stop_training-start_training, stop_testing-start_testing
 
-def validate_params(params: dict, experiment_name: str, distillation_type: str, _agg_num: int = 0) -> str:
+def validate_params(params: dict, experiment_name: str, distillation_type: str) -> str:
     """
     Validate the parameters for the experiment.
     Example valid params:
@@ -162,8 +163,8 @@ def validate_params(params: dict, experiment_name: str, distillation_type: str, 
     else:
         raise ValueError(f"Invalid distillation type: {distillation_type}")
     
-    if _agg_num > 0:
-        exid += f"_n{_agg_num}"
+    if params["_agg_num"] > 0:
+        exid += f"_n{params['_agg_num']}"
 
     return exid
 
@@ -474,7 +475,7 @@ def distribution_distillation_experiment(
     save_all: bool = False,
     overwrite: bool = False,
     make_activation_maps: bool = True,
-    _agg_num: int = 0, # ignore for solo experiments
+    plot_if_exists: bool = True,
 ) -> dict:
     """
     Run a distillation experiment comparing teacher, student, and distilled models.
@@ -540,7 +541,8 @@ def distribution_distillation_experiment(
             results = pd.read_csv(os.path.join(folderpath, experiment_id, RESULTS_CSV_PATH))
             output = load_json(os.path.join(folderpath, experiment_id, OUTPUT_JSON_PATH))
             # plot results
-            plot_results(output, os.path.join(folderpath, experiment_id))
+            if plot_if_exists:
+                plot_results(output, os.path.join(folderpath, experiment_id))
             return output, results
         else:
             print(f"Experiment {experiment_id} already exists, but some files are missing, continuing") 
@@ -737,8 +739,6 @@ def distribution_distillation_experiment(
     return output, results
 
 def aggregate_distribution_distillation_experiment(
-    top_level_folderpath: str,
-    top_name: str,
     num_experiments: int,
     dataset: Dataset,
     experiment_name: str,
@@ -751,14 +751,105 @@ def aggregate_distribution_distillation_experiment(
     """
     Aggregate distribution distillation experiments.
     """
-    # check that the folderpath + top_name exists, if not, create it
-    if not os.path.exists(os.path.join(top_level_folderpath, top_name)):
-        os.makedirs(os.path.join(top_level_folderpath, top_name))
+    # check that the folderpath exists, if not, create it
+    folderpath = os.path.join(folderpath, experiment_name)
+    if not os.path.exists(folderpath):
+        os.makedirs(folderpath)
     
     # run each experiment
+    outputs = []
+    output_dataframe = pd.DataFrame(columns=["acc_train_teacher", "acc_train_student", "acc_train_distilled", 
+                                             "time_train_teacher", "time_train_student", "time_train_distilled", 
+                                             "acc_test_teacher", "acc_test_student", "acc_test_distilled", 
+                                             "time_test_teacher", "time_test_student", "time_test_distilled", 
+                                             "total_time"])
+
+    # average the json results
+    aggregated_output = {
+        "experiment_name": experiment_name,
+        "num_experiments": num_experiments,
+        "params": params,
+
+        "data": {
+            "X_train": dataset.X_train.shape,
+            "Y_train": dataset.Y_train.shape,
+            "X_test": dataset.X_test.shape,
+            "Y_test": dataset.Y_test.shape,
+            "num_classes": len(np.unique(dataset.Y_train)),
+        }
+    }
+    print(f"Running '{experiment_name}' {num_experiments} times and saving results to {folderpath}")
     for i in range(1, num_experiments+1):
+        print(f"Running experiment {i} of {num_experiments}")
         params["_agg_num"] = i
-        output, results = distribution_distillation_experiment(dataset, experiment_name, params, folderpath, save_all, overwrite, make_activation_maps, _agg_num=i)
+        output, _ = distribution_distillation_experiment(dataset, experiment_name, params, folderpath, save_all, overwrite, make_activation_maps, plot_if_exists=False)
+        analysis = output["analysis"]
+        output_dataframe.loc[i] = [analysis["avg_acc_train_teacher"], analysis["avg_acc_train_student"], analysis["avg_acc_train_distilled"], 
+                                  analysis["avg_time_train_teacher"], analysis["avg_time_train_student"], analysis["avg_time_train_distilled"], 
+                                  analysis["avg_acc_test_teacher"], analysis["avg_acc_test_student"], analysis["avg_acc_test_distilled"], 
+                                  analysis["avg_time_test_teacher"], analysis["avg_time_test_student"], analysis["avg_time_test_distilled"], 
+                                  analysis["total_time"]]
+        outputs.append(output)
+
+
+        # normalized time
+        aggregated_output["num_experiments"] = i
+        aggregated_output["analysis"] = {
+            "avg_acc_test_teacher": output_dataframe["acc_test_teacher"].mean(),
+            "avg_acc_test_student": output_dataframe["acc_test_student"].mean(),
+            "avg_acc_test_distilled": output_dataframe["acc_test_distilled"].mean(),
+            "std_acc_test_teacher": output_dataframe["acc_test_teacher"].std(),
+            "std_acc_test_student": output_dataframe["acc_test_student"].std(),
+            "std_acc_test_distilled": output_dataframe["acc_test_distilled"].std(),
+
+            "avg_acc_train_teacher": output_dataframe["acc_train_teacher"].mean(),
+            "avg_acc_train_student": output_dataframe["acc_train_student"].mean(),
+            "avg_acc_train_distilled": output_dataframe["acc_train_distilled"].mean(),
+            "std_acc_train_teacher": output_dataframe["acc_train_teacher"].std(),
+            "std_acc_train_student": output_dataframe["acc_train_student"].std(),
+            "std_acc_train_distilled": output_dataframe["acc_train_distilled"].std(),    
+
+            "avg_time_train_teacher": output_dataframe["time_train_teacher"].mean(),
+            "avg_time_train_student": output_dataframe["time_train_student"].mean(),
+            "avg_time_train_distilled": output_dataframe["time_train_distilled"].mean(),
+            "std_time_train_teacher": output_dataframe["time_train_teacher"].std(),
+            "std_time_train_student": output_dataframe["time_train_student"].std(),
+            "std_time_train_distilled": output_dataframe["time_train_distilled"].std(),
+
+            "avg_time_test_teacher": output_dataframe["time_test_teacher"].mean(),
+            "avg_time_test_student": output_dataframe["time_test_student"].mean(),
+            "avg_time_test_distilled": output_dataframe["time_test_distilled"].mean(),
+            "std_time_test_teacher": output_dataframe["time_test_teacher"].std(),
+            "std_time_test_student": output_dataframe["time_test_student"].std(),
+            "std_time_test_distilled": output_dataframe["time_test_distilled"].std(),
+            
+            # normalized time. normalize by teacher time
+            "avg_time_train_teacher_normalized": output_dataframe["time_train_teacher"].mean() / output_dataframe["time_train_teacher"].mean(),
+            "avg_time_train_student_normalized": output_dataframe["time_train_student"].mean() / output_dataframe["time_train_teacher"].mean(),
+            "avg_time_train_distilled_normalized": output_dataframe["time_train_distilled"].mean() / output_dataframe["time_train_teacher"].mean(),
+            "std_time_train_teacher_normalized": output_dataframe["time_train_teacher"].transform(lambda x: x / output_dataframe["time_train_teacher"].mean()).std(),
+            "std_time_train_student_normalized": output_dataframe["time_train_student"].transform(lambda x: x / output_dataframe["time_train_teacher"].mean()).std(),
+            "std_time_train_distilled_normalized": output_dataframe["time_train_distilled"].transform(lambda x: x / output_dataframe["time_train_teacher"].mean()).std(),
+
+            "avg_time_test_teacher_normalized": output_dataframe["time_test_teacher"].mean() / output_dataframe["time_test_teacher"].mean(),
+            "avg_time_test_student_normalized": output_dataframe["time_test_student"].mean() / output_dataframe["time_test_teacher"].mean(),
+            "avg_time_test_distilled_normalized": output_dataframe["time_test_distilled"].mean() / output_dataframe["time_test_teacher"].mean(),
+            "std_time_test_teacher_normalized": output_dataframe["time_test_teacher"].transform(lambda x: x / output_dataframe["time_test_teacher"].mean()).std(),  
+            "std_time_test_student_normalized": output_dataframe["time_test_student"].transform(lambda x: x / output_dataframe["time_test_teacher"].mean()).std(),
+            "std_time_test_distilled_normalized": output_dataframe["time_test_distilled"].transform(lambda x: x / output_dataframe["time_test_teacher"].mean()).std(),
+
+            "avg_total_time": output_dataframe["total_time"].mean(),
+            "std_total_time": output_dataframe["total_time"].std(),
+        }
+        save_json(aggregated_output, os.path.join(folderpath, AGGREGATED_OUTPUT_JSON_PATH))
+    
+    del params["_agg_num"]
+
+    # save aggregated output
+    save_json(aggregated_output, os.path.join(folderpath, AGGREGATED_OUTPUT_JSON_PATH))
+
+    return aggregated_output
+    
 
 
 def get_downsample_indices(X:np.ndarray, downsample: float, symmetric: bool = True) -> np.ndarray:
