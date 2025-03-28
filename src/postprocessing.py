@@ -275,7 +275,7 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
         with open(latex_path, "w") as f:
             f.write(latex_table)
         
-def make_paper_2_tables_aggregate(top_dir: str):
+def make_paper_2_tables_aggregate(exps: list[tuple[str, str]]):
     """
     top_dir: top directory of aggregate results
     """
@@ -290,10 +290,6 @@ def make_paper_2_tables_aggregate(top_dir: str):
     train_table = pd.DataFrame(columns=["Dataset", "$Acc'_T$", "$\\mathcal{T}'_T$", "$Acc'_S$", "$\\mathcal{T}'_S$", "$Acc'_D$", "$\\mathcal{T}'_D$"], index=[])
     test_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$\\mathcal{T}_T$", "$Acc_S$", "$\\mathcal{T}_S$", "$Acc_D$", "$\\mathcal{T}_D$"], index=[])
 
-    # get all experiment directories
-    exps = [os.path.join(top_dir, d) for d in os.listdir(top_dir) if os.path.isdir(os.path.join(top_dir, d))]
-
-    exps = exps[1:] + exps[:1]
     for exp in exps:
         # load aggregated output
         if not os.path.exists(os.path.join(exp, AGGREGATED_OUTPUT_JSON_PATH)):
@@ -582,7 +578,7 @@ def make_combined_graphs(exps: list[tuple[str, str]], output_dir: str):
             plt.savefig(os.path.join(output_dir, f"combined_{phase}_{metric}.png"), bbox_inches="tight")
             plt.close()
 
-def make_combined_graphs_aggregate(top_dir: str, output_dir: str):
+def make_combined_graphs_aggregate(exps: list[tuple[str, str]], output_dir: str):
     """
     Create combined bar graphs for multiple experiments showing accuracy and time comparisons.
     
@@ -602,11 +598,6 @@ def make_combined_graphs_aggregate(top_dir: str, output_dir: str):
         "teacher": "tab:orange",
         "student": "tab:green"
     }
-    
-    # get all experiment directories
-    exps = [os.path.join(top_dir, d) for d in os.listdir(top_dir) if os.path.isdir(os.path.join(top_dir, d))]
-    # rotate exps
-    exps = exps[1:] + exps[:1]
     
     # Process data for each experiment
     experiment_data = []
@@ -773,10 +764,15 @@ if __name__ == "__main__":
 
     # Generate tables
     # make_paper_1_tables(paper1_exps)
-    paper2_aggregate_dir = j("results", "aggregate_distribution")
-    make_paper_2_tables_aggregate(paper2_aggregate_dir)
+    paper2_aggregate_exps = [
+        j("results", "aggregate_distribution", "MNIST"),
+        j("results", "aggregate_distribution", "KMNIST"),
+        j("results", "aggregate_distribution", "EMNIST"),
+        j("results", "aggregate_distribution", "IMDB"),
+    ]       
+    make_paper_2_tables_aggregate(paper2_aggregate_exps)
 
-    make_combined_graphs_aggregate(paper2_aggregate_dir, j("assets", "paper_2"))
+    make_combined_graphs_aggregate(paper2_aggregate_exps, j("assets", "paper_2"))
 
     # Generate combined graphs
     #print("tables done")
