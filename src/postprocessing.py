@@ -293,6 +293,7 @@ def make_paper_2_tables_aggregate(top_dir: str):
     # get all experiment directories
     exps = [os.path.join(top_dir, d) for d in os.listdir(top_dir) if os.path.isdir(os.path.join(top_dir, d))]
 
+    exps = exps[1:] + exps[:1]
     for exp in exps:
         # load aggregated output
         if not os.path.exists(os.path.join(exp, AGGREGATED_OUTPUT_JSON_PATH)):
@@ -604,7 +605,9 @@ def make_combined_graphs_aggregate(top_dir: str, output_dir: str):
     
     # get all experiment directories
     exps = [os.path.join(top_dir, d) for d in os.listdir(top_dir) if os.path.isdir(os.path.join(top_dir, d))]
-
+    # rotate exps
+    exps = exps[1:] + exps[:1]
+    
     # Process data for each experiment
     experiment_data = []
     for exp in exps:

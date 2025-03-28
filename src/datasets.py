@@ -359,25 +359,11 @@ def make_figure_showing_binarization():
     """
 
 if __name__ == "__main__":
-    make_figure_showing_binarization()
+    data = EMNISTLettersDataset()
+    print(data.X_train.shape)
+    print(data.Y_train.shape)
+    print(data.X_test.shape)
+    print(data.Y_test.shape)
+    print(np.unique(data.Y_train))
+    print(np.unique(data.Y_test))
     exit()
-    import json
-    for d in [
-        MNISTDataset(),
-        EMNISTLettersDataset(),
-        IMDBDataset(),
-        KMNISTDataset(),
-    ]:
-        data = d.get_data()
-        i = {
-            "data": {
-                "X_train": data[0].shape,
-                "Y_train": data[1].shape,
-                "X_test": data[2].shape,
-                "Y_test": data[3].shape,
-                "num_classes": len(np.unique(data[1])),
-            },
-        }
-        print(d.__class__.__name__)
-        # pretty print the dictionary
-        print(json.dumps(i, indent=4))

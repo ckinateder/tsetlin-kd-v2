@@ -89,7 +89,8 @@ if __name__ == "__main__":
                 "alpha": 0.5,
                 "z": 0.3,
             },
-            {"overwrite": False}
+            {"overwrite": False},
+            10
         ),
         (kmnist_dataset, "KMNIST", 
             {
@@ -99,7 +100,8 @@ if __name__ == "__main__":
                 "alpha": 0.5,
                 "z": 0.3,
             },
-            {"overwrite": False}
+            {"overwrite": False},
+            10
         ),
         (emnist_dataset, "EMNIST", 
             {
@@ -109,7 +111,8 @@ if __name__ == "__main__":
                 "alpha": 0.5,
                 "z": 0.2,
             },
-            {"overwrite": False}
+            {"overwrite": False},
+            10
         ),
         (imdb_dataset, "IMDB", 
             {
@@ -119,16 +122,17 @@ if __name__ == "__main__":
                 "alpha": 0.5,
                 "z": 0.2,
             },
-            {"overwrite": False, "make_activation_maps": False}
+            {"overwrite": False, "make_activation_maps": False},
+            10
         ),
     ]
     
     print("Running distribution-based distilled experiments")
-    for dataset, name, params, kwargs in distribution_distilled_experiments:
+    for dataset, name, params, kwargs, n in distribution_distilled_experiments:
         kwargs["folderpath"] = aggregate_distribution_dir
         kwargs["save_all"] = True
         kwargs["overwrite"] = False
-        aggregate_distribution_distillation_experiment(10, dataset, name, params, **kwargs)
+        aggregate_distribution_distillation_experiment(n, dataset, name, params, **kwargs)
 
     print(f"Remaking all plots in {distribution_dir}...")
     remake_plots(distribution_dir)
