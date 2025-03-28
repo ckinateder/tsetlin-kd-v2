@@ -331,23 +331,23 @@ def make_paper_2_tables_aggregate(exps: list[tuple[str, str]]):
         # get combined train table with time
         new_row = {
             "Dataset": rowname,
-            "$Acc'_T$": f'{exp_output["analysis"]["avg_acc_train_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_teacher"]:.2f}',
-            "$Acc'_S$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
-            "$Acc'_D$": f'{exp_output["analysis"]["avg_acc_train_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_distilled"]:.2f}',
-            "$\\mathcal{T}'_T$": f'{exp_output["analysis"]["avg_time_train_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_time_train_teacher"]:.2f}',
-            "$\\mathcal{T}'_S$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f} $\pm$ {exp_output["analysis"]["std_time_train_student"]:.2f}',
-            "$\\mathcal{T}'_D$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_time_train_distilled"]:.2f}'
+            "$Acc'_T$": f'{exp_output["analysis"]["avg_acc_train_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_teacher"]:.2f}',
+            "$Acc'_S$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
+            "$Acc'_D$": f'{exp_output["analysis"]["avg_acc_train_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_distilled"]:.2f}',
+            "$\\mathcal{T}'_T$": f'{exp_output["analysis"]["avg_time_train_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_teacher"]:.2f}',
+            "$\\mathcal{T}'_S$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_student"]:.2f}',
+            "$\\mathcal{T}'_D$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_distilled"]:.2f}'
         }
         train_table = train_table._append(new_row, ignore_index=True)
         
         new_row = {
             "Dataset": rowname,
-            "$Acc_T$": f'{exp_output["analysis"]["avg_acc_test_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_teacher"]:.2f}',
-            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
-            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_test_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_distilled"]:.2f}',
-            "$\\mathcal{T}_T$": f'{exp_output["analysis"]["avg_time_test_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_time_test_teacher"]:.2f}',
-            "$\\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f} $\pm$ {exp_output["analysis"]["std_time_test_student"]:.2f}',
-            "$\\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_time_test_distilled"]:.2f}'
+            "$Acc_T$": f'{exp_output["analysis"]["avg_acc_test_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_teacher"]:.2f}',
+            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
+            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_test_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_distilled"]:.2f}',
+            "$\\mathcal{T}_T$": f'{exp_output["analysis"]["avg_time_test_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_teacher"]:.2f}',
+            "$\\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_student"]:.2f}',
+            "$\\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_distilled"]:.2f}'
         }
         test_table = test_table._append(new_row, ignore_index=True)
 
