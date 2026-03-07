@@ -275,6 +275,30 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
         with open(latex_path, "w") as f:
             f.write(latex_table)
         
+def _to_latex_hline(df, column_format, caption, label):
+    """Like df.to_latex() but produces \\hline-style rules and table* environment."""
+    raw = df.to_latex(index=False, escape=False, column_format=column_format,
+                      caption=caption, label=label)
+    raw = raw.replace(r'\begin{table}', r'\begin{table*}')
+    raw = raw.replace(r'\end{table}', r'\end{table*}')
+    lines = raw.splitlines()
+    result = []
+    past_midrule = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped == r'\toprule':
+            result.append(r'\hline')
+        elif stripped == r'\midrule':
+            result.append(r'\hline')
+            past_midrule = True
+        elif stripped == r'\bottomrule':
+            pass  # last data row's appended \hline already closes the table
+        elif past_midrule and stripped.endswith(r'\\'):
+            result.append(line + r'\hline')
+        else:
+            result.append(line)
+    return '\n'.join(result)
+
 def make_paper_2_tables_aggregate(exps: list[tuple[str, str]]):
     """
     top_dir: top directory of aggregate results
@@ -316,7 +340,7 @@ def make_paper_2_tables_aggregate(exps: list[tuple[str, str]]):
             "$E_S$": f'{exp_output["params"]["student"]["epochs"]}',
             "$K$": f'{exp_output["num_experiments"]}'
         }
-        hyperparam_table = hyperparam_table._append(new_row, ignore_index=True) 
+        hyperparam_table = hyperparam_table._append(new_row, ignore_index=True)
 
         # get dataset size
         new_row = {
@@ -339,7 +363,7 @@ def make_paper_2_tables_aggregate(exps: list[tuple[str, str]]):
             "$\\mathcal{T}'_D$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_distilled"]:.2f}'
         }
         train_table = train_table._append(new_row, ignore_index=True)
-        
+
         new_row = {
             "Dataset": rowname,
             "$Acc_T$": f'{exp_output["analysis"]["avg_acc_test_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_teacher"]:.2f}',
@@ -356,53 +380,47 @@ def make_paper_2_tables_aggregate(exps: list[tuple[str, str]]):
         {
             "name": "hyperparam_table",
             "file_name": "hyperparam_table",
-            "caption": "Experiment Hyperparameters (DKD)",
+            "caption": "Experiment Hyperparameters",
             "label": "tab:hyperparams-dkd",
-            "column_format": "l"*len(hyperparam_table.columns)
+            "column_format": "|l|" + "c|" * (len(hyperparam_table.columns) - 1)
         },
         {
             "name": "dataset_size_table",
             "file_name": "dataset_size_table",
-            "caption": "Dataset Size (DKD)",
+            "caption": "Dataset Size",
             "label": "tab:dataset-size-dkd",
-            "column_format": "l"*len(dataset_size_table.columns)
+            "column_format": "|l|" + "c|" * (len(dataset_size_table.columns) - 1)
         },
         {
             "name": "train_table",
             "file_name": "train_table",
-            "caption": "Training Results (DKD)",
+            "caption": "Training Results",
             "label": "tab:train-table-dkd",
-            "column_format": "l"+("c"*(len(train_table.columns)-1))
+            "column_format": "|l|" + "c|" * (len(train_table.columns) - 1)
         },
         {
             "name": "test_table",
             "file_name": "test_table",
-            "caption": "Testing Results (DKD)",
+            "caption": "Testing Results",
             "label": "tab:test-table-dkd",
-            "column_format": "l"+("c"*(len(test_table.columns)-1))
+            "column_format": "|l|" + "c|" * (len(test_table.columns) - 1)
         }
     ]
-    
+
     # Create output directory if it doesn't exist
     output_dir = os.path.join("assets", "paper_2")
     os.makedirs(output_dir, exist_ok=True)
-    
+
     # Save tables in CSV and LaTeX formats
     for config in table_configs:
         table = locals()[config["name"]]
-        
+
         # Save CSV
         # csv_path = os.path.join(output_dir, f"{config['file_name']}.csv")
         # table.to_csv(csv_path, index=False)
-        
+
         # Save LaTeX
-        latex_table = table.to_latex(
-            index=False, 
-            escape=False, 
-            column_format=config["column_format"],
-            caption=config["caption"], 
-            label=config["label"],
-        )
+        latex_table = _to_latex_hline(table, config["column_format"], config["caption"], config["label"])
         latex_path = os.path.join(output_dir, f"{config['file_name']}.tex")
         with open(latex_path, "w") as f:
             f.write(latex_table)

@@ -4,16 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Environment Setup
 
-> **All commands must be run inside the Docker container.** The project depends on compiled C extensions in `pyTsetlinMachineParallel` and system fonts (CMU Serif) that are only available in the container environment.
-
-All scripts must be run from the **repo root** — the code uses relative paths (e.g., `data/`, `results/`) everywhere.
-
-### Docker (recommended)
+> **All commands must be run inside the virtual environment.** The project depends on compiled C extensions in `pyTsetlinMachineParallel` and system fonts (CMU Serif) that are only available in the container environment.
 
 ```bash
-docker build -t tsetlin-kd-v2 .
-docker run -it --rm -v $(pwd):/app --name tskd tsetlin-kd-v2 bash
+source venv/bin/activate
 ```
+
+All scripts must be run from the **repo root** — the code uses relative paths (e.g., `data/`, `results/`) everywhere.
 
 CUDA errors on startup are expected and can be ignored if running CPU-only.
 

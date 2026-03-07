@@ -12,3 +12,4 @@ data/KMNIST
 data/*.pkl
 combined_results/ckd
 pre1-1
+venv
