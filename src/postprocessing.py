@@ -724,13 +724,14 @@ def make_combined_graphs_aggregate(exps: list[tuple[str, str]], output_dir: str)
             print(f"No aggregated output found for {exp}")
             continue
         exp_output = load_json(os.path.join(exp, AGGREGATED_OUTPUT_JSON_PATH))
-        
+
         # Extract dataset name (e.g., "MNIST" from "MNIST_tC800_sC100...")
         dataset_name = exp_output["experiment_name"].split('_')[0]
-        
+
         # Calculate means for accuracy and time
         data = {
             "name": dataset_name,
+            "K": exp_output["num_experiments"],
             "train": {
                 "teacher": {
                     "avg_acc": exp_output["analysis"]["avg_acc_train_teacher"],
@@ -812,21 +813,21 @@ def make_combined_graphs_aggregate(exps: list[tuple[str, str]], output_dir: str)
                 
                 # Add error bars
                 error_bars = plt.errorbar(pos, means, yerr=stds, fmt='none', ecolor='black', capsize=5, zorder=10)
-            
+
             # Customize plot
             plt.grid(True, linestyle='dotted', which='major', axis='y', zorder=0)
             plt.grid(True, linestyle='dotted', which='minor', axis='y', alpha=0.2, zorder=0)
             plt.minorticks_on()
-            
+
             plt.xlabel('Dataset')
             if metric == "acc":
                 plt.ylabel(f'Average {phase.capitalize()} Accuracy (%)')
             else:
                 plt.ylabel(f'Average {phase.capitalize()} Time (normalized)')
-            
+
             # Set x-axis ticks and labels
-            plt.xticks([pos["student"] for pos in positions], 
-                      [data["name"] for data in experiment_data],
+            plt.xticks([pos["student"] for pos in positions],
+                      [f"{data['name']}\n$K={data['K']}$" for data in experiment_data],
                       rotation=0)
             
             # Adjust y-axis range to focus on the relevant region
