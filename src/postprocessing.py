@@ -312,8 +312,8 @@ def make_paper_2_tables_aggregate(exps: list[tuple[str, str]]):
     dataset_size_table = pd.DataFrame(columns=["Dataset", "$|X_{train}|$", "$|X_{test}|$", "$|L|$", "$\\zeta$"], index=[])
 
     # combined train table with time
-    train_table = pd.DataFrame(columns=["Dataset", "$Acc'_T$", "$\\mathcal{T}'_T$", "$Acc'_S$", "$\\mathcal{T}'_S$", "$Acc'_D$", "$\\mathcal{T}'_D$"], index=[])
-    test_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$\\mathcal{T}_T$", "$Acc_S$", "$\\mathcal{T}_S$", "$Acc_D$", "$\\mathcal{T}_D$"], index=[])
+    train_table = pd.DataFrame(columns=["Dataset", "$Acc'_T$", "$\\mathcal{T}'_T$", "$Acc'_B$", "$\\mathcal{T}'_B$", "$Acc'_S$", "$\\mathcal{T}'_S$"], index=[])
+    test_table = pd.DataFrame(columns=["Dataset", "$Acc_T$", "$\\mathcal{T}_T$", "$Acc_B$", "$\\mathcal{T}_B$", "$Acc_S$", "$\\mathcal{T}_S$"], index=[])
 
     for exp in exps:
         # load aggregated output
@@ -357,22 +357,22 @@ def make_paper_2_tables_aggregate(exps: list[tuple[str, str]]):
         new_row = {
             "Dataset": rowname,
             "$Acc'_T$": f'{exp_output["analysis"]["avg_acc_train_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_teacher"]:.2f}',
-            "$Acc'_S$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
-            "$Acc'_D$": f'{exp_output["analysis"]["avg_acc_train_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_distilled"]:.2f}',
+            "$Acc'_B$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
+            "$Acc'_S$": f'{exp_output["analysis"]["avg_acc_train_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_distilled"]:.2f}',
             "$\\mathcal{T}'_T$": f'{exp_output["analysis"]["avg_time_train_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_teacher"]:.2f}',
-            "$\\mathcal{T}'_S$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_student"]:.2f}',
-            "$\\mathcal{T}'_D$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_distilled"]:.2f}'
+            "$\\mathcal{T}'_B$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_student"]:.2f}',
+            "$\\mathcal{T}'_S$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_distilled"]:.2f}'
         }
         train_table = train_table._append(new_row, ignore_index=True)
 
         new_row = {
             "Dataset": rowname,
             "$Acc_T$": f'{exp_output["analysis"]["avg_acc_test_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_teacher"]:.2f}',
-            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
-            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_test_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_distilled"]:.2f}',
+            "$Acc_B$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
+            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_distilled"]:.2f}',
             "$\\mathcal{T}_T$": f'{exp_output["analysis"]["avg_time_test_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_teacher"]:.2f}',
-            "$\\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_student"]:.2f}',
-            "$\\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_distilled"]:.2f}'
+            "$\\mathcal{T}_B$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_student"]:.2f}',
+            "$\\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_distilled"]:.2f}'
         }
         test_table = test_table._append(new_row, ignore_index=True)
 
@@ -515,7 +515,7 @@ def make_ttest_table(exps: list[str]):
     col_fmt = "|l|" + "c|" * len(dataset_names)
     latex_table = _to_latex_hline(
         df, col_fmt,
-        caption="Paired t-test: Distilled vs.\\ Student Baseline (DKD)",
+        caption="Paired t-test: Student vs.\\ Baseline",
         label="tab:ttest-dkd"
     )
     latex_path = os.path.join(output_dir, "ttest_table.tex")
@@ -798,14 +798,15 @@ def make_combined_graphs_aggregate(exps: list[tuple[str, str]], output_dir: str)
             
             # Plot bars
 
+            display_names = {"teacher": "Teacher", "student": "Baseline", "distilled": "Student"}
             models = ["teacher", "student", "distilled"]
             for model in models:
                 means = [data[phase][model]["avg_"+metric] for data in experiment_data]
                 stds = [data[phase][model]["std_"+metric] for data in experiment_data]
                 pos = [pos[model] for pos in positions]
-                
-                bars = plt.bar(pos, means, bar_width, 
-                             label=model.capitalize(),
+
+                bars = plt.bar(pos, means, bar_width,
+                             label=display_names[model],
                              color=colors[model],
                              zorder=10)  # Set zorder to 10 to put bars above grid
                 
