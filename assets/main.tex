@@ -541,11 +541,10 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 		\hline
 		Dataset & $|C_T|$ & $|C_S|$ & $T_T$ & $T_S$ & $s_T$ & $s_S$ & $\tau$ & $\alpha$ & $z$ & $E_T$ & $E_S$ & $K$ \\
 		\hline
-		EMNIST & 1000 & 100 & 100 & 100 & 4.0 & 4.0 & 4.0 & 0.5 & 0.2 & 120 & 240 & 10 \\\hline
-		MNIST & 1000 & 100 & 10 & 10 & 4.0 & 4.0 & 3.0 & 0.5 & 0.3 & 120 & 240 & 10 \\\hline
-		KMNIST & 2000 & 200 & 100 & 100 & 8.2 & 8.2 & 4.0 & 0.5 & 0.3 & 120 & 240 & 10 \\\hline
-		IMDB & 8000 & 4000 & 6000 & 6000 & 7.0 & 7.0 & 3.0 & 0.5 & 0.2 & 30 & 60 & 8 \\
-		\hline
+		MNIST & 1000 & 100 & 10 & 10 & 4.0 & 4.0 & 3.0 & 0.5 & 0.3 & 120 & 240 & 30 \\\hline
+		KMNIST & 2000 & 200 & 100 & 100 & 8.2 & 8.2 & 4.0 & 0.5 & 0.3 & 120 & 240 & 30 \\\hline
+		EMNIST & 1000 & 100 & 100 & 100 & 4.0 & 4.0 & 4.0 & 0.5 & 0.2 & 120 & 240 & 12 \\\hline
+		IMDB & 8000 & 4000 & 6000 & 6000 & 7.0 & 7.0 & 3.0 & 0.5 & 0.2 & 30 & 60 & 10 \\\hline
 	\end{tabular}
 	\label{tab:hyperparams-dkd}
 \end{table*}
@@ -559,11 +558,10 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 		\hline
 		Dataset & $Acc'_T$ & $\mathcal{T}'_T$ & $Acc'_B$ & $\mathcal{T}'_B$ & $Acc'_S$ & $\mathcal{T}'_S$ \\
 		\hline
-		MNIST & 97.65 \newline $\pm$ 0.07 & 0.70 \newline $\pm$ 0.01 & 90.63 \newline $\pm$ 0.13 & 0.26 \newline $\pm$ 0.00 & 95.25 \newline $\pm$ 0.07 & 0.24 \newline $\pm$ 0.00 \\\hline%\hdashline
-		KMNIST & 98.10 \newline $\pm$ 0.03 & 1.69 \newline $\pm$ 0.05 & 92.46 \newline $\pm$ 0.03 & 0.34 \newline $\pm$ 0.00 & 94.66 \newline $\pm$ 0.04 & 0.36 \newline $\pm$ 0.00 \\\hline%\hdashline
-		EMNIST & 86.88 \newline $\pm$ 0.09 & 3.15 \newline $\pm$ 0.02 & 79.35 \newline $\pm$ 0.06 & 0.62 \newline $\pm$ 0.00 & 83.20 \newline $\pm$ 0.06 & 0.67 \newline $\pm$ 0.00 \\\hline%\hdashline
-		IMDB & 99.41 \newline $\pm$ 0.07 & 28.95 \newline $\pm$ 0.42 & 98.39 \newline $\pm$ 0.24 & 17.07 \newline $\pm$ 0.35 & 98.96 \newline $\pm$ 0.13 & 9.35 \newline $\pm$ 0.29 \\
-		\hline
+		MNIST & 97.63 \newline $\pm$ 0.08 & 0.70 \newline $\pm$ 0.02 & 90.63 \newline $\pm$ 0.16 & 0.26 \newline $\pm$ 0.00 & 95.24 \newline $\pm$ 0.06 & 0.24 \newline $\pm$ 0.00 \\\hline
+		KMNIST & 98.09 \newline $\pm$ 0.04 & 1.66 \newline $\pm$ 0.04 & 92.45 \newline $\pm$ 0.06 & 0.33 \newline $\pm$ 0.01 & 94.63 \newline $\pm$ 0.05 & 0.35 \newline $\pm$ 0.01 \\\hline
+		EMNIST & 86.86 \newline $\pm$ 0.09 & 3.14 \newline $\pm$ 0.03 & 79.36 \newline $\pm$ 0.06 & 0.62 \newline $\pm$ 0.05 & 83.19 \newline $\pm$ 0.06 & 0.67 \newline $\pm$ 0.03 \\\hline
+		IMDB & 99.41 \newline $\pm$ 0.07 & 28.95 \newline $\pm$ 0.42 & 98.39 \newline $\pm$ 0.24 & 17.07 \newline $\pm$ 0.35 & 98.96 \newline $\pm$ 0.13 & 9.35 \newline $\pm$ 0.29 \\\hline
 	\end{tabular}
 	\label{tab:train-table-dkd}
 \end{table*}
@@ -629,11 +627,10 @@ Figure~\ref{fig:test-acc-combined} shows the average accuracy of each model for 
 		\hline
 		Dataset & $Acc_T$ & $\mathcal{T}_T$ & $Acc_B$ & $\mathcal{T}_B$ & $Acc_S$ & $\mathcal{T}_S$ \\
 		\hline
-		MNIST & 95.20 \newline $\pm$ 0.06 & 0.37 \newline $\pm$ 0.01 & 90.37 \newline $\pm$ 0.14 & 0.06 \newline $\pm$ 0.00 & 93.96 \newline $\pm$ 0.06 & 0.06 \newline $\pm$ 0.00 \\\hline%\hdashline
-		KMNIST & 85.37 \newline $\pm$ 0.10 & 0.97 \newline $\pm$ 0.01 & 80.11 \newline $\pm$ 0.10 & 0.10 \newline $\pm$ 0.00 & 82.48 \newline $\pm$ 0.07 & 0.10 \newline $\pm$ 0.00 \\\hline%\hdashline
-		EMNIST & 80.96 \newline $\pm$ 0.10 & 3.27 \newline $\pm$ 0.06 & 77.52 \newline $\pm$ 0.05 & 0.26 \newline $\pm$ 0.00 & 80.31 \newline $\pm$ 0.07 & 0.26 \newline $\pm$ 0.00 \\\hline%\hdashline
-		IMDB & 88.96 \newline $\pm$ 0.04 & 17.88 \newline $\pm$ 0.71 & 87.85 \newline $\pm$ 0.24 & 10.37 \newline $\pm$ 0.30 & 88.62 \newline $\pm$ 0.03 & 9.36 \newline $\pm$ 0.17 \\
-		\hline
+		MNIST & 95.19 \newline $\pm$ 0.08 & 0.38 \newline $\pm$ 0.02 & 90.37 \newline $\pm$ 0.16 & 0.06 \newline $\pm$ 0.00 & 93.95 \newline $\pm$ 0.05 & 0.06 \newline $\pm$ 0.00 \\\hline
+		KMNIST & 85.41 \newline $\pm$ 0.10 & 0.95 \newline $\pm$ 0.03 & 80.11 \newline $\pm$ 0.09 & 0.10 \newline $\pm$ 0.01 & 82.47 \newline $\pm$ 0.09 & 0.10 \newline $\pm$ 0.01 \\\hline
+		EMNIST & 80.95 \newline $\pm$ 0.09 & 3.23 \newline $\pm$ 0.13 & 77.52 \newline $\pm$ 0.05 & 0.26 \newline $\pm$ 0.01 & 80.30 \newline $\pm$ 0.07 & 0.26 \newline $\pm$ 0.01 \\\hline
+		IMDB & 88.96 \newline $\pm$ 0.04 & 17.88 \newline $\pm$ 0.71 & 87.85 \newline $\pm$ 0.24 & 10.37 \newline $\pm$ 0.30 & 88.62 \newline $\pm$ 0.03 & 9.36 \newline $\pm$ 0.17 \\\hline
 	\end{tabular}
 	\label{tab:test-table-dkd}
 \end{table*}
