@@ -5,6 +5,7 @@ import json
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import stats
 from util import load_pkl, load_json, save_json
 from __init__ import  OUTPUT_JSON_PATH, PLOT_FIGSIZE, PLOT_DPI, ACC_TEST_DISTILLED, ACC_TRAIN_DISTILLED, AGGREGATED_OUTPUT_JSON_PATH
 import os 
@@ -425,6 +426,104 @@ def make_paper_2_tables_aggregate(exps: list[tuple[str, str]]):
         with open(latex_path, "w") as f:
             f.write(latex_table)
         
+def make_ttest_table(exps: list[str]):
+    """
+    Produce a wide paired t-test table (rows = metrics, columns = datasets) comparing
+    the distilled model against the student baseline across K independent trials.
+
+    Statistical design:
+    - Pairing: within trial k, student_k and distilled_k share the same teacher weights
+      and training data, so pairing controls for trial-to-trial teacher variability.
+    - Each "value" per run is the mean of that metric over training epochs within that
+      trial (i.e. what the analysis block calls avg_*).
+    - Accuracy: one-tailed test (alternative='greater', distilled first).
+        H0: mu_distilled <= mu_student  H1: mu_distilled > mu_student
+    - Time: two-tailed test (alternative='two-sided').
+        H0: mu_distilled == mu_student  H1: mu_distilled != mu_student
+    - Stars: *** p<0.001, ** p<0.01, * p<0.05, ns otherwise.
+    - Delta: distilled minus student (positive = distilled wins on accuracy).
+
+    Saved to: assets/paper_2/ttest_table.tex
+    """
+    def _stars(p):
+        if p < 0.001:
+            return "***"
+        elif p < 0.01:
+            return "**"
+        elif p < 0.05:
+            return "*"
+        else:
+            return "ns"
+
+    # Metric keys: (label, student_key, distilled_key, tailed)
+    metrics = [
+        ("Train Accuracy",  "avg_acc_train_student",  "avg_acc_train_distilled",  "greater"),
+        ("Test Accuracy",   "avg_acc_test_student",   "avg_acc_test_distilled",   "greater"),
+        ("Train Time (s)",  "avg_time_train_student", "avg_time_train_distilled", "two-sided"),
+        ("Test Time (s)",   "avg_time_test_student",  "avg_time_test_distilled",  "two-sided"),
+    ]
+
+    # Collect per-run scalars for each experiment directory
+    dataset_columns = {}  # dataset_name -> {metric_label -> cell_string}
+    for exp in exps:
+        # Derive a short dataset name from the aggregated output's experiment_name
+        agg_path = os.path.join(exp, AGGREGATED_OUTPUT_JSON_PATH)
+        if not os.path.exists(agg_path):
+            print(f"No aggregated output found for {exp}, skipping")
+            continue
+        agg = load_json(agg_path)
+        dataset_name = agg["experiment_name"].split("_")[0]
+
+        # Walk subdirs and collect one scalar per run per metric
+        run_data = {label: {"student": [], "distilled": []} for label, *_ in metrics}
+        for entry in sorted(os.scandir(exp), key=lambda e: e.name):
+            if not entry.is_dir():
+                continue
+            run_json = os.path.join(entry.path, OUTPUT_JSON_PATH)
+            if not os.path.exists(run_json):
+                continue
+            run_output = load_json(run_json)
+            analysis = run_output["analysis"]
+            for label, s_key, d_key, _ in metrics:
+                run_data[label]["student"].append(analysis[s_key])
+                run_data[label]["distilled"].append(analysis[d_key])
+
+        # Run paired t-tests and format cells
+        cells = {}
+        for label, _, _, alternative in metrics:
+            student_vals = run_data[label]["student"]
+            distilled_vals = run_data[label]["distilled"]
+            delta = sum(d - s for d, s in zip(distilled_vals, student_vals)) / len(student_vals)
+            t_stat, p_val = stats.ttest_rel(distilled_vals, student_vals, alternative=alternative)
+            stars = _stars(p_val)
+            cells[label] = f"$\\Delta = {delta:+.2f}$ \\newline $t = {t_stat:.2f}${stars}"
+
+        dataset_columns[dataset_name] = cells
+
+    # Build wide DataFrame: index = metric labels, columns = dataset names
+    metric_labels = [label for label, *_ in metrics]
+    dataset_names = list(dataset_columns.keys())
+    df = pd.DataFrame(index=metric_labels, columns=dataset_names)
+    df.index.name = "Metric"
+    for ds, cells in dataset_columns.items():
+        for label, cell in cells.items():
+            df.at[label, ds] = cell
+    df = df.reset_index()  # make Metric a regular column
+
+    output_dir = os.path.join("assets", "paper_2")
+    os.makedirs(output_dir, exist_ok=True)
+    col_fmt = "|l|" + "c|" * len(dataset_names)
+    latex_table = _to_latex_hline(
+        df, col_fmt,
+        caption="Paired t-test: Distilled vs.\\ Student Baseline (DKD)",
+        label="tab:ttest-dkd"
+    )
+    latex_path = os.path.join(output_dir, "ttest_table.tex")
+    with open(latex_path, "w") as f:
+        f.write(latex_table)
+    print(f"Saved t-test table to {latex_path}")
+
+
 def make_combined_graphs(exps: list[tuple[str, str]], output_dir: str):
     """
     Create combined bar graphs for multiple experiments showing accuracy and time comparisons.
@@ -782,6 +881,7 @@ if __name__ == "__main__":
         j("results", "aggregate_distribution", "IMDB"),
     ]       
     make_paper_2_tables_aggregate(paper2_aggregate_exps)
+    make_ttest_table(paper2_aggregate_exps)
 
     make_combined_graphs_aggregate(paper2_aggregate_exps, j("assets", "paper_2"))
 

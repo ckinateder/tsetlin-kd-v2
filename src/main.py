@@ -134,10 +134,8 @@ if __name__ == "__main__":
         kwargs["overwrite"] = False
         aggregate_distribution_distillation_experiment(n, dataset, name, params, **kwargs)
 
-    print(f"Remaking all plots in {distribution_dir}...")
-    remake_plots(distribution_dir)
-    print(f"Remaking all plots in {clause_dir}...")
-    remake_plots(clause_dir)
+    print(f"Remaking all plots in {aggregate_distribution_dir}...")
+    remake_plots(aggregate_distribution_dir)
    
     exit()
     
