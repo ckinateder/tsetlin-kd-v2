@@ -90,7 +90,7 @@ if __name__ == "__main__":
                 "z": 0.3,
             },
             {"overwrite": False},
-            10
+            30
         ),
         (kmnist_dataset, "KMNIST", 
             {
@@ -101,7 +101,7 @@ if __name__ == "__main__":
                 "z": 0.3,
             },
             {"overwrite": False},
-            10
+            30
         ),
         (emnist_dataset, "EMNIST", 
             {
@@ -112,7 +112,7 @@ if __name__ == "__main__":
                 "z": 0.2,
             },
             {"overwrite": False},
-            10
+            30
         ),
         (imdb_dataset, "IMDB", 
             {
@@ -123,7 +123,7 @@ if __name__ == "__main__":
                 "z": 0.2,
             },
             {"overwrite": False, "make_activation_maps": False},
-            10
+            30
         ),
     ]
     
@@ -157,48 +157,3 @@ if __name__ == "__main__":
         plot_results(output, os.path.join(one_off_dir, fpath))
         visualize_activation_maps(teacher_model, student_model, distilled_model, 
                                 dataset.X_train[samples], dataset.Y_train[samples], dataset.image_shape, os.path.join(one_off_dir, fpath, output["experiment_name"]+"_activation_maps.png"))
-    exit()
-    clause_distilled_experiments = [
-        (mnist_dataset, "MNIST", 
-            {
-                "teacher": { "C": 800, "T": 10, "s": 7.0, "epochs": 120 },
-                "student": { "C": 100, "T": 10, "s": 7.0, "epochs": 240 },
-                "downsample": 0.15,
-            },
-            {"overwrite": False}
-        ),
-        (kmnist_dataset, "KMNIST", 
-            {
-                "teacher": { "C": 400, "T": 100, "s": 5, "epochs": 120 },
-                "student": { "C": 100, "T": 100, "s": 5, "epochs": 240 },
-                "downsample": 0.22,
-            },
-            {"overwrite": False}
-        ),
-        (imdb_dataset, "IMDB", 
-            {
-                "teacher": { "C": 10000, "T": 6000, "s": 5.0, "epochs": 30 },
-                "student": { "C": 2000, "T": 6000, "s": 5.0, "epochs": 90 },
-                "downsample": 0.15,
-            },
-            {"overwrite": False}
-        ),
-        (emnist_dataset, "EMNIST", 
-            {
-                "teacher": { "C": 400, "T": 100, "s": 4.0, "epochs": 120 },
-                "student": { "C": 100, "T": 100, "s": 4.0, "epochs": 240 },
-                "downsample": 0.25,
-            },
-            {"overwrite": False}
-        ),
-    ]
-
-    print("Running clause-based distilled experiments")
-    for dataset, name, params, kwargs in clause_distilled_experiments:
-        kwargs["folderpath"] = clause_dir
-        kwargs["save_all"] = True
-        try:
-            clause_distillation_experiment(dataset, name, params, **kwargs)
-        except Exception as e:
-            print(f"Error running clause distillation experiment for {name}: {e}")
-            continue

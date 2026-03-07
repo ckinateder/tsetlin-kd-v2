@@ -857,6 +857,7 @@ def aggregate_distribution_distillation_experiment(
 
     # save aggregated output
     save_json(aggregated_output, os.path.join(folderpath, AGGREGATED_OUTPUT_JSON_PATH))
+    output_dataframe.to_csv(os.path.join(folderpath, AGGREGATED_RESULTS_CSV_PATH))
 
     return aggregated_output
     
