@@ -199,6 +199,12 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         "student": "tab:green",
         "distilled_ds": "tab:purple"
     }
+    display_names = {
+        "teacher": "Teacher",
+        "student": "Baseline",
+        "distilled": "Student",
+        "distilled_ds": "Distilled w/ PCD",
+    }
     line_thickness = 1.2
     default_font_size = 14
     legend_font_size = 13
@@ -259,7 +265,7 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
                           alpha=avg_alpha, label="_Distilled DS Avg")
             plt.axhline(analysis[f"avg_acc_{metric_type}_{model}"], 
                       color=colors[model], linestyle=":", 
-                      alpha=avg_alpha, label=f"_{model.capitalize()} Avg")
+                      alpha=avg_alpha, label=f"_{display_names[model]} Avg")
         
         # Plot curves
         for model in ["distilled", "teacher", "student"]:
@@ -268,7 +274,7 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
                         label="Distilled w/ PCD", color=colors["distilled_ds"], 
                         linewidth=line_thickness)
             plt.plot(results[f"acc_{metric_type}_{model}"], 
-                    label=model.capitalize(), color=colors[model], 
+                    label=display_names[model], color=colors[model],
                     alpha=alpha if model != "distilled" else 1.0, 
                     linewidth=line_thickness)
         
@@ -288,7 +294,7 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
         plt.grid(linestyle='dotted', zorder=0, axis="y")
         
-        labels = ["Teacher", "Student", "Distilled"]
+        labels = ["Teacher", "Baseline", "Student"]
         data = [analysis[f"avg_time_{metric_type}_teacher"], analysis[f"avg_time_{metric_type}_student"], analysis[f"avg_time_{metric_type}_distilled"]]
         bar_colors = [colors["teacher"], colors["student"], colors["distilled"]]
 
@@ -318,9 +324,9 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         models = [
             ("Teacher", analysis[f"avg_acc_{metric_type}_teacher"], 
              analysis[f"avg_time_{metric_type}_teacher"], colors["teacher"]),
-            ("Student", analysis[f"avg_acc_{metric_type}_student"], 
+            ("Baseline", analysis[f"avg_acc_{metric_type}_student"],
              analysis[f"avg_time_{metric_type}_student"], colors["student"]),
-            ("Distilled", analysis[f"avg_acc_{metric_type}_distilled"], 
+            ("Student", analysis[f"avg_acc_{metric_type}_distilled"],
              analysis[f"avg_time_{metric_type}_distilled"], colors["distilled"])
         ]
         
@@ -334,7 +340,7 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         
         # Extract teacher and student data for the line
         teacher_data = next(m for m in models if m[0] == "Teacher")
-        student_data = next(m for m in models if m[0] == "Student")
+        student_data = next(m for m in models if m[0] == "Baseline")
         
         teacher_time, teacher_acc = teacher_data[2], teacher_data[1]
         student_time, student_acc = student_data[2], student_data[1]
