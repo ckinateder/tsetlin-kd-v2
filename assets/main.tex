@@ -160,7 +160,7 @@ Although TMs have shown substantial promise, model accuracy generally increases 
 In this work, we explore knowledge distillation for Tsetlin Machines by introducing a framework that transfers information through clause-level structure and distributional signals derived from class sums. In this work, we make the following contributions:
 \begin{itemize}
 	\item We introduce Distribution Enhanced Knowledge Distillation (DKD) for Tsetlin Machines (TM), as a distillation framework that transfers the full class confidence distribution derived from unclamped class sums rather than only hard class predictions.
-	\item We introduce a numerically stable transformation of discrete and potentially unbounded TM class sums into probability distributions suitable for distillation. Unlike weighted TMs or regularized TMs, which modify clause weights or training penalties, DKD operates at the supervision level by reshaping the training signal of the student model.
+	\item We introduce a numerically stable transformation of discrete and potentially unbounded TM class sums into probability distributions suitable for distillation. Unlike weighted TMs, which modify clause weights, or regularized TMs, which alter training penalties, DKD operates entirely at the supervision level and is compatible with both.
 	\item We combine distribution level supervision with structured clause initialization, enabling the student to inherit both structural bias and distributional confidence information from the teacher.
 	\item We provide empirical evaluation across image and text datasets demonstrating that distribution based supervision improves student performance compared to training without distillation.
 \end{itemize}
@@ -701,7 +701,7 @@ Even with identical model sizes, $TM_S$ shows lower activation entropy (3.1 vs 3
  
  Our experiments focus on relatively simple, balanced datasets with moderate feature dimensionality (784--5000 features). Performance on high-dimensional problems, severely imbalanced classes, or complex domains (e.g., medical imaging, time-series) remains unexplored. Notably, IMDB shows a modest improvement of 0.57 percentage points, suggesting that distillation effectiveness may vary across domains.
  
- We do not compare against simpler compression alternatives such as direct clause pruning from the teacher or training the student model for $E_{T+S}$ total epochs. Additionally, explicit memory consumption measurements and actual edge device deployment tests are not included in this study and would be required to fully substantiate practical applicability claims.
+ We do not compare against simpler compression alternatives such as direct clause pruning from the teacher. Additionally, explicit memory consumption measurements and actual edge device deployment tests are not included in this study and would be required to fully substantiate practical applicability claims; however, this would mainly be relevant to a specific Tsetlin Machine implementation, which it was omitted. The clause count of each model serves as a platform-agnostic representative basis for memory consumption.
  
  Our approach lacks formal analysis of approximation bounds or information-theoretic characterization of what ``dark knowledge'' the soft labels capture in propositional logic systems. Understanding why temperature values $\tau \in [3.0, 4.0]$ work well for TMs, compared to $\tau \approx 1$--2 typical in neural networks, requires further investigation.
  
