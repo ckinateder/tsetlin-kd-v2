@@ -524,7 +524,9 @@ Let $E_S$ and $E_T$ denote the number of student and teacher epochs, respectivel
 
 First, the baseline model $TM_B$ is trained on the dataset for $E_{T+S}$ epochs, providing a reference accuracy for a Tsetlin Machine with $C_S$ clauses and $E_{T+S}$ epochs. Next, the teacher model $TM_T$ is trained with $C_T$ clauses for $E_{T+S}$ epochs.
 
-Once the baselines are established, we reinitialize the teacher model $TM_T$ from the checkpoint at $E_T$ epochs to avoid giving the student model an unfair advantage. We then initialize the student model $TM_S$ with the clauses of the trained teacher using Algorithm~\ref{algo:init-clauses}. Soft labels are generated from the teacher over the training dataset using Algorithm~\ref{algo:soft-labels}. Finally, the student model is trained for $E_S$ epochs on the training dataset and the soft labels from the teacher using Algorithm~\ref{algo:fit-soft}. Because Tsetlin Machines are stochastic, each experiment is repeated $K$ times and results are averaged. We report mean and standard deviation across runs; formal hypothesis testing is not performed, and observed improvements should therefore be interpreted as consistent empirical trends rather than statistically certified gains.
+Once the baselines are established, we reinitialize the teacher model $TM_T$ from the checkpoint at $E_T$ epochs to avoid giving the student model an unfair advantage. We then initialize the student model $TM_S$ with the clauses of the trained teacher using Algorithm~\ref{algo:init-clauses}. Soft labels are generated from the teacher over the training dataset using Algorithm~\ref{algo:soft-labels}. Finally, the student model is trained for $E_S$ epochs on the training dataset and the soft labels from the teacher using Algorithm~\ref{algo:fit-soft}. Because Tsetlin Machines are stochastic, each experiment is repeated $K$ times and results are averaged, reporting mean and standard deviation across runs. 
+
+We evaluate the statistical siginificance of observed improvements by conducting paired t-tests across our $K$ independent trials, comparing the student against the baseline. The student model is parametrically identical to 
 
 The experimental design focuses on isolating the effect of distribution-enhanced supervision and clause-level transfer under fixed architectural settings. Accordingly, comparisons are limited to teacher, baseline, and student models that share identical hyperparameters aside from clause count. Alternative approaches such as extended training of smaller Tsetlin Machines, weighted or regularized TMs, and explicit clause pruning without distillation are not evaluated experimentally in this study. These comparisons represent important directions for future work.
 
@@ -551,7 +553,7 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 	\hline
 	MNIST & 1000 & 100 & 10 & 10 & 4.0 & 4.0 & 3.0 & 0.5 & 0.3 & 120 & 240 & 30 \\\hline
 	KMNIST & 2000 & 200 & 100 & 100 & 8.2 & 8.2 & 4.0 & 0.5 & 0.3 & 120 & 240 & 30 \\\hline
-	EMNIST & 1000 & 100 & 100 & 100 & 4.0 & 4.0 & 4.0 & 0.5 & 0.2 & 120 & 240 & 22 \\\hline
+	EMNIST & 1000 & 100 & 100 & 100 & 4.0 & 4.0 & 4.0 & 0.5 & 0.2 & 120 & 240 & 26 \\\hline
 	IMDB & 8000 & 4000 & 6000 & 6000 & 7.0 & 7.0 & 3.0 & 0.5 & 0.2 & 30 & 60 & 10 \\\hline
 	\end{tabular}
 	\label{tab:hyperparams-dkd}
@@ -566,20 +568,20 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 		\hline
 		Metric & MNIST & KMNIST & EMNIST & IMDB \\
 		\hline
-		$Acc_T$ & 97.63 $\pm$ 0.08 & 98.09 $\pm$ 0.04 & 86.88 $\pm$ 0.09 & 99.41 $\pm$ 0.07 \\
+		$Acc_T$ (no DKD)& 97.63 $\pm$ 0.08 & 98.09 $\pm$ 0.04 & 86.89 $\pm$ 0.09 & 99.41 $\pm$ 0.07 \\
 		\hline
-		$Acc_B$ & 90.63 $\pm$ 0.16 & 92.45 $\pm$ 0.06 & 79.37 $\pm$ 0.07 & 98.39 $\pm$ 0.24 \\
+		$Acc_B$ (no DKD)& 90.63 $\pm$ 0.16 & 92.45 $\pm$ 0.06 & 79.37 $\pm$ 0.06 & 98.39 $\pm$ 0.24 \\
 		\hline
-		$Acc_S$ & 95.24 $\pm$ 0.06 & 94.63 $\pm$ 0.05 & 83.17 $\pm$ 0.06 & 98.96 $\pm$ 0.13 \\
+		$Acc_S$ (DKD) & 95.24 $\pm$ 0.06 & 94.63 $\pm$ 0.05 & 83.18 $\pm$ 0.06 & 98.96 $\pm$ 0.13 \\
 		\hline
 		$\Delta$ ($Acc_S-Acc_B$) & +4.61*** & +2.18*** & +3.80*** & +0.57*** \\
 		\hline
 		\hline
-		$\mathcal{T}_T$ & 0.70 $\pm$ 0.02 & 1.66 $\pm$ 0.04 & 3.10 $\pm$ 0.05 & 28.95 $\pm$ 0.42 \\
+		$\mathcal{T}_T$ (no DKD)& 0.70 $\pm$ 0.02 & 1.66 $\pm$ 0.04 & 3.10 $\pm$ 0.05 & 28.95 $\pm$ 0.42 \\
 		\hline
-		$\mathcal{T}_B$ & 0.26 $\pm$ 0.00 & 0.33 $\pm$ 0.01 & 0.59 $\pm$ 0.05 & 17.07 $\pm$ 0.35 \\
+		$\mathcal{T}_B$ (no DKD)& 0.26 $\pm$ 0.00 & 0.33 $\pm$ 0.01 & 0.59 $\pm$ 0.05 & 17.07 $\pm$ 0.35 \\
 		\hline
-		$\mathcal{T}_S$ & 0.24 $\pm$ 0.00 & 0.35 $\pm$ 0.01 & 0.65 $\pm$ 0.04 & 9.35 $\pm$ 0.29 \\
+		$\mathcal{T}_S$ (DKD)& 0.24 $\pm$ 0.00 & 0.35 $\pm$ 0.01 & 0.64 $\pm$ 0.04 & 9.35 $\pm$ 0.29 \\
 		\hline
 		$\Delta$ ($\mathcal{T}_S-\mathcal{T}_B$) & -0.03*** & +0.01*** & +0.05*** & -7.72*** \\
 		\hline
@@ -645,23 +647,23 @@ Figure~\ref{fig:test-acc-combined} shows the average accuracy of each model for 
 	\centering
 	\caption{Testing Results }
 		\begin{tabular}{|l|c|c|c|c|}
-		\hline
+	\hline
 		Metric & MNIST & KMNIST & EMNIST & IMDB \\
 		\hline
-		$Acc_T$ & 95.19 $\pm$ 0.08 & 85.41 $\pm$ 0.10 & 80.94 $\pm$ 0.09 & 88.96 $\pm$ 0.04 \\
+		$Acc_T$ (no DKD)& 95.19 $\pm$ 0.08 & 85.41 $\pm$ 0.10 & 80.95 $\pm$ 0.09 & 88.96 $\pm$ 0.04 \\
 		\hline
-		$Acc_B$ & 90.37 $\pm$ 0.16 & 80.11 $\pm$ 0.09 & 77.53 $\pm$ 0.07 & 87.85 $\pm$ 0.24 \\
+		$Acc_B$ (no DKD)& 90.37 $\pm$ 0.16 & 80.11 $\pm$ 0.09 & 77.52 $\pm$ 0.07 & 87.85 $\pm$ 0.24 \\
 		\hline
-		$Acc_S$ & 93.95 $\pm$ 0.05 & 82.47 $\pm$ 0.09 & 80.27 $\pm$ 0.07 & 88.62 $\pm$ 0.03 \\
+		$Acc_S$ (DKD) & 93.95 $\pm$ 0.05 & 82.47 $\pm$ 0.09 & 80.26 $\pm$ 0.07 & 88.62 $\pm$ 0.03 \\
 		\hline
 		$\Delta$ ($Acc_S-Acc_B$) & +3.58*** & +2.36*** & +2.74*** & +0.78*** \\
 		\hline
 		\hline
-		$\mathcal{T}_T$ & 0.38 $\pm$ 0.02 & 0.95 $\pm$ 0.03 & 3.15 $\pm$ 0.13 & 17.88 $\pm$ 0.71 \\
+		$\mathcal{T}_T$ (no DKD)& 0.38 $\pm$ 0.02 & 0.95 $\pm$ 0.03 & 3.13 $\pm$ 0.13 & 17.88 $\pm$ 0.71 \\
 		\hline
-		$\mathcal{T}_B$ & 0.06 $\pm$ 0.00 & 0.10 $\pm$ 0.01 & 0.25 $\pm$ 0.01 & 10.37 $\pm$ 0.30 \\
+		$\mathcal{T}_B$ (no DKD)& 0.06 $\pm$ 0.00 & 0.10 $\pm$ 0.01 & 0.25 $\pm$ 0.01 & 10.37 $\pm$ 0.30 \\
 		\hline
-		$\mathcal{T}_S$ & 0.06 $\pm$ 0.00 & 0.10 $\pm$ 0.01 & 0.25 $\pm$ 0.01 & 9.36 $\pm$ 0.17 \\
+		$\mathcal{T}_S$ (DKD)& 0.06 $\pm$ 0.00 & 0.10 $\pm$ 0.01 & 0.25 $\pm$ 0.01 & 9.36 $\pm$ 0.17 \\
 		\hline
 		$\Delta$ ($\mathcal{T}_S-\mathcal{T}_B$) & +0.00*** & +0.00*** & +0.00*** & -1.00*** \\
 		\hline

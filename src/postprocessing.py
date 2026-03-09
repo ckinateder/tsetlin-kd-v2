@@ -550,7 +550,7 @@ def make_formatted_tables(exps: list[str]):
         body.append(line)
         body.append("$Acc_B$ & " + " & ".join(r["acc_baseline"] for r in rows) + " \\\\")
         body.append(line)
-        body.append("$Acc_S$ & " + " & ".join(r["acc_student"] for r in rows) + " \\\\")
+        body.append("$Acc_S$ (DKD) & " + " & ".join(r["acc_student"] for r in rows) + " \\\\")
         body.append(line)
         body.append("$\\Delta$ ($Acc_S-Acc_B$) & " + " & ".join(r["delta_acc"] for r in rows) + " \\\\")
         body.append("\\hline")
@@ -559,7 +559,7 @@ def make_formatted_tables(exps: list[str]):
         body.append(line)
         body.append("$\\mathcal{T}_B$ & " + " & ".join(r["time_baseline"] for r in rows) + " \\\\")
         body.append(line)
-        body.append("$\\mathcal{T}_S$ & " + " & ".join(r["time_student"] for r in rows) + " \\\\")
+        body.append("$\\mathcal{T}_S$ (DKD)& " + " & ".join(r["time_student"] for r in rows) + " \\\\")
         body.append(line)
         body.append("$\\Delta$ ($\\mathcal{T}_S-\\mathcal{T}_B$) & " + " & ".join(r["delta_time"] for r in rows) + " \\\\")
 
