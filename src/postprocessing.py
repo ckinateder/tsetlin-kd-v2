@@ -518,16 +518,16 @@ def make_formatted_tables(exps: list[str]):
             acc_baseline = f"{agg[acc_b_avg]:.2f} $\\pm$ {agg[acc_b_std]:.2f}"
             _, p_acc = stats.ttest_rel(rd["distilled_acc"], rd["student_acc"], alternative="greater")
             stars_acc = _stars(p_acc)
-            acc_student = f"{agg[acc_s_avg]:.2f} $\\pm$ {agg[acc_s_std]:.2f}{stars_acc}"
-            delta_acc = (sum(rd["distilled_acc"]) - sum(rd["student_acc"])) / len(rd["student_acc"])
+            acc_student = f"{agg[acc_s_avg]:.2f} $\\pm$ {agg[acc_s_std]:.2f}"
+            delta_acc = f'{((sum(rd["distilled_acc"]) - sum(rd["student_acc"])) / len(rd["student_acc"])):+.2f}{stars_acc}'
 
             # Time block
             time_teacher = f"{agg[time_t_avg]:.2f} $\\pm$ {agg[time_t_std]:.2f}"
             time_baseline = f"{agg[time_b_avg]:.2f} $\\pm$ {agg[time_b_std]:.2f}"
             _, p_time = stats.ttest_rel(rd["distilled_time"], rd["student_time"], alternative="two-sided")
             stars_time = _stars(p_time)
-            time_student = f"{agg[time_s_avg]:.2f} $\\pm$ {agg[time_s_std]:.2f}{stars_time}"
-            delta_time = (sum(rd["distilled_time"]) - sum(rd["student_time"])) / len(rd["student_time"])
+            time_student = f"{agg[time_s_avg]:.2f} $\\pm$ {agg[time_s_std]:.2f}"
+            delta_time = f'{((sum(rd["distilled_time"]) - sum(rd["student_time"])) / len(rd["student_time"])):+.2f}{stars_time}'
 
             rows.append({
                 "acc_teacher": acc_teacher,
@@ -546,22 +546,22 @@ def make_formatted_tables(exps: list[str]):
         line = "\\hline"
 
         body = []
-        body.append("Acc --- Teacher & " + " & ".join(r["acc_teacher"] for r in rows) + " \\\\")
+        body.append("$Acc_T$ & " + " & ".join(r["acc_teacher"] for r in rows) + " \\\\")
         body.append(line)
-        body.append("Acc --- Baseline & " + " & ".join(r["acc_baseline"] for r in rows) + " \\\\")
+        body.append("$Acc_B$ & " + " & ".join(r["acc_baseline"] for r in rows) + " \\\\")
         body.append(line)
-        body.append("Acc --- Student & " + " & ".join(r["acc_student"] for r in rows) + " \\\\")
+        body.append("$Acc_S$ & " + " & ".join(r["acc_student"] for r in rows) + " \\\\")
         body.append(line)
-        body.append("$\\Delta$ Acc (S $-$ B) & " + " & ".join(f"{r['delta_acc']:+.2f}" for r in rows) + " \\\\")
+        body.append("$\\Delta$ ($Acc_S-Acc_B$) & " + " & ".join(r["delta_acc"] for r in rows) + " \\\\")
         body.append("\\hline")
         body.append("\\hline")
-        body.append("Time --- Teacher & " + " & ".join(r["time_teacher"] for r in rows) + " \\\\")
+        body.append("$\\mathcal{T}_T$ & " + " & ".join(r["time_teacher"] for r in rows) + " \\\\")
         body.append(line)
-        body.append("Time --- Baseline & " + " & ".join(r["time_baseline"] for r in rows) + " \\\\")
+        body.append("$\\mathcal{T}_B$ & " + " & ".join(r["time_baseline"] for r in rows) + " \\\\")
         body.append(line)
-        body.append("Time --- Student & " + " & ".join(r["time_student"] for r in rows) + " \\\\")
+        body.append("$\\mathcal{T}_S$ & " + " & ".join(r["time_student"] for r in rows) + " \\\\")
         body.append(line)
-        body.append("$\\Delta$ Time (S $-$ B) & " + " & ".join(f"{r['delta_time']:+.2f}" for r in rows) + " \\\\")
+        body.append("$\\Delta$ ($\\mathcal{T}_S-\\mathcal{T}_B$) & " + " & ".join(r["delta_time"] for r in rows) + " \\\\")
 
         caption = "Training Results" if phase == "train" else "Testing Results"
         label = "tab:combined-train-dkd" if phase == "train" else "tab:combined-test-dkd"
