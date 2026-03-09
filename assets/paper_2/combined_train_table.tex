@@ -1,0 +1,26 @@
+\begin{table*}
+\caption{Training Results}
+\label{tab:combined-train-dkd}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+Metric & MNIST & KMNIST & EMNIST & IMDB \\
+\hline
+Acc --- Teacher & 97.63 $\pm$ 0.08 & 98.09 $\pm$ 0.04 & 86.88 $\pm$ 0.09 & 99.41 $\pm$ 0.07 \\
+\hline
+Acc --- Baseline & 90.63 $\pm$ 0.16 & 92.45 $\pm$ 0.06 & 79.37 $\pm$ 0.07 & 98.39 $\pm$ 0.24 \\
+\hline
+Acc --- Student & 95.24 $\pm$ 0.06*** & 94.63 $\pm$ 0.05*** & 83.17 $\pm$ 0.06*** & 98.96 $\pm$ 0.13*** \\
+\hline
+$\Delta$ Acc (S $-$ B) & +4.61 & +2.18 & +3.80 & +0.57 \\
+\hline
+\hline
+Time --- Teacher & 0.70 $\pm$ 0.02 & 1.66 $\pm$ 0.04 & 3.10 $\pm$ 0.05 & 28.95 $\pm$ 0.42 \\
+\hline
+Time --- Baseline & 0.26 $\pm$ 0.00 & 0.33 $\pm$ 0.01 & 0.59 $\pm$ 0.05 & 17.07 $\pm$ 0.35 \\
+\hline
+Time --- Student & 0.24 $\pm$ 0.00*** & 0.35 $\pm$ 0.01*** & 0.65 $\pm$ 0.04*** & 9.35 $\pm$ 0.29*** \\
+\hline
+$\Delta$ Time (S $-$ B) & -0.03 & +0.01 & +0.05 & -7.72 \\
+\hline
+\end{tabular}
+\end{table*}

@@ -530,6 +530,9 @@ The experimental design focuses on isolating the effect of distribution-enhanced
 
 For data collection, we measure average accuracies over $E_{T+S}$ epochs. Training and testing times are recorded for the baseline and teacher over $E_{T+S}$ epochs, and for the student model over $E_S$ epochs. This reflects that the student model begins training after $E_T$ epochs with a smaller architecture than the teacher. The time for generating soft labels and clause outputs is not included, as it is a one-time cost approximately equal to the time of one training epoch.
 
+ADD SECTION ON P TEST HERE. INCLUDE SIGNIFICANCE THRESHOLDS Significance thresholds are set at p < 0.05 (), p < 0.01 (), and p < 0.001 ().
+TWO TAILED TEST FOR TIME, ONE TAILED FOR ACCURACY
+
 Hyperparameters for our distribution-enhanced experiments are shown in Table~\ref{tab:hyperparams-dkd}. Temperature selection ($\tau$ in Table~\ref{tab:hyperparams-dkd}) was determined through preliminary grid search experiments over the range $[1.0, 2.0, 3.0, 4.0, 5.0]$. We found that $\tau \in [3.0, 4.0]$ consistently produced the best results across datasets, outperforming the vanilla softmax ($\tau = 1.0$). This suggests that softer distributions, which reveal more information about class relationships, are particularly valuable for Tsetlin Machines, likely because they help guide discrete propositional logic clauses toward capturing inter-class boundaries more effectively. 
 
 Overall, we observe across all datasets that the proposed knowledge distillation approach consistently improves the accuracy of the student model relative to a non-distilled baseline under identical architectural constraints, while maintaining comparable training and inference costs.
@@ -543,7 +546,7 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 		\hline
 		MNIST & 1000 & 100 & 10 & 10 & 4.0 & 4.0 & 3.0 & 0.5 & 0.3 & 120 & 240 & 30 \\\hline
 		KMNIST & 2000 & 200 & 100 & 100 & 8.2 & 8.2 & 4.0 & 0.5 & 0.3 & 120 & 240 & 30 \\\hline
-		EMNIST & 1000 & 100 & 100 & 100 & 4.0 & 4.0 & 4.0 & 0.5 & 0.2 & 120 & 240 & 12 \\\hline
+		EMNIST & 1000 & 100 & 100 & 100 & 4.0 & 4.0 & 4.0 & 0.5 & 0.2 & 120 & 240 & 22 \\\hline
 		IMDB & 8000 & 4000 & 6000 & 6000 & 7.0 & 7.0 & 3.0 & 0.5 & 0.2 & 30 & 60 & 10 \\\hline
 	\end{tabular}
 	\label{tab:hyperparams-dkd}
@@ -560,7 +563,7 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 		\hline
 		MNIST & 97.63 \newline $\pm$ 0.08 & 0.70 \newline $\pm$ 0.02 & 90.63 \newline $\pm$ 0.16 & 0.26 \newline $\pm$ 0.00 & 95.24 \newline $\pm$ 0.06 & 0.24 \newline $\pm$ 0.00 \\\hline
 		KMNIST & 98.09 \newline $\pm$ 0.04 & 1.66 \newline $\pm$ 0.04 & 92.45 \newline $\pm$ 0.06 & 0.33 \newline $\pm$ 0.01 & 94.63 \newline $\pm$ 0.05 & 0.35 \newline $\pm$ 0.01 \\\hline
-		EMNIST & 86.86 \newline $\pm$ 0.09 & 3.14 \newline $\pm$ 0.03 & 79.36 \newline $\pm$ 0.06 & 0.62 \newline $\pm$ 0.05 & 83.19 \newline $\pm$ 0.06 & 0.67 \newline $\pm$ 0.03 \\\hline
+		EMNIST & 86.88 \newline $\pm$ 0.09 & 3.10 \newline $\pm$ 0.05 & 79.37 \newline $\pm$ 0.07 & 0.59 \newline $\pm$ 0.05 & 83.17 \newline $\pm$ 0.06 & 0.65 \newline $\pm$ 0.04 \\\hline
 		IMDB & 99.41 \newline $\pm$ 0.07 & 28.95 \newline $\pm$ 0.42 & 98.39 \newline $\pm$ 0.24 & 17.07 \newline $\pm$ 0.35 & 98.96 \newline $\pm$ 0.13 & 9.35 \newline $\pm$ 0.29 \\\hline
 	\end{tabular}
 	\label{tab:train-table-dkd}
@@ -629,7 +632,7 @@ Figure~\ref{fig:test-acc-combined} shows the average accuracy of each model for 
 		\hline
 		MNIST & 95.19 \newline $\pm$ 0.08 & 0.38 \newline $\pm$ 0.02 & 90.37 \newline $\pm$ 0.16 & 0.06 \newline $\pm$ 0.00 & 93.95 \newline $\pm$ 0.05 & 0.06 \newline $\pm$ 0.00 \\\hline
 		KMNIST & 85.41 \newline $\pm$ 0.10 & 0.95 \newline $\pm$ 0.03 & 80.11 \newline $\pm$ 0.09 & 0.10 \newline $\pm$ 0.01 & 82.47 \newline $\pm$ 0.09 & 0.10 \newline $\pm$ 0.01 \\\hline
-		EMNIST & 80.95 \newline $\pm$ 0.09 & 3.23 \newline $\pm$ 0.13 & 77.52 \newline $\pm$ 0.05 & 0.26 \newline $\pm$ 0.01 & 80.30 \newline $\pm$ 0.07 & 0.26 \newline $\pm$ 0.01 \\\hline
+		EMNIST & 80.94 \newline $\pm$ 0.09 & 3.15 \newline $\pm$ 0.13 & 77.53 \newline $\pm$ 0.07 & 0.25 \newline $\pm$ 0.01 & 80.27 \newline $\pm$ 0.07 & 0.25 \newline $\pm$ 0.01 \\\hline
 		IMDB & 88.96 \newline $\pm$ 0.04 & 17.88 \newline $\pm$ 0.71 & 87.85 \newline $\pm$ 0.24 & 10.37 \newline $\pm$ 0.30 & 88.62 \newline $\pm$ 0.03 & 9.36 \newline $\pm$ 0.17 \\\hline
 	\end{tabular}
 	\label{tab:test-table-dkd}
@@ -656,7 +659,9 @@ Figure~\ref{fig:test-acc-combined} shows the average accuracy of each model for 
 
 Figure~\ref{fig:test-time-combined} shows the normalized average testing time per epoch relative to the teacher. Normalization allows a fair comparison across datasets of different sizes (see Table~\ref{tab:dataset-size}). We observe that each student model achieves testing performance similar to its respective baseline model while improving accuracy.
 
-For EMNIST, the student model demonstrates notable efficiency under the evaluated settings. As shown in Figure~\ref{fig:test-eff-emnist}, $TM_S$ achieves near-teacher accuracy while reducing inference time by roughly 12$\times$. The accuracy is comparable to multi-layer Tsetlin Machines reported in~\cite{gorbenko2024multi}, but with lower inference time and a reduced number of clauses (Figures~\ref{fig:test-acc-emnist} and~\ref{fig:test-time-combined}). While clause count is a primary determinant of memory usage in Tsetlin Machines, explicit memory footprint measurements are not reported in this study.
+For EMNIST, the student model demonstrates notable efficiency under the evaluated settings. As shown in Figure~\ref{fig:test-eff-emnist}, $TM_S$ achieves near-teacher accuracy while reducing inference time by roughly 12$\times$. The accuracy is comparable to multi-layer Tsetlin Machines reported in~\cite{gorbenko2024multi}, but with lower inference time and a reduced number of clauses (Figures~\ref{fig:test-acc-emnist} and~\ref{fig:test-time-combined}). 
+
+Tsetlin Machine memory consumption scales as $\mathcal{O}(\zeta |C| n)$. Because $TM_T$ and $TM_S$ are parametrically identical aside from clause count, the memory footprint of the student reduces by the teacher-to-student clause ratio:  $10\times$ for MNIST, KMNIST, and EMNIST, and by $2\times$ for IMDB. This relationship is preserved in any TM implementation.
 
 \begin{figure}[h]
 	\centering
@@ -701,7 +706,8 @@ Even with identical model sizes, $TM_S$ shows lower activation entropy (3.1 vs 3
  
  Our experiments focus on relatively simple, balanced datasets with moderate feature dimensionality (784--5000 features). Performance on high-dimensional problems, severely imbalanced classes, or complex domains (e.g., medical imaging, time-series) remains unexplored. Notably, IMDB shows a modest improvement of 0.57 percentage points, suggesting that distillation effectiveness may vary across domains.
  
- We do not compare against simpler compression alternatives such as direct clause pruning from the teacher. Additionally, explicit memory consumption measurements and actual edge device deployment tests are not included in this study and would be required to fully substantiate practical applicability claims; however, this would mainly be relevant to a specific Tsetlin Machine implementation, which it was omitted. The clause count of each model serves as a platform-agnostic representative basis for memory consumption.
+ We do not compare against simpler compression alternatives such as direct clause pruning from the teacher. Additionally, explicit memory consumption measurements and actual edge device deployment tests are not included in this study and would be required to fully substantiate practical applicability claims; however, such measurements would mainly be relevant to a specific Tsetlin Machine implementation, which is why it was omitted. The clause count of each model serves as a platform-agnostic representative basis for memory consumption.
+
  
  Our approach lacks formal analysis of approximation bounds or information-theoretic characterization of what ``dark knowledge'' the soft labels capture in propositional logic systems. Understanding why temperature values $\tau \in [3.0, 4.0]$ work well for TMs, compared to $\tau \approx 1$--2 typical in neural networks, requires further investigation.
  

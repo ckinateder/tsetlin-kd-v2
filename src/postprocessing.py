@@ -425,25 +425,14 @@ def make_paper_2_tables_aggregate(exps: list[tuple[str, str]]):
         latex_path = os.path.join(output_dir, f"{config['file_name']}.tex")
         with open(latex_path, "w") as f:
             f.write(latex_table)
-        
-def make_ttest_table(exps: list[str]):
+
+
+def make_formatted_tables(exps: list[str]):
     """
-    Produce a wide paired t-test table (rows = metrics, columns = datasets) comparing
-    the distilled model against the student baseline across K independent trials.
-
-    Statistical design:
-    - Pairing: within trial k, student_k and distilled_k share the same teacher weights
-      and training data, so pairing controls for trial-to-trial teacher variability.
-    - Each "value" per run is the mean of that metric over training epochs within that
-      trial (i.e. what the analysis block calls avg_*).
-    - Accuracy: one-tailed test (alternative='greater', distilled first).
-        H0: mu_distilled <= mu_student  H1: mu_distilled > mu_student
-    - Time: two-tailed test (alternative='two-sided').
-        H0: mu_distilled == mu_student  H1: mu_distilled != mu_student
-    - Stars: *** p<0.001, ** p<0.01, * p<0.05, ns otherwise.
-    - Delta: distilled minus student (positive = distilled wins on accuracy).
-
-    Saved to: assets/paper_2/ttest_table.tex
+    Produce combined_test_table.tex and combined_train_table.tex with datasets as
+    columns and metrics as rows. Includes mean ± std for Teacher, Baseline, Student
+    (with t-test significance stars on Student), and Δ (S − B). A double \\hline
+    separates the accuracy block from the time block.
     """
     def _stars(p):
         if p < 0.001:
@@ -453,29 +442,44 @@ def make_ttest_table(exps: list[str]):
         elif p < 0.05:
             return "*"
         else:
-            return "ns"
+            return ""
 
-    # Metric keys: (label, student_key, distilled_key, tailed)
-    metrics = [
-        ("Train Accuracy",  "avg_acc_train_student",  "avg_acc_train_distilled",  "greater"),
-        ("Test Accuracy",   "avg_acc_test_student",   "avg_acc_test_distilled",   "greater"),
-        ("Train Time (s)",  "avg_time_train_student", "avg_time_train_distilled", "two-sided"),
-        ("Test Time (s)",   "avg_time_test_student",  "avg_time_test_distilled",  "two-sided"),
-    ]
+    # Per phase: (acc_teacher_key, acc_baseline_key, acc_student_key, time_teacher_key, ...)
+    phase_keys = {
+        "train": (
+            "avg_acc_train_teacher", "std_acc_train_teacher",
+            "avg_acc_train_student", "std_acc_train_student",
+            "avg_acc_train_distilled", "std_acc_train_distilled",
+            "avg_time_train_teacher", "std_time_train_teacher",
+            "avg_time_train_student", "std_time_train_student",
+            "avg_time_train_distilled", "std_time_train_distilled",
+        ),
+        "test": (
+            "avg_acc_test_teacher", "std_acc_test_teacher",
+            "avg_acc_test_student", "std_acc_test_student",
+            "avg_acc_test_distilled", "std_acc_test_distilled",
+            "avg_time_test_teacher", "std_time_test_teacher",
+            "avg_time_test_student", "std_time_test_student",
+            "avg_time_test_distilled", "std_time_test_distilled",
+        ),
+    }
 
-    # Collect per-run scalars for each experiment directory
-    dataset_columns = {}  # dataset_name -> {metric_label -> cell_string}
+    # Collect per-dataset: aggregated stats + per-run lists for t-test and delta
+    dataset_order = []
+    by_dataset = {}  # dataset_name -> {agg, run_data}
     for exp in exps:
-        # Derive a short dataset name from the aggregated output's experiment_name
         agg_path = os.path.join(exp, AGGREGATED_OUTPUT_JSON_PATH)
         if not os.path.exists(agg_path):
             print(f"No aggregated output found for {exp}, skipping")
             continue
         agg = load_json(agg_path)
         dataset_name = agg["experiment_name"].split("_")[0]
+        dataset_order.append(dataset_name)
 
-        # Walk subdirs and collect one scalar per run per metric
-        run_data = {label: {"student": [], "distilled": []} for label, *_ in metrics}
+        run_data = {
+            "train": {"student_acc": [], "distilled_acc": [], "student_time": [], "distilled_time": []},
+            "test": {"student_acc": [], "distilled_acc": [], "student_time": [], "distilled_time": []},
+        }
         for entry in sorted(os.scandir(exp), key=lambda e: e.name):
             if not entry.is_dir():
                 continue
@@ -483,45 +487,102 @@ def make_ttest_table(exps: list[str]):
             if not os.path.exists(run_json):
                 continue
             run_output = load_json(run_json)
-            analysis = run_output["analysis"]
-            for label, s_key, d_key, _ in metrics:
-                run_data[label]["student"].append(analysis[s_key])
-                run_data[label]["distilled"].append(analysis[d_key])
+            a = run_output["analysis"]
+            run_data["train"]["student_acc"].append(a["avg_acc_train_student"])
+            run_data["train"]["distilled_acc"].append(a["avg_acc_train_distilled"])
+            run_data["train"]["student_time"].append(a["avg_time_train_student"])
+            run_data["train"]["distilled_time"].append(a["avg_time_train_distilled"])
+            run_data["test"]["student_acc"].append(a["avg_acc_test_student"])
+            run_data["test"]["distilled_acc"].append(a["avg_acc_test_distilled"])
+            run_data["test"]["student_time"].append(a["avg_time_test_student"])
+            run_data["test"]["distilled_time"].append(a["avg_time_test_distilled"])
 
-        # Run paired t-tests and format cells
-        cells = {}
-        for label, _, _, alternative in metrics:
-            student_vals = run_data[label]["student"]
-            distilled_vals = run_data[label]["distilled"]
-            delta = sum(d - s for d, s in zip(distilled_vals, student_vals)) / len(student_vals)
-            t_stat, p_val = stats.ttest_rel(distilled_vals, student_vals, alternative=alternative)
-            stars = _stars(p_val)
-            cells[label] = f"$\\Delta = {delta:+.2f}$ \\newline $t = {t_stat:.2f}${stars}"
-
-        dataset_columns[dataset_name] = cells
-
-    # Build wide DataFrame: index = metric labels, columns = dataset names
-    metric_labels = [label for label, *_ in metrics]
-    dataset_names = list(dataset_columns.keys())
-    df = pd.DataFrame(index=metric_labels, columns=dataset_names)
-    df.index.name = "Metric"
-    for ds, cells in dataset_columns.items():
-        for label, cell in cells.items():
-            df.at[label, ds] = cell
-    df = df.reset_index()  # make Metric a regular column
+        by_dataset[dataset_name] = {"agg": agg, "run_data": run_data}
 
     output_dir = os.path.join("assets", "paper_2")
     os.makedirs(output_dir, exist_ok=True)
-    col_fmt = "|l|" + "c|" * len(dataset_names)
-    latex_table = _to_latex_hline(
-        df, col_fmt,
-        caption="Paired t-test: Student vs.\\ Baseline",
-        label="tab:ttest-dkd"
-    )
-    latex_path = os.path.join(output_dir, "ttest_table.tex")
-    with open(latex_path, "w") as f:
-        f.write(latex_table)
-    print(f"Saved t-test table to {latex_path}")
+
+    for phase in ("train", "test"):
+        keys = phase_keys[phase]
+        (acc_t_avg, acc_t_std, acc_b_avg, acc_b_std, acc_s_avg, acc_s_std,
+         time_t_avg, time_t_std, time_b_avg, time_b_std, time_s_avg, time_s_std) = keys
+
+        rows = []
+        for ds in dataset_order:
+            data = by_dataset[ds]
+            agg = data["agg"]["analysis"]
+            rd = data["run_data"][phase]
+
+            # Accuracy block
+            acc_teacher = f"{agg[acc_t_avg]:.2f} $\\pm$ {agg[acc_t_std]:.2f}"
+            acc_baseline = f"{agg[acc_b_avg]:.2f} $\\pm$ {agg[acc_b_std]:.2f}"
+            _, p_acc = stats.ttest_rel(rd["distilled_acc"], rd["student_acc"], alternative="greater")
+            stars_acc = _stars(p_acc)
+            acc_student = f"{agg[acc_s_avg]:.2f} $\\pm$ {agg[acc_s_std]:.2f}{stars_acc}"
+            delta_acc = (sum(rd["distilled_acc"]) - sum(rd["student_acc"])) / len(rd["student_acc"])
+
+            # Time block
+            time_teacher = f"{agg[time_t_avg]:.2f} $\\pm$ {agg[time_t_std]:.2f}"
+            time_baseline = f"{agg[time_b_avg]:.2f} $\\pm$ {agg[time_b_std]:.2f}"
+            _, p_time = stats.ttest_rel(rd["distilled_time"], rd["student_time"], alternative="two-sided")
+            stars_time = _stars(p_time)
+            time_student = f"{agg[time_s_avg]:.2f} $\\pm$ {agg[time_s_std]:.2f}{stars_time}"
+            delta_time = (sum(rd["distilled_time"]) - sum(rd["student_time"])) / len(rd["student_time"])
+
+            rows.append({
+                "acc_teacher": acc_teacher,
+                "acc_baseline": acc_baseline,
+                "acc_student": acc_student,
+                "delta_acc": delta_acc,
+                "time_teacher": time_teacher,
+                "time_baseline": time_baseline,
+                "time_student": time_student,
+                "delta_time": delta_time,
+            })
+
+        # Build LaTeX: columns = Metric | MNIST | KMNIST | EMNIST | IMDB
+        col_fmt = "|l|" + "c|" * len(dataset_order)
+        header = "Metric & " + " & ".join(dataset_order) + " \\\\"
+        line = "\\hline"
+
+        body = []
+        body.append("Acc --- Teacher & " + " & ".join(r["acc_teacher"] for r in rows) + " \\\\")
+        body.append(line)
+        body.append("Acc --- Baseline & " + " & ".join(r["acc_baseline"] for r in rows) + " \\\\")
+        body.append(line)
+        body.append("Acc --- Student & " + " & ".join(r["acc_student"] for r in rows) + " \\\\")
+        body.append(line)
+        body.append("$\\Delta$ Acc (S $-$ B) & " + " & ".join(f"{r['delta_acc']:+.2f}" for r in rows) + " \\\\")
+        body.append("\\hline")
+        body.append("\\hline")
+        body.append("Time --- Teacher & " + " & ".join(r["time_teacher"] for r in rows) + " \\\\")
+        body.append(line)
+        body.append("Time --- Baseline & " + " & ".join(r["time_baseline"] for r in rows) + " \\\\")
+        body.append(line)
+        body.append("Time --- Student & " + " & ".join(r["time_student"] for r in rows) + " \\\\")
+        body.append(line)
+        body.append("$\\Delta$ Time (S $-$ B) & " + " & ".join(f"{r['delta_time']:+.2f}" for r in rows) + " \\\\")
+
+        caption = "Training Results" if phase == "train" else "Testing Results"
+        label = "tab:combined-train-dkd" if phase == "train" else "tab:combined-test-dkd"
+        latex = (
+            "\\begin{table*}\n"
+            f"\\caption{{{caption}}}\n"
+            f"\\label{{{label}}}\n"
+            f"\\begin{{tabular}}{{{col_fmt}}}\n"
+            f"{line}\n"
+            f"{header}\n"
+            f"{line}\n"
+            + "\n".join(body) + "\n"
+            f"{line}\n"
+            "\\end{tabular}\n"
+            "\\end{table*}\n"
+        )
+        filename = "combined_train_table.tex" if phase == "train" else "combined_test_table.tex"
+        out_path = os.path.join(output_dir, filename)
+        with open(out_path, "w") as f:
+            f.write(latex)
+        print(f"Saved {filename} to {out_path}")
 
 
 def make_combined_graphs(exps: list[tuple[str, str]], output_dir: str):
@@ -883,7 +944,7 @@ if __name__ == "__main__":
         j("results", "aggregate_distribution", "IMDB"),
     ]       
     make_paper_2_tables_aggregate(paper2_aggregate_exps)
-    make_ttest_table(paper2_aggregate_exps)
+    make_formatted_tables(paper2_aggregate_exps)
 
     make_combined_graphs_aggregate(paper2_aggregate_exps, j("assets", "paper_2"))
 

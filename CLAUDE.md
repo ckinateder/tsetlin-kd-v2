@@ -58,6 +58,18 @@ Each experiment trains three models for comparison:
 
 For clause-based KD, a 4th model (**distilled_ds**) is also trained with downsampled clauses.
 
+### Naming in outputs and tables
+
+In JSON/output and code, the three comparison models use internal names that differ from paper labels:
+
+| Internal (JSON, code) | Display (tables, figures) |
+|-----------------------|----------------------------|
+| `teacher`             | Teacher                    |
+| `student`             | **Baseline** (small TM, no KD) |
+| `distilled`           | **Student** (small TM with KD)  |
+
+So "student" in `output.json` / `aggregated_output.json` (e.g. `avg_acc_test_student`) is the **baseline** small model; "distilled" is the **KD student** we compare against it. Postprocessing uses a `display_names` mapping (e.g. in `make_formatted_tables`, `make_combined_graphs_aggregate`) so tables and charts show "Baseline" and "Student" and avoid confusion.
+
 Results are saved to a directory named by experiment parameters (e.g., `MNIST_tC1000_sC100_tT10_sT10_ts4.0_ss4.0_te120_se240_temp3.0_a0.5_z0.3`).
 
 ### Aggregate experiments
@@ -71,7 +83,7 @@ Results are saved to a directory named by experiment parameters (e.g., `MNIST_tC
 | `src/main.py` | Entry point — defines experiment configs and runs them |
 | `src/distillation.py` | Core experiment logic: `distribution_distillation_experiment`, `clause_distillation_experiment`, `aggregate_distribution_distillation_experiment`, `plot_results` |
 | `src/datasets.py` | Dataset classes (all inherit from `Dataset` ABC); data is booleanized for TM compatibility |
-| `src/postprocessing.py` | Post-hoc chart and LaTeX table generation (`make_paper_2_tables_aggregate`, `make_combined_graphs_aggregate`) |
+| `src/postprocessing.py` | Post-hoc chart and LaTeX table generation: `make_paper_2_tables_aggregate`, `make_formatted_tables` (writes `combined_test_table.tex`, `combined_train_table.tex` — datasets as columns, metrics as rows, with accuracy/time break), `make_combined_graphs_aggregate`. The old `ttest_table.tex` is no longer generated. |
 | `src/grid_search.py` | Hyperparameter search utility |
 | `src/__init__.py` | Shared constants: file path constants, column name constants, plot settings |
 | `src/util.py` | I/O helpers: `load_or_create` (pkl cache), `save_json`/`load_json`, `save_pkl`/`load_pkl` |
