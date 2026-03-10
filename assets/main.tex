@@ -160,7 +160,7 @@ Although TMs have shown substantial promise, model accuracy generally increases 
 In this work, we explore knowledge distillation for Tsetlin Machines by introducing a framework that transfers information through clause-level structure and distributional signals derived from class sums. In this work, we make the following contributions:
 \begin{itemize}
 	\item We introduce Distribution Enhanced Knowledge Distillation (DKD) for Tsetlin Machines (TM), as a distillation framework that transfers the full class confidence distribution derived from unclamped class sums rather than only hard class predictions.
-	\item We introduce a numerically stable transformation of discrete and potentially unbounded TM class sums into probability distributions suitable for distillation. Unlike weighted TMs, which modify clause weights, or regularized TMs, which alter training penalties, DKD operates entirely at the supervision level and is compatible with both.
+	\item We introduce a numerically stable transformation of discrete and potentially unbounded TM class sums into probability distributions suitable for distillation. Unlike weighted TMs, which modify clause weights, or regularized TMs, which alter training penalties, DKD operates entirely at the supervision level and is fully compatible with both.
 	\item We combine distribution level supervision with structured clause initialization, enabling the student to inherit both structural bias and distributional confidence information from the teacher.
 	\item We provide empirical evaluation across image and text datasets demonstrating that distribution based supervision improves student performance compared to training without distillation.
 \end{itemize}
@@ -518,7 +518,7 @@ IMDB textual data is preprocessed into n-grams and converted into bit representa
 
 \subsection{Experiment Design}
 
-Our experiments follow a knowledge distillation scenario similar to neural networks. We have a baseline model $TM_B$, a teacher model $TM_T$, and a student model $TM_S$. All three models share the same parameters except for the number of clauses. The baseline model is assigned fewer clauses than the teacher (in our experiments, between 2 and 10 times fewer), and the student has the same number of clauses as the baseline. The baseline serves as a reference for what the student would achieve without our proposed algorithms. Because the baseline and student models have the same size, they should have roughly the same speed.
+Our experiments follow a knowledge distillation scenario similar to neural networks. We have a baseline model $TM_B$, a teacher model $TM_T$, and a student model $TM_S$. All three models are weighted Tsetlin Machines, share the same parameters aside from clause count. Each  The baseline (and student) model is assigned fewer clauses than the teacher (in our experiments, between 2 and 10 times fewer), and the student has the same number of clauses as the baseline. The baseline serves as a reference for what the student would achieve without the effect our proposed algorithms (DKD). Because the baseline and student models have the same size, they should have roughly the same computational cost.
 
 Let $E_S$ and $E_T$ denote the number of student and teacher epochs, respectively. Let $E_{T+S} = E_T + E_S$ denote the total number of epochs. The choice of epoch counts (Table~\ref{tab:hyperparams-dkd}) was determined through preliminary convergence analysis on validation data.
 
@@ -526,18 +526,12 @@ First, the baseline model $TM_B$ is trained on the dataset for $E_{T+S}$ epochs,
 
 Once the baselines are established, we reinitialize the teacher model $TM_T$ from the checkpoint at $E_T$ epochs to avoid giving the student model an unfair advantage. We then initialize the student model $TM_S$ with the clauses of the trained teacher using Algorithm~\ref{algo:init-clauses}. Soft labels are generated from the teacher over the training dataset using Algorithm~\ref{algo:soft-labels}. Finally, the student model is trained for $E_S$ epochs on the training dataset and the soft labels from the teacher using Algorithm~\ref{algo:fit-soft}. Because Tsetlin Machines are stochastic, each experiment is repeated $K$ times and results are averaged, reporting mean and standard deviation across runs. 
 
-We evaluate the statistical siginificance of observed improvements by conducting paired t-tests across our $K$ independent trials, comparing the student against the baseline. The student model is parametrically identical to 
+We evaluate the statistical siginificance of observed improvements by conducting paired t-tests across $K$ independent trials, comparing the distilled student against the baseline. 
+We use a one tailed paired t-test to compare accuracy ($H_1$: student > baseline) and a two tailed test on training and inference time, reflecting our directional hypothesis on accuracy and neutral effect on computational time. Significance thresholds are set at the conventional $p < 0.05$, $p < 0.01$, and $p < 0.001$.
 
-The experimental design focuses on isolating the effect of distribution-enhanced supervision and clause-level transfer under fixed architectural settings. Accordingly, comparisons are limited to teacher, baseline, and student models that share identical hyperparameters aside from clause count. Alternative approaches such as extended training of smaller Tsetlin Machines, weighted or regularized TMs, and explicit clause pruning without distillation are not evaluated experimentally in this study. These comparisons represent important directions for future work.
+The experimental design focuses on isolating the effect of distribution-enhanced supervision and clause-level transfer under fixed architectural settings. Accordingly, comparisons are limited to teacher, baseline, and student models that share identical hyperparameters aside from clause count. Alternative approaches such as extended training of smaller Tsetlin Machines, regularized TMs, and explicit clause pruning without distillation are not evaluated experimentally in this study. These comparisons represent important directions for future work.
 
 For data collection, we measure average accuracies over $E_{T+S}$ epochs. Training and testing times are recorded for the baseline and teacher over $E_{T+S}$ epochs, and for the student model over $E_S$ epochs. This reflects that the student model begins training after $E_T$ epochs with a smaller architecture than the teacher. The time for generating soft labels and clause outputs is not included, as it is a one-time cost approximately equal to the time of one training epoch.
-
-\hline
-
-ADD SECTION ON P TEST HERE. INCLUDE SIGNIFICANCE THRESHOLDS Significance thresholds are set at p < 0.05 (), p < 0.01 (), and p < 0.001 ().
-TWO TAILED TEST FOR TIME, ONE TAILED FOR ACCURACY
-
-\hline
 
 Hyperparameters for our distribution-enhanced experiments are shown in Table~\ref{tab:hyperparams-dkd}. Temperature selection ($\tau$ in Table~\ref{tab:hyperparams-dkd}) was determined through preliminary grid search experiments over the range $[1.0, 2.0, 3.0, 4.0, 5.0]$. We found that $\tau \in [3.0, 4.0]$ consistently produced the best results across datasets, outperforming the vanilla softmax ($\tau = 1.0$). This suggests that softer distributions, which reveal more information about class relationships, are particularly valuable for Tsetlin Machines, likely because they help guide discrete propositional logic clauses toward capturing inter-class boundaries more effectively. 
 
@@ -568,18 +562,18 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 		\hline
 		Metric & MNIST & KMNIST & EMNIST & IMDB \\
 		\hline
-		$Acc_T$ (no DKD)& 97.63 $\pm$ 0.08 & 98.09 $\pm$ 0.04 & 86.89 $\pm$ 0.09 & 99.41 $\pm$ 0.07 \\
+		$Acc_T$ & 97.63 $\pm$ 0.08 & 98.09 $\pm$ 0.04 & 86.89 $\pm$ 0.09 & 99.41 $\pm$ 0.07 \\
 		\hline
-		$Acc_B$ (no DKD)& 90.63 $\pm$ 0.16 & 92.45 $\pm$ 0.06 & 79.37 $\pm$ 0.06 & 98.39 $\pm$ 0.24 \\
+		$Acc_B$ & 90.63 $\pm$ 0.16 & 92.45 $\pm$ 0.06 & 79.37 $\pm$ 0.06 & 98.39 $\pm$ 0.24 \\
 		\hline
 		$Acc_S$ (DKD) & 95.24 $\pm$ 0.06 & 94.63 $\pm$ 0.05 & 83.18 $\pm$ 0.06 & 98.96 $\pm$ 0.13 \\
 		\hline
 		$\Delta$ ($Acc_S-Acc_B$) & +4.61*** & +2.18*** & +3.80*** & +0.57*** \\
 		\hline
 		\hline
-		$\mathcal{T}_T$ (no DKD)& 0.70 $\pm$ 0.02 & 1.66 $\pm$ 0.04 & 3.10 $\pm$ 0.05 & 28.95 $\pm$ 0.42 \\
+		$\mathcal{T}_T$ & 0.70 $\pm$ 0.02 & 1.66 $\pm$ 0.04 & 3.10 $\pm$ 0.05 & 28.95 $\pm$ 0.42 \\
 		\hline
-		$\mathcal{T}_B$ (no DKD)& 0.26 $\pm$ 0.00 & 0.33 $\pm$ 0.01 & 0.59 $\pm$ 0.05 & 17.07 $\pm$ 0.35 \\
+		$\mathcal{T}_B$ & 0.26 $\pm$ 0.00 & 0.33 $\pm$ 0.01 & 0.59 $\pm$ 0.05 & 17.07 $\pm$ 0.35 \\
 		\hline
 		$\mathcal{T}_S$ (DKD)& 0.24 $\pm$ 0.00 & 0.35 $\pm$ 0.01 & 0.64 $\pm$ 0.04 & 9.35 $\pm$ 0.29 \\
 		\hline
@@ -646,28 +640,28 @@ Figure~\ref{fig:test-acc-combined} shows the average accuracy of each model for 
 \begin{table*}
 	\centering
 	\caption{Testing Results }
-		\begin{tabular}{|l|c|c|c|c|}
-	\hline
+	\begin{tabular}{|l|c|c|c|c|}
+		\hline
 		Metric & MNIST & KMNIST & EMNIST & IMDB \\
 		\hline
-		$Acc_T$ (no DKD)& 95.19 $\pm$ 0.08 & 85.41 $\pm$ 0.10 & 80.95 $\pm$ 0.09 & 88.96 $\pm$ 0.04 \\
+		$Acc_T$ & 95.19 $\pm$ 0.08 & 85.41 $\pm$ 0.10 & 80.95 $\pm$ 0.09 & 88.96 $\pm$ 0.04 \\
 		\hline
-		$Acc_B$ (no DKD)& 90.37 $\pm$ 0.16 & 80.11 $\pm$ 0.09 & 77.52 $\pm$ 0.07 & 87.85 $\pm$ 0.24 \\
+		$Acc_B$ & 90.37 $\pm$ 0.16 & 80.11 $\pm$ 0.09 & 77.51 $\pm$ 0.07 & 87.85 $\pm$ 0.24 \\
 		\hline
 		$Acc_S$ (DKD) & 93.95 $\pm$ 0.05 & 82.47 $\pm$ 0.09 & 80.26 $\pm$ 0.07 & 88.62 $\pm$ 0.03 \\
 		\hline
-		$\Delta$ ($Acc_S-Acc_B$) & +3.58*** & +2.36*** & +2.74*** & +0.78*** \\
+		$\Delta$ ($Acc_S-Acc_B$) & +3.58*** & +2.36*** & +2.75*** & +0.78*** \\
 		\hline
 		\hline
-		$\mathcal{T}_T$ (no DKD)& 0.38 $\pm$ 0.02 & 0.95 $\pm$ 0.03 & 3.13 $\pm$ 0.13 & 17.88 $\pm$ 0.71 \\
+		$\mathcal{T}_T$ & 0.38 $\pm$ 0.02 & 0.95 $\pm$ 0.03 & 3.13 $\pm$ 0.12 & 17.88 $\pm$ 0.71 \\
 		\hline
-		$\mathcal{T}_B$ (no DKD)& 0.06 $\pm$ 0.00 & 0.10 $\pm$ 0.01 & 0.25 $\pm$ 0.01 & 10.37 $\pm$ 0.30 \\
+		$\mathcal{T}_B$ & 0.06 $\pm$ 0.00 & 0.10 $\pm$ 0.01 & 0.24 $\pm$ 0.01 & 10.37 $\pm$ 0.30 \\
 		\hline
 		$\mathcal{T}_S$ (DKD)& 0.06 $\pm$ 0.00 & 0.10 $\pm$ 0.01 & 0.25 $\pm$ 0.01 & 9.36 $\pm$ 0.17 \\
 		\hline
 		$\Delta$ ($\mathcal{T}_S-\mathcal{T}_B$) & +0.00*** & +0.00*** & +0.00*** & -1.00*** \\
 		\hline
-		\end{tabular}
+	\end{tabular}
 	\label{tab:test-table-dkd}
 \end{table*}
 
