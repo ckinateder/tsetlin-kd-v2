@@ -526,12 +526,12 @@ First, the baseline model $TM_B$ is trained on the dataset for $E_{T+S}$ epochs,
 
 Once the baselines are established, we reinitialize the teacher model $TM_T$ from the checkpoint at $E_T$ epochs to avoid giving the student model an unfair advantage. We then initialize the student model $TM_S$ with the clauses of the trained teacher using Algorithm~\ref{algo:init-clauses}. Soft labels are generated from the teacher over the training dataset using Algorithm~\ref{algo:soft-labels}. Finally, the student model is trained for $E_S$ epochs on the training dataset and the soft labels from the teacher using Algorithm~\ref{algo:fit-soft}. Because Tsetlin Machines are stochastic, each experiment is repeated $K$ times and results are averaged, reporting mean and standard deviation across runs. 
 
-We evaluate the statistical siginificance of observed improvements by conducting paired t-tests across $K$ independent trials, comparing the distilled student against the baseline. 
-We use a one tailed paired t-test to compare accuracy ($H_1$: student > baseline) and a two tailed test on training and inference time, reflecting our directional hypothesis on accuracy and neutral effect on computational time. Significance thresholds are set at the conventional $p < 0.05$, $p < 0.01$, and $p < 0.001$.
+We evaluate the statistical siginificance of observed improvements by conducting paired \textit{t}-tests across $K$ independent trials, comparing the distilled student against the baseline. 
+We use a one tailed paired \textit{t}-test to compare accuracy ($H_1$: student $>$ baseline) and a two tailed test on training and inference time ($H_1$: ), reflecting our directional hypothesis on accuracy and neutral effect on computational time. Significance thresholds are set at the conventional $p < 0.05$, $p < 0.01$, and $p < 0.001$ and reported as *, **, and ***, respectively.
 
 The experimental design focuses on isolating the effect of distribution-enhanced supervision and clause-level transfer under fixed architectural settings. Accordingly, comparisons are limited to teacher, baseline, and student models that share identical hyperparameters aside from clause count. Alternative approaches such as extended training of smaller Tsetlin Machines, regularized TMs, and explicit clause pruning without distillation are not evaluated experimentally in this study. These comparisons represent important directions for future work.
 
-For data collection, we measure average accuracies over $E_{T+S}$ epochs. Training and testing times are recorded for the baseline and teacher over $E_{T+S}$ epochs, and for the student model over $E_S$ epochs. This reflects that the student model begins training after $E_T$ epochs with a smaller architecture than the teacher. The time for generating soft labels and clause outputs is not included, as it is a one-time cost approximately equal to the time of one training epoch.
+For data collection, we measure average accuracies over $E_{T+S}$ epochs. Training and testing times are recorded for the baseline and teacher over $E_{T+S}$ epochs, and for the student model over $E_S$ epochs. This reflects that the student model begins training after $E_T$ epochs with a smaller architecture than the teacher. The time for generating soft labels and clause outputs is not included, as it is a one-time cost approximately equal to the time of one training epoch. All times are reported in seconds, and all accuracies are reported in percentages.
 
 Hyperparameters for our distribution-enhanced experiments are shown in Table~\ref{tab:hyperparams-dkd}. Temperature selection ($\tau$ in Table~\ref{tab:hyperparams-dkd}) was determined through preliminary grid search experiments over the range $[1.0, 2.0, 3.0, 4.0, 5.0]$. We found that $\tau \in [3.0, 4.0]$ consistently produced the best results across datasets, outperforming the vanilla softmax ($\tau = 1.0$). This suggests that softer distributions, which reveal more information about class relationships, are particularly valuable for Tsetlin Machines, likely because they help guide discrete propositional logic clauses toward capturing inter-class boundaries more effectively. 
 
@@ -547,7 +547,7 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 	\hline
 	MNIST & 1000 & 100 & 10 & 10 & 4.0 & 4.0 & 3.0 & 0.5 & 0.3 & 120 & 240 & 30 \\\hline
 	KMNIST & 2000 & 200 & 100 & 100 & 8.2 & 8.2 & 4.0 & 0.5 & 0.3 & 120 & 240 & 30 \\\hline
-	EMNIST & 1000 & 100 & 100 & 100 & 4.0 & 4.0 & 4.0 & 0.5 & 0.2 & 120 & 240 & 26 \\\hline
+	EMNIST & 1000 & 100 & 100 & 100 & 4.0 & 4.0 & 4.0 & 0.5 & 0.2 & 120 & 240 & 30 \\\hline
 	IMDB & 8000 & 4000 & 6000 & 6000 & 7.0 & 7.0 & 3.0 & 0.5 & 0.2 & 30 & 60 & 10 \\\hline
 	\end{tabular}
 	\label{tab:hyperparams-dkd}
@@ -557,23 +557,23 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 
 \begin{table*}
 	\centering
-	\caption{Training Results}
+	\caption{Training accuracy and epoch time for the teacher ($Acc_T$, $\mathcal{T}_T$), baseline ($Acc_B$, $\mathcal{T}_B$), and student ($Acc_S$, $\mathcal{T}_S$) models. $\delta$ represents the student minus baseline difference. Statistical significance is displayed for the paired \textit{t}-test results via stars: {*}$p < 0.05$, {**}$p < 0.01$, {***}$p < 0.001$ (one-tailed for accuracy, two-tailed for time). All values are reported as mean $\pm$ standard deviation across $K$ trials. Each TM is weighted, and the student and the baseline are parametrically identical. Only the student model uses our DKD algorithm.}
 	\begin{tabular}{|l|c|c|c|c|}
 		\hline
 		Metric & MNIST & KMNIST & EMNIST & IMDB \\
 		\hline
 		$Acc_T$ & 97.63 $\pm$ 0.08 & 98.09 $\pm$ 0.04 & 86.89 $\pm$ 0.09 & 99.41 $\pm$ 0.07 \\
 		\hline
-		$Acc_B$ & 90.63 $\pm$ 0.16 & 92.45 $\pm$ 0.06 & 79.37 $\pm$ 0.06 & 98.39 $\pm$ 0.24 \\
+		$Acc_B$ & 90.63 $\pm$ 0.16 & 92.45 $\pm$ 0.06 & 79.36 $\pm$ 0.06 & 98.39 $\pm$ 0.24 \\
 		\hline
-		$Acc_S$ (DKD) & 95.24 $\pm$ 0.06 & 94.63 $\pm$ 0.05 & 83.18 $\pm$ 0.06 & 98.96 $\pm$ 0.13 \\
+		$Acc_S$ (DKD) & 95.24 $\pm$ 0.06 & 94.63 $\pm$ 0.05 & 83.17 $\pm$ 0.06 & 98.96 $\pm$ 0.13 \\
 		\hline
-		$\Delta$ ($Acc_S-Acc_B$) & +4.61*** & +2.18*** & +3.80*** & +0.57*** \\
+		$\Delta$ ($Acc_S-Acc_B$) & +4.61*** & +2.18*** & +3.81*** & +0.57*** \\
 		\hline
 		\hline
-		$\mathcal{T}_T$ & 0.70 $\pm$ 0.02 & 1.66 $\pm$ 0.04 & 3.10 $\pm$ 0.05 & 28.95 $\pm$ 0.42 \\
+		$\mathcal{T}_T$ & 0.70 $\pm$ 0.02 & 1.66 $\pm$ 0.04 & 3.09 $\pm$ 0.05 & 28.95 $\pm$ 0.42 \\
 		\hline
-		$\mathcal{T}_B$ & 0.26 $\pm$ 0.00 & 0.33 $\pm$ 0.01 & 0.59 $\pm$ 0.05 & 17.07 $\pm$ 0.35 \\
+		$\mathcal{T}_B$ & 0.26 $\pm$ 0.00 & 0.33 $\pm$ 0.01 & 0.58 $\pm$ 0.04 & 17.07 $\pm$ 0.35 \\
 		\hline
 		$\mathcal{T}_S$ (DKD)& 0.24 $\pm$ 0.00 & 0.35 $\pm$ 0.01 & 0.64 $\pm$ 0.04 & 9.35 $\pm$ 0.29 \\
 		\hline
@@ -588,7 +588,7 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 	\begin{subfigure}[b]{0.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{combined_train_acc.png}
-		\caption{Average training accuracy $Acc'$ on each dataset using DKD.}
+		\caption{Average training accuracy on each dataset using DKD.}
 		\label{fig:train-acc-combined}
 	\end{subfigure}
 	\hfill
@@ -602,18 +602,16 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 	\label{fig:train-acc-time-combined}
 \end{figure}
 
-The experimental results indicate that teacher-student knowledge distillation consistently improves the training accuracy of a smaller model with minimal overhead. Clause transfer from the teacher to the student model, combined with distribution-enhanced fitting, allows the student model to achieve higher accuracy without increasing training time. These results are summarized in Table~\ref{tab:train-table-dkd} and illustrated in Figures~\ref{fig:train-acc-combined} and~\ref{fig:train-time-combined}.
+The experimental results indicate that teacher-student knowledge distillation consistently improves the training accuracy of a smaller model with minimal overhead. Clause transfer from the teacher to the student model, combined with distribution-enhanced fitting, allows the student model to achieve higher accuracy without increasing training time. These results are summarized in Table~\ref{tab:train-table-dkd} and illustrated in Figures~\ref{fig:train-acc-combined} and~\ref{fig:train-time-combined}. Note that the average training times in Figure~\ref{fig:train-time-combined} are normalized to allow fair comparison across datasets of different sizes.
 
-The average training times in Figure~\ref{fig:train-time-combined} are normalized to allow fair comparison across datasets of different sizes. For the EMNIST dataset, training accuracy improves by nearly 4 percentage points compared to the baseline model, while maintaining similar epoch times. This is further illustrated in Figures~\ref{fig:train-acc-emnist} and~\ref{fig:train-time-combined}. 
-
-Training efficiency can also be visualized in an efficiency plot (Figure~\ref{fig:train-eff-emnist}). Points to the left of the diagonal line represent a ``free lunch'' region, where accuracy increases without a proportional increase in execution time. This reflects the core idea of knowledge distillation: improving accuracy without additional or inference training cost. This visualization is intended as an intuitive comparison rather than a formal efficiency guarantee.
+Training efficiency can also be visualized in an efficiency plot (Figure~\ref{fig:train-eff-emnist}). Points to the left of the diagonal line represent a ``free lunch'' region, where accuracy increases without a proportional increase in execution time. This reflects the core idea of knowledge distillation: improving accuracy without increasing training or inference cost by the normalized equivalent amount. %This visualization is intended as an intuitive comparison rather than a formal efficiency guarantee.
 
 \begin{figure}[h]
 	\centering
 	\begin{subfigure}[b]{0.48\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{EMNIST_train_accuracy.png}
-		\caption{Training accuracy $Acc'$ on EMNIST using DKD.}
+		\caption{Training accuracy on EMNIST using DKD.}
 		\label{fig:train-acc-emnist}
 	\end{subfigure}
 	\hfill
@@ -627,7 +625,12 @@ Training efficiency can also be visualized in an efficiency plot (Figure~\ref{fi
 	\label{fig:train-emnist-combined}
 \end{figure}
 
-For MNIST, the student model $TM_S$ increases training accuracy over the baseline by approximately 5 percentage points, with reduced variance and slightly lower training time. On KMNIST, $TM_S$ achieves modest gains, increasing average accuracy by around 2 percentage points with similar epoch times. On the IMDB dataset, $TM_S$ achieves accuracy between the teacher and baseline while reducing the training time by half when compared to the baseline, and by almost four times when compared to the teacher. This is enabled by rapid literal pruning guided by the teacher, and IMDB results stabilize more quickly than the MNIST datasets, allowing for fewer epochs.
+For MNIST, the student model $TM_S$ increases training accuracy over the baseline by approximately 5 percentage points, with reduced variance and slightly lower training time. On KMNIST, $TM_S$ achieves modest gains, increasing average accuracy by around 2 percentage points with similar epoch times. 
+For the EMNIST dataset, training accuracy improves by nearly 4 percentage points compared to the baseline model, while maintaining similar epoch times. This is further illustrated in Figures~\ref{fig:train-acc-emnist} and~\ref{fig:train-time-combined}. 
+On the IMDB dataset, $TM_S$ achieves accuracy between the teacher and baseline while reducing the training time by half when compared to the baseline, and by almost four times when compared to the teacher. This is enabled by rapid literal pruning guided by the teacher, and IMDB results stabilize more quickly than the MNIST datasets, allowing for fewer epochs.
+Note that the neglible increase in training time for KMNIST and EMNIST occurs for the same reason.
+
+For all datasets, the effects of DKD on training accuracy and epoch time are statistically significant at $p<0.001$, as evidenced by our paired \textit{t}-test on the baseline and student model.
 
 The temporary drop in accuracy at $E = E_T$ in each plot reflects the student model's adjustment to clause transfer. The baseline model $TM_B$ is trained from scratch, whereas the student model $TM_S$ starts with $|C_S|$ clauses copied from $TM_T$ after $E_T$ epochs. The student model needs several epochs to re-balance clause contributions in the absence of the remaining teacher clauses. For example, in Figure~\ref{fig:train-acc-emnist}, it takes approximately 7 epochs for $TM_S$ to reach the equilibrium accuracy of the baseline, which is fewer epochs than required for the baseline to reach the same level. This demonstrates that clause initialization combined with distribution-enhanced fitting enables efficient training of a smaller model.
 
@@ -639,7 +642,7 @@ Figure~\ref{fig:test-acc-combined} shows the average accuracy of each model for 
 
 \begin{table*}
 	\centering
-	\caption{Testing Results }
+	\caption{Testing accuracy and epoch time for the teacher ($Acc_T$, $\mathcal{T}_T$), baseline ($Acc_B$, $\mathcal{T}_B$), and student ($Acc_S$, $\mathcal{T}_S$) models. $\Delta$ represents the student minus baseline difference. Statistical significance is displayed for the paired \textit{t}-test results via stars: {*}$p < 0.05$, {**}$p < 0.01$, {***}$p < 0.001$ (one-tailed for accuracy, two-tailed for time). All values are reported as mean $\pm$ standard deviation across $K$ trials. Each TM is weighted, and the student and the baseline are parametrically identical. Only the student model uses our DKD algorithm.}
 	\begin{tabular}{|l|c|c|c|c|}
 		\hline
 		Metric & MNIST & KMNIST & EMNIST & IMDB \\
@@ -670,7 +673,7 @@ Figure~\ref{fig:test-acc-combined} shows the average accuracy of each model for 
 	\begin{subfigure}[b]{0.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{combined_test_acc.png}
-		\caption{Average testing accuracy $Acc$ on each dataset using DKD.}
+		\caption{Average testing accuracy on each dataset using DKD.}
 		\label{fig:test-acc-combined}
 	\end{subfigure}
 	\hfill
@@ -684,7 +687,7 @@ Figure~\ref{fig:test-acc-combined} shows the average accuracy of each model for 
 	\label{fig:test-acc-time-combined}
 \end{figure}
 
-Figure~\ref{fig:test-time-combined} shows the normalized average testing time per epoch relative to the teacher. Normalization allows a fair comparison across datasets of different sizes (see Table~\ref{tab:dataset-size}). We observe that each student model achieves testing performance similar to its respective baseline model while improving accuracy.
+Figure~\ref{fig:test-time-combined} shows the normalized average testing time per epoch relative to the teacher. Normalization allows a fair comparison across datasets of different sizes (see Table~\ref{tab:dataset-size}). We observe that each student model achieves testing performance similar to its respective baseline model while improving accuracy. As with the training analyis, we observe that all perfomance gains are statistically significant at $p<0.001$.
 
 For EMNIST, the student model demonstrates notable efficiency under the evaluated settings. As shown in Figure~\ref{fig:test-eff-emnist}, $TM_S$ achieves near-teacher accuracy while reducing inference time by roughly 12$\times$. The accuracy is comparable to multi-layer Tsetlin Machines reported in~\cite{gorbenko2024multi}, but with lower inference time and a reduced number of clauses (Figures~\ref{fig:test-acc-emnist} and~\ref{fig:test-time-combined}). 
 
@@ -695,7 +698,7 @@ Tsetlin Machine memory consumption scales as $\mathcal{O}(\zeta |C| n)$. Because
 	\begin{subfigure}[b]{0.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{EMNIST_test_accuracy.png}
-		\caption{Testing accuracy $Acc$ on EMNIST using DKD.}
+		\caption{Testing accuracy on EMNIST using DKD.}
 		\label{fig:test-acc-emnist}
 	\end{subfigure}
 	\hfill
@@ -728,18 +731,18 @@ Even with identical model sizes, $TM_S$ shows lower activation entropy (3.1 vs 3
 	\label{fig:activation-emnist}
 \end{figure}
 
- \section{Limitation}
- While our Distribution-Enhanced Knowledge Distillation demonstrates consistent empirical improvements, several limitations warrant acknowledgment.
- 
- Our experiments focus on relatively simple, balanced datasets with moderate feature dimensionality (784--5000 features). Performance on high-dimensional problems, severely imbalanced classes, or complex domains (e.g., medical imaging, time-series) remains unexplored. Notably, IMDB shows a modest improvement of 0.57 percentage points, suggesting that distillation effectiveness may vary across domains.
- 
- We do not compare against simpler compression alternatives such as direct clause pruning from the teacher. Additionally, explicit memory consumption measurements and actual edge device deployment tests are not included in this study; however, such measurements would only be relevant to the specific tested Tsetlin Machine implementation, which is why it was omitted. The clause count of each model serves as a platform-agnostic representative basis for memory consumption.
+\section{Limitations}
+While our Distribution-Enhanced Knowledge Distillation demonstrates consistent empirical improvements, several limitations warrant acknowledgment.
 
- 
- Our approach lacks formal analysis of approximation bounds or information-theoretic characterization of what ``dark knowledge'' the soft labels capture in propositional logic systems. Understanding why temperature values $\tau \in [3.0, 4.0]$ work well for TMs, compared to $\tau \approx 1$--2 typical in neural networks, requires further investigation.
- 
- Further research could be directed at optimizing the balance $\alpha$, weight transfer $z$, and temperature $\tau$ parameters, through automated hyperparameter search methods, or exploring adaptive temperature scheduling during training similar to curriculum learning approaches. Investigating whether temperature should vary by dataset characteristics (e.g., number of classes, class imbalance) could yield additional insights. The clause transfer algorithm could also be improved by considering clause coverage on all features, not just diversity and weight. Instead of solely using offline distillation as shown in this paper, further research could also be directed at comparing the effects of online and offline distillation. We would also explore the application of our algorithm in other domains like few-shot learning \cite{anjum2025using, DBLP:conf/bigdataconf/GuoAZ22, anjum2025weighted} and bioinformatics \cite{woessner2024identifying}, where data is few and knowledge transfer can help training these models with limited data.
- 
+Our experiments focus on relatively simple, balanced datasets with moderate feature dimensionality (784--5000 features). Performance on high-dimensional problems, severely imbalanced classes, or complex domains (e.g., medical imaging, time-series) remains unexplored. Notably, IMDB shows a modest improvement of 0.57 percentage points, suggesting that distillation effectiveness may vary across domains.
+
+We do not compare against simpler compression alternatives such as direct clause pruning from the teacher. Additionally, explicit memory consumption measurements and actual edge device deployment tests are not included in this study; however, such measurements would only be relevant to the specific tested Tsetlin Machine implementation, which is why it was omitted. The clause count of each model serves as a platform-agnostic representative basis for memory consumption.
+
+
+Our approach lacks formal analysis of approximation bounds or information-theoretic characterization of what ``dark knowledge'' the soft labels capture in propositional logic systems. Understanding why temperature values $\tau \in [3.0, 4.0]$ work well for TMs, compared to $\tau \approx 1$--2 typical in neural networks, requires further investigation.
+
+Further research could be directed at optimizing the balance $\alpha$, weight transfer $z$, and temperature $\tau$ parameters, through automated hyperparameter search methods, or exploring adaptive temperature scheduling during training similar to curriculum learning approaches. Investigating whether temperature should vary by dataset characteristics (e.g., number of classes, class imbalance) could yield additional insights. The clause transfer algorithm could also be improved by considering clause coverage on all features, not just diversity and weight. Instead of solely using offline distillation as shown in this paper, further research could also be directed at comparing the effects of online and offline distillation. We would also explore the application of our algorithm in other domains like few-shot learning \cite{anjum2025using, DBLP:conf/bigdataconf/GuoAZ22, anjum2025weighted} and bioinformatics \cite{woessner2024identifying}, where data is few and knowledge transfer can help training these models with limited data.
+
 \section{Conclusion}
 Distribution-enhanced knowledge distillation substantially accelerates Tsetlin Machine training and inference while improving accuracy. In all tested datasets, TMs trained with DKD greatly surpass the performance of TMs of the same size trained naively.
 Activation map analysis confirms that the student model leverages teacher clause context to strategically select features. Training and inference times are reduced, demonstrating practical efficiency.
