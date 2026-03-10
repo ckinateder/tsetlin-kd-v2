@@ -503,13 +503,13 @@ IMDB textual data is preprocessed into n-grams and converted into bit representa
 \begin{table}
 	\centering
 	\caption{Dataset Information}
-	\begin{tabular}{|l|c|c|c|c|c|}
+	\begin{tabular}{l|ccccc}
 		\hline
 		Dataset & $|X_{train}|$ & $|X_{test}|$ & $|L|$ & $\zeta$ & Type\\
 		\hline
-		EMNIST & 124800 & 20800 & 784 & 26 & Image \\\hline
-		MNIST & 60000 & 10000 & 784 & 10 & Image \\\hline
-		KMNIST & 60000 & 10000 & 784 & 10 & Image \\\hline
+		EMNIST & 124800 & 20800 & 784 & 26 & Image \\
+		MNIST & 60000 & 10000 & 784 & 10 & Image \\
+		KMNIST & 60000 & 10000 & 784 & 10 & Image \\
 		IMDB & 25000 & 25000 & 5000 & 2 & Text \\
 		\hline
 	\end{tabular}
@@ -541,13 +541,13 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 	\centering
 	\caption{Experiment Hyperparameters }
 	\label{tab:hyperparams-dkd}
-	\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|c|c|}
+	\begin{tabular}{l|cccccccccccc}
 	\hline
 	Dataset & $|C_T|$ & $|C_S|$ & $T_T$ & $T_S$ & $s_T$ & $s_S$ & $\tau$ & $\alpha$ & $z$ & $E_T$ & $E_S$ & $K$ \\
 	\hline
-	MNIST & 1000 & 100 & 10 & 10 & 4.0 & 4.0 & 3.0 & 0.5 & 0.3 & 120 & 240 & 30 \\\hline
-	KMNIST & 2000 & 200 & 100 & 100 & 8.2 & 8.2 & 4.0 & 0.5 & 0.3 & 120 & 240 & 30 \\\hline
-	EMNIST & 1000 & 100 & 100 & 100 & 4.0 & 4.0 & 4.0 & 0.5 & 0.2 & 120 & 240 & 30 \\\hline
+	MNIST & 1000 & 100 & 10 & 10 & 4.0 & 4.0 & 3.0 & 0.5 & 0.3 & 120 & 240 & 30 \\
+	KMNIST & 2000 & 200 & 100 & 100 & 8.2 & 8.2 & 4.0 & 0.5 & 0.3 & 120 & 240 & 30 \\
+	EMNIST & 1000 & 100 & 100 & 100 & 4.0 & 4.0 & 4.0 & 0.5 & 0.2 & 120 & 240 & 30 \\
 	IMDB & 8000 & 4000 & 6000 & 6000 & 7.0 & 7.0 & 3.0 & 0.5 & 0.2 & 30 & 60 & 10 \\\hline
 	\end{tabular}
 	\label{tab:hyperparams-dkd}
@@ -558,25 +558,18 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 \begin{table*}
 	\centering
 	\caption{Training accuracy and epoch time for the teacher ($Acc_T$, $\mathcal{T}_T$), baseline ($Acc_B$, $\mathcal{T}_B$), and student ($Acc_S$, $\mathcal{T}_S$) models. $\delta$ represents the student minus baseline difference. Statistical significance is displayed for the paired \textit{t}-test results via stars: {*}$p < 0.05$, {**}$p < 0.01$, {***}$p < 0.001$ (one-tailed for accuracy, two-tailed for time). All values are reported as mean $\pm$ standard deviation across $K$ trials. Each TM is weighted, and the student and the baseline are parametrically identical. Only the student model uses our DKD algorithm.}
-	\begin{tabular}{|l|c|c|c|c|}
+	\begin{tabular}{l|cccc}
 		\hline
 		Metric & MNIST & KMNIST & EMNIST & IMDB \\
 		\hline
 		$Acc_T$ & 97.63 $\pm$ 0.08 & 98.09 $\pm$ 0.04 & 86.89 $\pm$ 0.09 & 99.41 $\pm$ 0.07 \\
-		\hline
 		$Acc_B$ & 90.63 $\pm$ 0.16 & 92.45 $\pm$ 0.06 & 79.36 $\pm$ 0.06 & 98.39 $\pm$ 0.24 \\
-		\hline
 		$Acc_S$ (DKD) & 95.24 $\pm$ 0.06 & 94.63 $\pm$ 0.05 & 83.17 $\pm$ 0.06 & 98.96 $\pm$ 0.13 \\
-		\hline
 		$\Delta$ ($Acc_S-Acc_B$) & +4.61*** & +2.18*** & +3.81*** & +0.57*** \\
 		\hline
-		\hline
 		$\mathcal{T}_T$ & 0.70 $\pm$ 0.02 & 1.66 $\pm$ 0.04 & 3.09 $\pm$ 0.05 & 28.95 $\pm$ 0.42 \\
-		\hline
 		$\mathcal{T}_B$ & 0.26 $\pm$ 0.00 & 0.33 $\pm$ 0.01 & 0.58 $\pm$ 0.04 & 17.07 $\pm$ 0.35 \\
-		\hline
 		$\mathcal{T}_S$ (DKD)& 0.24 $\pm$ 0.00 & 0.35 $\pm$ 0.01 & 0.64 $\pm$ 0.04 & 9.35 $\pm$ 0.29 \\
-		\hline
 		$\Delta$ ($\mathcal{T}_S-\mathcal{T}_B$) & -0.03*** & +0.01*** & +0.05*** & -7.72*** \\
 		\hline
 	\end{tabular}
@@ -643,25 +636,18 @@ Figure~\ref{fig:test-acc-combined} shows the average accuracy of each model for 
 \begin{table*}
 	\centering
 	\caption{Testing accuracy and epoch time for the teacher ($Acc_T$, $\mathcal{T}_T$), baseline ($Acc_B$, $\mathcal{T}_B$), and student ($Acc_S$, $\mathcal{T}_S$) models. $\Delta$ represents the student minus baseline difference. Statistical significance is displayed for the paired \textit{t}-test results via stars: {*}$p < 0.05$, {**}$p < 0.01$, {***}$p < 0.001$ (one-tailed for accuracy, two-tailed for time). All values are reported as mean $\pm$ standard deviation across $K$ trials. Each TM is weighted, and the student and the baseline are parametrically identical. Only the student model uses our DKD algorithm.}
-	\begin{tabular}{|l|c|c|c|c|}
+	\begin{tabular}{l|cccc}
 		\hline
 		Metric & MNIST & KMNIST & EMNIST & IMDB \\
 		\hline
 		$Acc_T$ & 95.19 $\pm$ 0.08 & 85.41 $\pm$ 0.10 & 80.95 $\pm$ 0.09 & 88.96 $\pm$ 0.04 \\
-		\hline
 		$Acc_B$ & 90.37 $\pm$ 0.16 & 80.11 $\pm$ 0.09 & 77.51 $\pm$ 0.07 & 87.85 $\pm$ 0.24 \\
-		\hline
 		$Acc_S$ (DKD) & 93.95 $\pm$ 0.05 & 82.47 $\pm$ 0.09 & 80.26 $\pm$ 0.07 & 88.62 $\pm$ 0.03 \\
-		\hline
 		$\Delta$ ($Acc_S-Acc_B$) & +3.58*** & +2.36*** & +2.75*** & +0.78*** \\
 		\hline
-		\hline
 		$\mathcal{T}_T$ & 0.38 $\pm$ 0.02 & 0.95 $\pm$ 0.03 & 3.13 $\pm$ 0.12 & 17.88 $\pm$ 0.71 \\
-		\hline
 		$\mathcal{T}_B$ & 0.06 $\pm$ 0.00 & 0.10 $\pm$ 0.01 & 0.24 $\pm$ 0.01 & 10.37 $\pm$ 0.30 \\
-		\hline
 		$\mathcal{T}_S$ (DKD)& 0.06 $\pm$ 0.00 & 0.10 $\pm$ 0.01 & 0.25 $\pm$ 0.01 & 9.36 $\pm$ 0.17 \\
-		\hline
 		$\Delta$ ($\mathcal{T}_S-\mathcal{T}_B$) & +0.00*** & +0.00*** & +0.00*** & -1.00*** \\
 		\hline
 	\end{tabular}

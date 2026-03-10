@@ -157,8 +157,8 @@ def make_experiment_tables(exps: list[tuple[str, str]]):
     # hyperparameter table
     hyperparam_table = pd.DataFrame(columns=["Dataset", "$|C_T|$", "$|C_S|$", "$T_T$", "$T_S$", "$s_T$", "$s_S$", "$\\tau$", "$\\alpha$", "$z$", "$E_T$", "$E_S$"], index=[])
 
-    # dataset size table
-    dataset_size_table = pd.DataFrame(columns=["Dataset", "$|X_{train}|$", "$|X_{test}|$", "$|L|$", "$\\zeta$"], index=[])
+    # dataset size table (Type: Image / Text from dataset name)
+    dataset_size_table = pd.DataFrame(columns=["Dataset", "$|X_{train}|$", "$|X_{test}|$", "$|L|$", "$\\zeta$", "Type"], index=[])
 
     # combined train table with time
     train_table = pd.DataFrame(columns=["Dataset", "$Acc'_T$", "$\\mathcal{T}'_T$", "$Acc'_S$", "$\\mathcal{T}'_S$", "$Acc'_D$", "$\\mathcal{T}'_D$"], index=[])
@@ -169,6 +169,7 @@ def make_experiment_tables(exps: list[tuple[str, str]]):
 
         # get row name
         rowname = exp_output["experiment_name"]
+        dtype = "Text" if "IMDB" in rowname else "Image"
 
         # get hyperparameters
         new_row = {
@@ -193,7 +194,8 @@ def make_experiment_tables(exps: list[tuple[str, str]]):
             "$|X_{train}|$": f'{exp_output["data"]["X_train"][0]}',
             "$|X_{test}|$": f'{exp_output["data"]["X_test"][0]}',
             "$|L|$": f'{exp_output["data"]["X_train"][1]}',
-            "$\\zeta$": f'{exp_output["data"]["num_classes"]}'
+            "$\\zeta$": f'{exp_output["data"]["num_classes"]}',
+            "Type": dtype
         }
         dataset_size_table = dataset_size_table._append(new_row, ignore_index=True)
 
@@ -220,35 +222,39 @@ def make_experiment_tables(exps: list[tuple[str, str]]):
         }
         test_table = test_table._append(new_row, ignore_index=True)
 
-    # Define table configurations
+    # Define table configurations: table_env, caption, label, column_format (no vertical bars)
     table_configs = [
         {
             "name": "hyperparam_table",
             "file_name": "hyperparam_table",
-            "caption": "Experiment Hyperparameters (DKD)",
+            "table_env": "table*",
+            "caption": "Experiment Hyperparameters ",
             "label": "tab:hyperparams-dkd",
-            "column_format": "l"*len(hyperparam_table.columns)
+            "column_format": "l" + "c" * (len(hyperparam_table.columns) - 1)
         },
         {
             "name": "dataset_size_table",
             "file_name": "dataset_size_table",
-            "caption": "Dataset Size (DKD)",
-            "label": "tab:dataset-size-dkd",
-            "column_format": "l"*len(dataset_size_table.columns)
+            "table_env": "table",
+            "caption": "Dataset Information",
+            "label": "tab:dataset-size",
+            "column_format": "l" + "c" * (len(dataset_size_table.columns) - 1)
         },
         {
             "name": "train_table",
             "file_name": "train_table",
-            "caption": "Training Results (DKD)",
+            "table_env": "table*",
+            "caption": "Training Results",
             "label": "tab:train-table-dkd",
-            "column_format": "l"+("c"*(len(train_table.columns)-1))
+            "column_format": "l" + "c" * (len(train_table.columns) - 1)
         },
         {
             "name": "test_table",
             "file_name": "test_table",
-            "caption": "Testing Results (DKD)",
+            "table_env": "table*",
+            "caption": "Testing Results",
             "label": "tab:test-table-dkd",
-            "column_format": "l"+("c"*(len(test_table.columns)-1))
+            "column_format": "l" + "c" * (len(test_table.columns) - 1)
         }
     ]
     
@@ -256,26 +262,20 @@ def make_experiment_tables(exps: list[tuple[str, str]]):
     output_dir = os.path.join("assets", "experiment")
     os.makedirs(output_dir, exist_ok=True)
     
-    # Save tables in CSV and LaTeX formats
+    # Save LaTeX tables in paper format
     for config in table_configs:
         table = locals()[config["name"]]
-        
-        # Save CSV
-        # csv_path = os.path.join(output_dir, f"{config['file_name']}.csv")
-        # table.to_csv(csv_path, index=False)
-        
-        # Save LaTeX
-        latex_table = table.to_latex(
-            index=False, 
-            escape=False, 
-            column_format=config["column_format"],
-            caption=config["caption"], 
-            label=config["label"],
+        latex_table = _write_latex_table(
+            table,
+            config["table_env"],
+            config["caption"],
+            config["label"],
+            config["column_format"],
         )
         latex_path = os.path.join(output_dir, f"{config['file_name']}.tex")
         with open(latex_path, "w") as f:
             f.write(latex_table)
-        
+
 def _to_latex_hline(df, column_format, caption, label):
     """Like df.to_latex() but produces \\hline-style rules and table* environment."""
     raw = df.to_latex(index=False, escape=False, column_format=column_format,
@@ -300,6 +300,33 @@ def _to_latex_hline(df, column_format, caption, label):
             result.append(line)
     return '\n'.join(result)
 
+
+def _write_latex_table(df, table_env, caption, label, column_format):
+    """
+    Write a DataFrame as LaTeX in the paper format: \\begin{table} or \\begin{table*},
+    \\centering, \\caption, \\label, \\begin{tabular}{...}, \\hline, header, \\hline,
+    data rows, \\hline, \\end{tabular}, \\end{table}.
+    """
+    header = " & ".join(str(c) for c in df.columns) + " \\\\"
+    rows = []
+    for _, row in df.iterrows():
+        rows.append(" & ".join(str(v) for v in row) + " \\\\")
+    body = "\n\t\t".join(rows)
+    return (
+        f"\\begin{{{table_env}}}\n"
+        f"\t\\centering\n"
+        f"\t\\caption{{{caption}}}\n"
+        f"\t\\label{{{label}}}\n"
+        f"\t\\begin{{tabular}}{{{column_format}}}\n"
+        f"\t\t\\hline\n"
+        f"\t\t{header}\n"
+        f"\t\t\\hline\n"
+        f"\t\t{body}\n"
+        f"\t\t\\hline\n"
+        f"\t\\end{{tabular}}\n"
+        f"\\end{{{table_env}}}"
+    )
+
 def make_experiment_tables_aggregate(exps: list[tuple[str, str]]):
     """
     top_dir: top directory of aggregate results
@@ -308,8 +335,8 @@ def make_experiment_tables_aggregate(exps: list[tuple[str, str]]):
     # hyperparameter table
     hyperparam_table = pd.DataFrame(columns=["Dataset", "$|C_T|$", "$|C_S|$", "$T_T$", "$T_S$", "$s_T$", "$s_S$", "$\\tau$", "$\\alpha$", "$z$", "$E_T$", "$E_S$", "$K$"], index=[])
 
-    # dataset size table
-    dataset_size_table = pd.DataFrame(columns=["Dataset", "$|X_{train}|$", "$|X_{test}|$", "$|L|$", "$\\zeta$"], index=[])
+    # dataset size table (Type: Image / Text from dataset name)
+    dataset_size_table = pd.DataFrame(columns=["Dataset", "$|X_{train}|$", "$|X_{test}|$", "$|L|$", "$\\zeta$", "Type"], index=[])
 
     # combined train table with time
     train_table = pd.DataFrame(columns=["Dataset", "$Acc'_T$", "$\\mathcal{T}'_T$", "$Acc'_B$", "$\\mathcal{T}'_B$", "$Acc'_S$", "$\\mathcal{T}'_S$"], index=[])
@@ -324,6 +351,7 @@ def make_experiment_tables_aggregate(exps: list[tuple[str, str]]):
 
         # get row name
         rowname = exp_output["experiment_name"]
+        dtype = "Text" if "IMDB" in rowname else "Image"
 
         # get hyperparameters
         new_row = {
@@ -349,7 +377,8 @@ def make_experiment_tables_aggregate(exps: list[tuple[str, str]]):
             "$|X_{train}|$": f'{exp_output["data"]["X_train"][0]}',
             "$|X_{test}|$": f'{exp_output["data"]["X_test"][0]}',
             "$|L|$": f'{exp_output["data"]["X_train"][1]}',
-            "$\\zeta$": f'{exp_output["data"]["num_classes"]}'
+            "$\\zeta$": f'{exp_output["data"]["num_classes"]}',
+            "Type": dtype
         }
         dataset_size_table = dataset_size_table._append(new_row, ignore_index=True)
 
@@ -376,35 +405,39 @@ def make_experiment_tables_aggregate(exps: list[tuple[str, str]]):
         }
         test_table = test_table._append(new_row, ignore_index=True)
 
-    # Define table configurations
+    # Define table configurations: table_env, caption, label, column_format (no vertical bars)
     table_configs = [
         {
             "name": "hyperparam_table",
             "file_name": "hyperparam_table",
-            "caption": "Experiment Hyperparameters",
+            "table_env": "table*",
+            "caption": "Experiment Hyperparameters ",
             "label": "tab:hyperparams-dkd",
-            "column_format": "|l|" + "c|" * (len(hyperparam_table.columns) - 1)
+            "column_format": "l" + "c" * (len(hyperparam_table.columns) - 1)
         },
         {
             "name": "dataset_size_table",
             "file_name": "dataset_size_table",
-            "caption": "Dataset Size",
-            "label": "tab:dataset-size-dkd",
-            "column_format": "|l|" + "c|" * (len(dataset_size_table.columns) - 1)
+            "table_env": "table",
+            "caption": "Dataset Information",
+            "label": "tab:dataset-size",
+            "column_format": "l" + "c" * (len(dataset_size_table.columns) - 1)
         },
         {
             "name": "train_table",
             "file_name": "train_table",
+            "table_env": "table*",
             "caption": "Training Results",
             "label": "tab:train-table-dkd",
-            "column_format": "|l|" + "c|" * (len(train_table.columns) - 1)
+            "column_format": "l" + "c" * (len(train_table.columns) - 1)
         },
         {
             "name": "test_table",
             "file_name": "test_table",
+            "table_env": "table*",
             "caption": "Testing Results",
             "label": "tab:test-table-dkd",
-            "column_format": "|l|" + "c|" * (len(test_table.columns) - 1)
+            "column_format": "l" + "c" * (len(test_table.columns) - 1)
         }
     ]
 
@@ -412,16 +445,16 @@ def make_experiment_tables_aggregate(exps: list[tuple[str, str]]):
     output_dir = os.path.join("assets", "experiment")
     os.makedirs(output_dir, exist_ok=True)
 
-    # Save tables in CSV and LaTeX formats
+    # Save LaTeX tables in paper format
     for config in table_configs:
         table = locals()[config["name"]]
-
-        # Save CSV
-        # csv_path = os.path.join(output_dir, f"{config['file_name']}.csv")
-        # table.to_csv(csv_path, index=False)
-
-        # Save LaTeX
-        latex_table = _to_latex_hline(table, config["column_format"], config["caption"], config["label"])
+        latex_table = _write_latex_table(
+            table,
+            config["table_env"],
+            config["caption"],
+            config["label"],
+            config["column_format"],
+        )
         latex_path = os.path.join(output_dir, f"{config['file_name']}.tex")
         with open(latex_path, "w") as f:
             f.write(latex_table)
@@ -540,42 +573,36 @@ def make_formatted_tables(exps: list[str]):
                 "delta_time": delta_time,
             })
 
-        # Build LaTeX: columns = Metric | MNIST | KMNIST | EMNIST | IMDB
-        col_fmt = "|l|" + "c|" * len(dataset_order)
+        # Build LaTeX: columns = Metric | MNIST | KMNIST | EMNIST | IMDB (no vertical bars)
+        col_fmt = "l" + "c" * len(dataset_order)
         header = "Metric & " + " & ".join(dataset_order) + " \\\\"
         line = "\\hline"
 
         body = []
         body.append("$Acc_T$ & " + " & ".join(r["acc_teacher"] for r in rows) + " \\\\")
-        body.append(line)
         body.append("$Acc_B$ & " + " & ".join(r["acc_baseline"] for r in rows) + " \\\\")
-        body.append(line)
         body.append("$Acc_S$ (DKD) & " + " & ".join(r["acc_student"] for r in rows) + " \\\\")
-        body.append(line)
         body.append("$\\Delta$ ($Acc_S-Acc_B$) & " + " & ".join(r["delta_acc"] for r in rows) + " \\\\")
         body.append("\\hline")
-        body.append("\\hline")
         body.append("$\\mathcal{T}_T$ & " + " & ".join(r["time_teacher"] for r in rows) + " \\\\")
-        body.append(line)
         body.append("$\\mathcal{T}_B$ & " + " & ".join(r["time_baseline"] for r in rows) + " \\\\")
-        body.append(line)
         body.append("$\\mathcal{T}_S$ (DKD)& " + " & ".join(r["time_student"] for r in rows) + " \\\\")
-        body.append(line)
         body.append("$\\Delta$ ($\\mathcal{T}_S-\\mathcal{T}_B$) & " + " & ".join(r["delta_time"] for r in rows) + " \\\\")
 
         caption = "Training Results" if phase == "train" else "Testing Results"
         label = "tab:combined-train-dkd" if phase == "train" else "tab:combined-test-dkd"
         latex = (
             "\\begin{table*}\n"
-            f"\\caption{{{caption}}}\n"
-            f"\\label{{{label}}}\n"
-            f"\\begin{{tabular}}{{{col_fmt}}}\n"
-            f"{line}\n"
-            f"{header}\n"
-            f"{line}\n"
-            + "\n".join(body) + "\n"
-            f"{line}\n"
-            "\\end{tabular}\n"
+            "\t\\centering\n"
+            f"\t\\caption{{{caption}}}\n"
+            f"\t\\label{{{label}}}\n"
+            f"\t\\begin{{tabular}}{{{col_fmt}}}\n"
+            f"\t\t{line}\n"
+            f"\t\t{header}\n"
+            f"\t\t{line}\n"
+            + "\n".join("\t\t" + b for b in body) + "\n"
+            f"\t\t{line}\n"
+            "\t\\end{tabular}\n"
             "\\end{table*}\n"
         )
         filename = "combined_train_table.tex" if phase == "train" else "combined_test_table.tex"

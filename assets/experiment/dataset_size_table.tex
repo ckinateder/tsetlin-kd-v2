@@ -1,13 +1,15 @@
-\begin{table*}
-\caption{Dataset Size}
-\label{tab:dataset-size-dkd}
-\begin{tabular}{|l|c|c|c|c|}
-\hline
-Dataset & $|X_{train}|$ & $|X_{test}|$ & $|L|$ & $\zeta$ \\
-\hline
-MNIST & 60000 & 10000 & 784 & 10 \\\hline
-KMNIST & 60000 & 10000 & 784 & 10 \\\hline
-EMNIST & 124800 & 20800 & 784 & 26 \\\hline
-IMDB & 25000 & 25000 & 5000 & 2 \\\hline
-\end{tabular}
-\end{table*}
+\begin{table}
+	\centering
+	\caption{Dataset Information}
+	\label{tab:dataset-size}
+	\begin{tabular}{lccccc}
+		\hline
+		Dataset & $|X_{train}|$ & $|X_{test}|$ & $|L|$ & $\zeta$ & Type \\
+		\hline
+		MNIST & 60000 & 10000 & 784 & 10 & Image \\
+		KMNIST & 60000 & 10000 & 784 & 10 & Image \\
+		EMNIST & 124800 & 20800 & 784 & 26 & Image \\
+		IMDB & 25000 & 25000 & 5000 & 2 & Text \\
+		\hline
+	\end{tabular}
+\end{table}
