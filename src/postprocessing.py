@@ -149,7 +149,7 @@ def make_paper_1_tables(exps: list[tuple[str, str]]):
         with open(latex_path, "w") as f:
             f.write(latex_table)
 
-def make_paper_2_tables(exps: list[tuple[str, str]]):
+def make_experiment_tables(exps: list[tuple[str, str]]):
     """
     exps: list of experiment directory paths
     """
@@ -253,7 +253,7 @@ def make_paper_2_tables(exps: list[tuple[str, str]]):
     ]
     
     # Create output directory if it doesn't exist
-    output_dir = os.path.join("assets", "paper_2")
+    output_dir = os.path.join("assets", "experiment")
     os.makedirs(output_dir, exist_ok=True)
     
     # Save tables in CSV and LaTeX formats
@@ -300,7 +300,7 @@ def _to_latex_hline(df, column_format, caption, label):
             result.append(line)
     return '\n'.join(result)
 
-def make_paper_2_tables_aggregate(exps: list[tuple[str, str]]):
+def make_experiment_tables_aggregate(exps: list[tuple[str, str]]):
     """
     top_dir: top directory of aggregate results
     """
@@ -409,7 +409,7 @@ def make_paper_2_tables_aggregate(exps: list[tuple[str, str]]):
     ]
 
     # Create output directory if it doesn't exist
-    output_dir = os.path.join("assets", "paper_2")
+    output_dir = os.path.join("assets", "experiment")
     os.makedirs(output_dir, exist_ok=True)
 
     # Save tables in CSV and LaTeX formats
@@ -499,7 +499,7 @@ def make_formatted_tables(exps: list[str]):
 
         by_dataset[dataset_name] = {"agg": agg, "run_data": run_data}
 
-    output_dir = os.path.join("assets", "paper_2")
+    output_dir = os.path.join("assets", "experiment")
     os.makedirs(output_dir, exist_ok=True)
 
     for phase in ("train", "test"):
@@ -943,16 +943,16 @@ if __name__ == "__main__":
         j("results", "aggregate_distribution", "EMNIST"),
         j("results", "aggregate_distribution", "IMDB"),
     ]       
-    make_paper_2_tables_aggregate(paper2_aggregate_exps)
+    make_experiment_tables_aggregate(paper2_aggregate_exps)
     make_formatted_tables(paper2_aggregate_exps)
 
-    make_combined_graphs_aggregate(paper2_aggregate_exps, j("assets", "paper_2"))
+    make_combined_graphs_aggregate(paper2_aggregate_exps, j("assets", "experiment"))
 
     # Generate combined graphs
     #print("tables done")
     # make_combined_graphs(paper1_exps, "assets/paper_1")
     # print("paper 1 graphs done")
-    # make_combined_graphs(paper2_exps, "paper_2")
+    # make_combined_graphs(paper2_exps, "experiment")
     # print("paper 2 graphs done")
 
 """

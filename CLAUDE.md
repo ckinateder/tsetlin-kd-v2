@@ -83,7 +83,7 @@ Results are saved to a directory named by experiment parameters (e.g., `MNIST_tC
 | `src/main.py` | Entry point — defines experiment configs and runs them |
 | `src/distillation.py` | Core experiment logic: `distribution_distillation_experiment`, `clause_distillation_experiment`, `aggregate_distribution_distillation_experiment`, `plot_results` |
 | `src/datasets.py` | Dataset classes (all inherit from `Dataset` ABC); data is booleanized for TM compatibility |
-| `src/postprocessing.py` | Post-hoc chart and LaTeX table generation: `make_paper_2_tables_aggregate`, `make_formatted_tables` (writes `combined_test_table.tex`, `combined_train_table.tex` — datasets as columns, metrics as rows, with accuracy/time break), `make_combined_graphs_aggregate`. The old `ttest_table.tex` is no longer generated. |
+| `src/postprocessing.py` | Post-hoc chart and LaTeX table generation: `make_experiment_tables_aggregate`, `make_formatted_tables` (writes `combined_test_table.tex`, `combined_train_table.tex` — datasets as columns, metrics as rows, with accuracy/time break), `make_combined_graphs_aggregate`. The old `ttest_table.tex` is no longer generated. |
 | `src/grid_search.py` | Hyperparameter search utility |
 | `src/__init__.py` | Shared constants: file path constants, column name constants, plot settings |
 | `src/util.py` | I/O helpers: `load_or_create` (pkl cache), `save_json`/`load_json`, `save_pkl`/`load_pkl` |
@@ -104,7 +104,7 @@ results/
 combined_results/        # archived/combined results used for paper figures
 assets/
   paper_1/               # CKD figures and .tex tables
-  paper_2/               # DKD figures and .tex tables
+  experiment/               # DKD figures and .tex tables
 ```
 
 Each experiment directory contains:
