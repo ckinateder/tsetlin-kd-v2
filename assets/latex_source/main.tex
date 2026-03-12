@@ -124,7 +124,7 @@
 %% Sample for unstructured abstract %%
 %%==================================%%
 
-\abstract{The Tsetlin Machine (TM) is a framework that used propositional logic to learn patterns from data by creating human-interpretable conjunctive clauses. Similar to neural networks, TM accuracy generally increases with model size, although larger clause sets lead to slower training and higher memory usage. Knowledge distillation (KD) is widely used in neural networks to transfer information from a large teacher model to a smaller student model, improving accuracy without increasing training time. Extending KD to Tsetlin Machines is not straightforward due to the absence of differentiable logits. Consequently, we propose Distribution-Enhanced Knowledge Distillation (DKD), a TM-based framework that adapts KD principles to TMs. DKD transfers knowledge through two mechanisms: (1) an intelligent clause-selection algorithm that identifies and initializes the student with the most informative teacher clauses, and (2) a probability-based distillation scheme that generates soft distributions from the teacher's unclamped class sums and incorporates them into the student's training feedback. Together, these components allow the student to learn higher-level decision patterns normally accessible only to a larger TM. Experiments on benchmark image and text datasets demonstrate that DKD consistently improves student accuracy while maintaining or reducing inference time. The approach effectively narrows the performance gap between teacher and student models, offering a practical path toward deploying compact and interpretable Tsetlin Machines in resource-constrained environments.}
+\abstract{The Tsetlin Machine (TM) is a framework that uses propositional logic to learn patterns from data by creating human-interpretable conjunctive clauses. Similar to neural networks, TM accuracy generally increases with model size, and larger clause sets lead to slower training and higher memory usage. Knowledge distillation (KD) is widely used in neural networks to transfer information from a large teacher model to a smaller student model, improving accuracy without increasing training time. Extending KD to Tsetlin Machines is not straightforward due to the absence of differentiable logits. Consequently, we propose Distribution-Enhanced Knowledge Distillation (DKD), a TM-based framework that adapts KD principles to TMs. DKD transfers knowledge through two mechanisms: (1) an intelligent clause-selection algorithm that identifies and initializes the student with the most informative teacher clauses, and (2) a probability-based distillation scheme that generates soft distributions from the teacher's unclamped class sums and incorporates them into the student's training feedback. Together, these components allow the student to learn higher-level decision patterns normally accessible only to a larger TM. Experiments on benchmark image and text datasets demonstrate that DKD consistently improves student accuracy while maintaining inference time when compared to a parametrically identical baseline. This approach effectively narrows the performance gap between teacher and student models, offering a practical path toward deploying compact and interpretable Tsetlin Machines in resource-constrained environments.}
 
 %%================================%%
 %% Sample for structured abstract %%
@@ -155,12 +155,12 @@ The Tsetlin Machine (TM), introduced by Granmo in 2018 \cite{granmo2018tsetlin},
 
 Using propositional logic in Tsetlin Machines has many unique advantages over traditional machine learning algorithms. Propositional logic based learning is more interpretable and explainable, making it easier for humans to understand. Because of this, Tsetlin Machines have numerous important applications in explainable AI (xAI), a field where transparency and interpretability are of chief importance in AI algorithms~\cite{xu2019explainable,dovsilovic2018explainable}. Tsetlin Machines can also achieve a much faster execution time over traditional machine learning algorithms that require advanced vector multiplication. Propositional logic based learning algorithms have been utilized by traditional machine learning algorithms~\cite{anjum2022localization, anjumlocalization}.
 
-Although TMs have shown substantial promise, model accuracy generally increases with the number of clauses, making large TMs computationally expensive and difficult to deploy on edge devices or FPGAs \cite{zhang2021low}. These limitations naturally motivate the question of whether knowledge distillation techniques can be adapted to the discrete, non-differentiable structure of Tsetlin Machines. Traditional distillation methods cannot be applied directly, as TMs do not produce logits, feature maps, or differentiable intermediate representations.
+Although TMs have shown substantial promise, model accuracy generally increases with the number of clauses, making large TMs computationally expensive and difficult to deploy on edge devices or FPGAs \cite{zhang2021low}. These limitations naturally raise the question of whether knowledge distillation techniques can be adapted to the discrete, non-differentiable structure of Tsetlin Machines. Traditional distillation methods cannot be applied directly, as TMs do not produce logits, feature maps, or differentiable intermediate representations.
 
-In this work, we explore knowledge distillation for Tsetlin Machines by introducing a framework that transfers information through clause-level structure and distributional signals derived from class sums. In this work, we make the following contributions:
+In this work, we explore knowledge distillation for Tsetlin Machines by introducing a framework that transfers information through clause-level structure and distributional signals derived from class sums. We make the following contributions:
 \begin{itemize}
-	\item We introduce Distribution Enhanced Knowledge Distillation (DKD) for Tsetlin Machines (TM), as a distillation framework that transfers the full class confidence distribution derived from unclamped class sums rather than only hard class predictions.
-	\item We introduce a numerically stable transformation of discrete and potentially unbounded TM class sums into probability distributions suitable for distillation. Unlike weighted TMs, which modify clause weights, or regularized TMs, which alter training penalties, DKD operates entirely at the supervision level and is fully compatible with both.
+	\item We introduce Distribution Enhanced Knowledge Distillation (DKD) for Tsetlin Machines (TM), a distillation framework that transfers the full class confidence distribution derived from unclamped class sums rather than only hard class predictions.
+	\item We introduce a numerically stable transformation of discrete and potentially unbounded TM class sums into probability distributions suitable for distillation. Unlike weighted TMs, which modify clause weights, or regularized TMs, which alter training penalties, DKD operates entirely at the supervision level and is compatible with both.
 	\item We combine distribution level supervision with structured clause initialization, enabling the student to inherit both structural bias and distributional confidence information from the teacher.
 	\item We provide empirical evaluation across image and text datasets demonstrating that distribution based supervision improves student performance compared to training without distillation.
 \end{itemize}
@@ -254,17 +254,17 @@ Algorithm \ref{algo:init-clauses} initializes the student Tsetlin Machine using 
 
 For weight-based selection, the teacher clauses in each class are sorted in descending order of their clause weights. Let $\lambda_{\text{weight}}$ denote the index set of the top $\lfloor z\cdot|C_S|\rfloor$ clauses. The remaining clause indices form the set $\Omega_{\text{remain}}$.
 
-To compute diversity, we evaluate each remaining clause $(j,w_j) \in \Omega_{\text{remain}}$ for every class $k$. Let $A_j^k$ denote the set of Tsetlin Automata (TAs) associated with clause $j$ in class $k$. Define the TA activation ratio
+To compute diversity, we evaluate each remaining clause $(j,w_j) \in \Omega_{\text{remain}}$ for every class $k$. Let $A_j^k$ denote the set of Tsetlin Automata (TAs) associated with clause $j$ in class $k$. Define the TA activation ratio for clause $j$ in class $k$ as
 \[
 a_j = \frac{|A_j^k|_1}{|A_j^k|_0 + |A_j^k|_1},
 \]
 which reflects how often the clause includes its literals. Higher $a_j$ values indicate clauses that engage with a broader portion of the input space. Next, we normalize the clause weight,
 \[
-w'_j = \frac{w_j}{\max(W^k)},
+w'_j = \frac{w_j}{\max(W^k)}
 \]
 where $W^k$ is the set of clause weights for class $k$. Combining diversity and normalized weight yields
 \[
-v_j = w'_j \cdot a_j.
+v_j = w'_j \cdot a_j
 \]
 Each score is stored in a set $D$, which is then sorted in descending order. The top $(|C_S| - n_{\text{direct}})$ indices from $D$ form the diversity-based clause set $\lambda_{\text{diverse}}$. The complete selection set is $\lambda_{\text{selected}} = \lambda_{\text{weight}} \cup \lambda_{\text{diverse}}$, which is transferred to the student.
 
@@ -325,7 +325,7 @@ Varying the weight-transfer parameter $z$ changes the balance between weight-foc
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.65\linewidth]{pdist-ex-scaled.png}
-	\caption{Fig. A1: Visualization of soft label probability distributions generated by 
+	\caption{Visualization of soft label probability distributions generated by 
 		Algorithm \ref{algo:soft-labels}. Left: Temperature $\tau = 1.0$ (as generated). Center: $\tau = 2.0$ 
 		(softer, more uniform). Right: $\tau = 0.5$ (sharper, peaked). The red bar 
 		indicates the predicted class. Higher temperatures expose more information 
@@ -345,7 +345,7 @@ Recall that in a traditional multi-class Tsetlin Machine, classification is dete
 
 In order to convert these class sums into valid soft labels, we apply the procedure given in Algorithm~\ref{algo:soft-labels}. These class sums contain valuable information about the teacher’s confidence across all classes, not just the top class. However, they cannot be directly used as probability distributions because they can be negative (due to negative clause votes), they are unbounded, and may not sum to one.
 
-Algorithm \ref{algo:soft-labels} converts raw, unclamped class sums produced by a teacher Tsetlin Machine into probability distributions suitable for knowledge distillation. Unlike neural networks, Tsetlin Machines produce discrete and potentially unbounded class sums that may be negative and are not directly comparable across samples. The algorithm therefore applies a sequence of transformations to preserve relative class confidence while ensuring numerical stability: class sums are first shifted to remove negative values, then normalized on a per-sample basis, and finally transformed into a probability distribution using a temperature-scaled softmax. In degenerate cases where all class sums are equal, the procedure yields a uniform distribution, reflecting maximal uncertainty in the teacher’s prediction.
+Algorithm \ref{algo:soft-labels} converts raw, unclamped class sums produced by a teacher Tsetlin Machine into probability distributions suitable for knowledge distillation. Unlike neural networks, Tsetlin Machines produce discrete and potentially unbounded class sums that may be negative and are not directly comparable across samples. The algorithm therefore applies a sequence of transformations to preserve relative class confidence while ensuring numerical stability: class sums are first shifted to remove negative values, then normalized on a per-sample basis, and finally transformed into a probability distribution using a softmax function. In degenerate cases where all class sums are equal, the procedure yields a uniform distribution, reflecting maximal uncertainty in the teacher’s prediction.
 
 To address these issues, Algorithm~\ref{algo:soft-labels} applies a sequence of transformations designed to preserve relative class confidence while ensuring numerical stability. First, a per sample shifting operation removes negative values without altering the ordering of class scores. Next, per sample normalization scales class sums to a comparable range, preventing dominance by samples with large magnitude scores. The exponential transformation emphasizes relative differences between classes, and the final normalization step produces valid probability distributions that sum to one. Together, these steps enable stable and meaningful soft labels suitable for distillation in the absence of continuous logits or backpropagation.
 
@@ -357,7 +357,7 @@ To address these issues, Algorithm~\ref{algo:soft-labels} applies a sequence of 
 		\Function{GetSoftLabels}{$\mathbb{C}$}
 		\Comment{Phase 1: Make class sums non-negative}
 		\State $c_{\min}^i = \min_{j \in \{1,\dots,\zeta\}} \mathbb{C}_{ij}, \quad \forall i = 1,\dots,N$
-		\State $\hat{\mathbb{C}}_{ij} = \mathbb{C}_{ij} - c_{\min}^i, \quad \forall i,j$  
+		\State $\hat{\mathbb{C}}_{ij} = \mathbb{C}_{ij} + |c_{\min}^i|, \quad \forall i,j$  
 		\Comment{Now $\hat{\mathbb{C}}_{ij} \ge 0$}
 		\\
 		\Comment{Phase 2: Normalize per example to [0,1]}
@@ -371,14 +371,14 @@ To address these issues, Algorithm~\ref{algo:soft-labels} applies a sequence of 
 		\EndIf
 		\\
 		\Comment{Phase 3: Exponentiate and normalize to produce a probability distribution}
-		\State $P_{ij} = \exp\left(\bar{\mathbb{C}}_{ij} / \tau\right), \quad \forall i,j$  % EDIT: make temperature explicit
+		\State $P_{ij} = \exp\left(\bar{\mathbb{C}}_{ij} \right), \quad \forall i,j$ 
 		\State $S_{ij} = \displaystyle \frac{P_{ij}}{\sum_{k=1}^{\zeta} P_{ik}}, \quad \forall i,j$
 		\State \Return $S \in \mathbb{R}^{N \times \zeta}$
 		\EndFunction
 	\end{algorithmic}
 \end{algorithm}
 
-Here $S_{ij}$ can be interpreted as the teacher’s estimated probability $\mathbb{P}(y_i = j \mid \mathbf{x}_i)$. Each row $S_i$ is a valid probability distribution over classes. The optional temperature parameter $\tau > 0$ (which defaults to 1 if not explicitly used) allows controlling the softness of the distribution during distillation.
+Here $S_{ij}$ can be interpreted as the teacher’s estimated probability $\mathbb{P}(y_i = j \mid \mathbf{x}_i)$. Each row $S_i$ is a valid probability distribution over classes. 
 
 For example, suppose for a 3-class TM we obtain raw class sums  
 \[
@@ -392,7 +392,7 @@ Phase 2 (normalize) yields
 \[
 \bar{\mathbb{C}} = [0,\;1.0,\;0.118],
 \]  
-Phase 3 (softmax with $\tau = 1$) yields  
+Phase 3 (softmax) yields  
 \[
 P = [\exp(0),\;\exp(1.0),\;\exp(0.118)] = [1,\;2.718,\;1.125],
 \]  
@@ -402,21 +402,21 @@ S \approx [0.204,\;0.554,\;0.229].
 \]  
 Thus the teacher assigns approximately 55.4\% probability to class 2, 22.9\% to class 3, and 20.4\% to class 1 — not just the single top class but a full distribution reflecting confidence and relative class plausibility.
 
-The ``dark knowledge'' contained in a teacher model is transferable to the student through its inter-class similarity structure [Hinton et al.] In a TM, that inter-class similarity is encoded in the relative ordering and magnitude differences of TM class sums. Because shifting by a constant (Phase 1), normalizing by a positive scalar (Phase 2), and applying softmax (Phase 3) each retain the relative ordering of their inputs, their composition likewise preserves rank ordering. Therefore, the soft labels produced by Algorithm 2 suitably preserve the dark knowledge contained in the teacher.
+The ``dark knowledge'' contained in a teacher model is transferable to the student through its inter-class similarity structure \cite{hinton2015distillingknowledgeneuralnetwork}. In a TM, that inter-class similarity is encoded in the relative ordering and magnitude differences of TM class sums. Because shifting by a constant (Phase 1), normalizing by a positive scalar (Phase 2), and applying softmax (Phase 3) each retain the relative ordering of their inputs, their composition likewise preserves rank ordering. Therefore, the soft labels produced by Algorithm 2 suitably preserve the dark knowledge contained in the teacher.
 
-Our approach differs from standard logit-based softmax (often used in neural networks) by introducing shifting and scaling before exponentiation. These steps ensure non-negativity, avoid numerical instability due to large or negative sums, and preserve relative differences in class votes. We apply any temperature scaling only during distillation, not during soft‑label generation, which simplifies reuse of soft labels across different training regimes.
+Our approach differs from standard logit-based softmax (often used in neural networks) by introducing shifting and scaling before exponentiation. These steps ensure non-negativity, avoid numerical instability due to large or negative sums, and preserve relative differences in class votes. We apply any temperature scaling only during the fit stage (Algorithm \ref{algo:fit-soft}), not during soft‑label generation, which simplifies reuse of soft labels across different training regimes.
 
 This procedure enables the student model to learn not only the teacher’s top prediction but its confidence structure across classes, potentially transferring richer “dark knowledge” as shown to improve generalization in various distillation settings (e.g., knowledge distillation literature).  
 
 \subsection{Improved Training} 
 
-To use the soft labels generated by the teacher in Algorithm~\ref{algo:soft-labels}, we modify the standard Tsetlin Machine update step. Algorithm \ref{algo:soft-labels} describes the training procedure for the student Tsetlin Machine using both hard labels and soft labels provided by the teacher. During training, the student receives standard clause feedback derived from ground-truth labels, while additional guidance is incorporated through probability distributions generated from the teacher’s class sums. A balance parameter controls the relative influence of hard and soft supervision, allowing the student to learn both the target labels and the teacher’s confidence structure. This approach preserves the original Tsetlin Machine learning dynamics while enriching the training signal with distribution-level information.
+To use the soft labels generated by the teacher in Algorithm~\ref{algo:soft-labels}, we modify the standard Tsetlin Machine update step. Algorithm \ref{algo:fit-soft} describes the training procedure for the student Tsetlin Machine using both hard labels and soft labels provided by the teacher. During training, the student receives standard clause feedback derived from ground-truth labels, while additional guidance is incorporated through probability distributions generated from the teacher’s class sums. A balance parameter ($\alpha$) controls the relative influence of hard and soft supervision, allowing the student to learn both the target labels and the teacher’s confidence structure. This approach preserves the original Tsetlin Machine learning dynamics while enriching the training signal with distribution-level information.
 
 Training consists of two phases: reinforcing the positive class and reinforcing the negative classes. Recall that a multi-class Tsetlin Machine can be viewed as a team of $\zeta$ TMs, one for each class. In standard multi-class TM training, Type I feedback is sent to the true class $c$, and Type II feedback is sent to a random negative class $\neq c$.
 
 We propose a novel fit method for use in Tsetlin Machines, described in Algorithm~\ref{algo:fit-soft}. As in traditional TM training, the algorithm takes training data $X \in \mathbb{R}^{N \times n}$, true labels $y \in \mathbb{R}^N$, the number of training examples $N$, and the number of epochs $E$. We introduce three additional parameters: soft labels $S \in \mathbb{R}^{N \times \zeta}$, balance $\alpha \in [0,1]$, and distribution temperature $\tau \in (0,\infty)$. The balance parameter $\alpha$ controls the influence of soft labels in training, while the temperature $\tau$ adjusts the entropy of the soft labels. Figure~\ref{fig:soft-labels-flow} illustrates the data pathway for training the student model.
 
-First, for each epoch $e$ and example $i$, the soft label distributions are adjusted by temperature $\tau^2$ and re-normalized. This modifies the entropy of the soft labels: a higher $\tau>1$ increases entropy, moving the distribution toward uniform, while $\tau<1$ decreases entropy, emphasizing the true class. This effect is shown in Figure~\ref{fig:pdist-ex-scaled}.
+First, for each epoch $e$ and example $i$, the soft label distributions are adjusted by temperature $\tau^2$ and re-normalized. This modifies the entropy of the soft labels: a higher $\tau>1$ increases entropy, moving the distribution toward uniform, while $\tau<1$ decreases entropy, emphasizing the true class. This effect is shown in Figure~\ref{fig:pdist-ex-scaled}. 
 
 In Algorithm~\ref{algo:fit-soft}, Type I feedback is applied to the true class $y_i=c$ with probability $\alpha$, allowing the student to learn from ambiguous examples and mimic the teacher. For each class $k$, the base feedback probability $\phi = (1-\alpha) p_{i,k}$ is computed. Classes with $\phi < 0.001$ are skipped for efficiency. The feedback type is determined by the soft label: $p_{i,k} > 0.5$ indicates a possible positive class (Type I), otherwise Type II. The feedback probability is then adjusted by confidence and temperature before stochastic application. This process is repeated for each class, example, and epoch, enabling the student model to integrate both teacher soft labels and ground truth information.
 
@@ -447,7 +447,8 @@ In Algorithm~\ref{algo:fit-soft}, Type I feedback is applied to the true class $
 		
 		\Comment{Phase 2: Soft Label Training}
 		\For{each class $k \in \{1,\ldots,\zeta\}$}
-		\If{$k = c$ \textbf{and} $\alpha > 0$} \Comment{Skip true class if already trained with hard labels}
+		\Comment{Skip true class if already trained with hard labels}
+		\If{$k = c$ \textbf{and} $\alpha > 0$} 
 		\State \textbf{continue}
 		\EndIf
 		\State $\phi \gets (1 - \alpha) \, p_{i,k}$ \Comment{Base feedback probability}
@@ -518,7 +519,7 @@ IMDB textual data is preprocessed into n-grams and converted into bit representa
 
 \subsection{Experiment Design}
 
-Our experiments follow a knowledge distillation scenario similar to neural networks. We have a baseline model $TM_B$, a teacher model $TM_T$, and a student model $TM_S$. All three models are weighted Tsetlin Machines, share the same parameters aside from clause count. Each  The baseline (and student) model is assigned fewer clauses than the teacher (in our experiments, between 2 and 10 times fewer), and the student has the same number of clauses as the baseline. The baseline serves as a reference for what the student would achieve without the effect our proposed algorithms (DKD). Because the baseline and student models have the same size, they should have roughly the same computational cost.
+Our experiments follow a knowledge distillation scenario similar to neural networks. We have a baseline model $TM_B$, a teacher model $TM_T$, and a student model $TM_S$. All three models are weighted Tsetlin Machines, and share the same parameters aside from clause count. The baseline and student models are assigned fewer clauses than the teacher (in our experiments, between 2 and 10 times fewer), and the student has the same number of clauses as the baseline. The baseline serves as a reference for what the student would achieve without the effect our proposed algorithms (DKD). Because the baseline and student models have the same size, they should have roughly the same computational cost.
 
 Let $E_S$ and $E_T$ denote the number of student and teacher epochs, respectively. Let $E_{T+S} = E_T + E_S$ denote the total number of epochs. The choice of epoch counts (Table~\ref{tab:hyperparams-dkd}) was determined through preliminary convergence analysis on validation data.
 
@@ -527,28 +528,27 @@ First, the baseline model $TM_B$ is trained on the dataset for $E_{T+S}$ epochs,
 Once the baselines are established, we reinitialize the teacher model $TM_T$ from the checkpoint at $E_T$ epochs to avoid giving the student model an unfair advantage. We then initialize the student model $TM_S$ with the clauses of the trained teacher using Algorithm~\ref{algo:init-clauses}. Soft labels are generated from the teacher over the training dataset using Algorithm~\ref{algo:soft-labels}. Finally, the student model is trained for $E_S$ epochs on the training dataset and the soft labels from the teacher using Algorithm~\ref{algo:fit-soft}. Because Tsetlin Machines are stochastic, each experiment is repeated $K$ times and results are averaged, reporting mean and standard deviation across runs. 
 
 We evaluate the statistical siginificance of observed improvements by conducting paired \textit{t}-tests across $K$ independent trials, comparing the distilled student against the baseline. 
-We use a one tailed paired \textit{t}-test to compare accuracy ($H_1$: student $>$ baseline) and a two tailed test on training and inference time ($H_1$: ), reflecting our directional hypothesis on accuracy and neutral effect on computational time. Significance thresholds are set at the conventional $p < 0.05$, $p < 0.01$, and $p < 0.001$ and reported as *, **, and ***, respectively.
+We use a one tailed paired \textit{t}-test to measure accuracy ($H_1$: student $>$ baseline) and a two tailed test on training and inference time ($H_1$: ), reflecting our directional hypothesis on accuracy and neutral effect on computational time. Significance thresholds are set at the conventional $p < 0.05$, $p < 0.01$, and $p < 0.001$ and reported as *, **, and ***, respectively.
 
 The experimental design focuses on isolating the effect of distribution-enhanced supervision and clause-level transfer under fixed architectural settings. Accordingly, comparisons are limited to teacher, baseline, and student models that share identical hyperparameters aside from clause count. Alternative approaches such as extended training of smaller Tsetlin Machines, regularized TMs, and explicit clause pruning without distillation are not evaluated experimentally in this study. These comparisons represent important directions for future work.
 
 For data collection, we measure average accuracies over $E_{T+S}$ epochs. Training and testing times are recorded for the baseline and teacher over $E_{T+S}$ epochs, and for the student model over $E_S$ epochs. This reflects that the student model begins training after $E_T$ epochs with a smaller architecture than the teacher. The time for generating soft labels and clause outputs is not included, as it is a one-time cost approximately equal to the time of one training epoch. All times are reported in seconds, and all accuracies are reported in percentages.
 
-Hyperparameters for our distribution-enhanced experiments are shown in Table~\ref{tab:hyperparams-dkd}. Temperature selection ($\tau$ in Table~\ref{tab:hyperparams-dkd}) was determined through preliminary grid search experiments over the range $[1.0, 2.0, 3.0, 4.0, 5.0]$. We found that $\tau \in [3.0, 4.0]$ consistently produced the best results across datasets, outperforming the vanilla softmax ($\tau = 1.0$). This suggests that softer distributions, which reveal more information about class relationships, are particularly valuable for Tsetlin Machines, likely because they help guide discrete propositional logic clauses toward capturing inter-class boundaries more effectively. 
+Hyperparameters for our distribution-enhanced experiments are shown in Table~\ref{tab:hyperparams-dkd}. Temperature selection ($\tau$ in Table~\ref{tab:hyperparams-dkd}) was determined through preliminary grid search experiments over the range $[1.0, 2.0, 3.0, 4.0, 5.0]$. We found that $\tau \in [3.0, 4.0]$ consistently produced the best results across datasets, outperforming the vanilla softmax ($\tau = 1.0$). This suggests that softer distributions, which reveal more information about class relationships, are particularly valuable for Tsetlin Machines, likely because they help guide discrete propositional logic clauses toward capturing inter-class boundaries more effectively. We denote the internal TM threshold and specificity as $T$ and $s$, respectively \cite{granmo2018tsetlin}. Each dataset has its own $T$ and $s$ values, and all models within that respective dataset share the same $T$ and $s$.
 
 Overall, we observe across all datasets that the proposed knowledge distillation approach consistently improves the accuracy of the student model relative to a non-distilled baseline under identical architectural constraints, while maintaining comparable training and inference costs.
 
 \begin{table*}
 	\centering
 	\caption{Experiment Hyperparameters }
-	\label{tab:hyperparams-dkd}
-	\begin{tabular}{l|cccccccccccc}
+	\begin{tabular}{l|cccccccccc}
 	\hline
-	Dataset & $|C_T|$ & $|C_S|$ & $T_T$ & $T_S$ & $s_T$ & $s_S$ & $\tau$ & $\alpha$ & $z$ & $E_T$ & $E_S$ & $K$ \\
+	Dataset & $|C_T|$ & $|C_S|$ & $T$ & $s$ & $\tau$ & $\alpha$ & $z$ & $E_T$ & $E_S$ & $K$ \\
 	\hline
-	MNIST & 1000 & 100 & 10 & 10 & 4.0 & 4.0 & 3.0 & 0.5 & 0.3 & 120 & 240 & 30 \\
-	KMNIST & 2000 & 200 & 100 & 100 & 8.2 & 8.2 & 4.0 & 0.5 & 0.3 & 120 & 240 & 30 \\
-	EMNIST & 1000 & 100 & 100 & 100 & 4.0 & 4.0 & 4.0 & 0.5 & 0.2 & 120 & 240 & 30 \\
-	IMDB & 8000 & 4000 & 6000 & 6000 & 7.0 & 7.0 & 3.0 & 0.5 & 0.2 & 30 & 60 & 10 \\\hline
+	MNIST & 1000 & 100 & 10 & 4.0 & 3.0 & 0.5 & 0.3 & 120 & 240 & 30 \\
+	KMNIST & 2000 & 200 & 100 & 8.2 & 4.0 & 0.5 & 0.3 & 120 & 240 & 30 \\
+	EMNIST & 1000 & 100 & 100 & 4.0 & 4.0 & 0.5 & 0.2 & 120 & 240 & 30 \\
+	IMDB & 8000 & 4000 & 6000 & 7.0 & 3.0 & 0.5 & 0.2 & 30 & 60 & 10 \\\hline
 	\end{tabular}
 	\label{tab:hyperparams-dkd}
 \end{table*}
