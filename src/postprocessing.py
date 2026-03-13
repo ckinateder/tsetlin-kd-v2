@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 from util import load_pkl, load_json, save_json
-from __init__ import  OUTPUT_JSON_PATH, PLOT_FIGSIZE, PLOT_DPI, ACC_TEST_DISTILLED, ACC_TRAIN_DISTILLED, AGGREGATED_OUTPUT_JSON_PATH
+from __init__ import  OUTPUT_JSON_PATH, PLOT_FIGSIZE, PLOT_DPI, ACC_TEST_STUDENT, ACC_TRAIN_STUDENT, AGGREGATED_OUTPUT_JSON_PATH
 import os 
 def iterate_over_file_in_folder(folder="experiments", file_extension=".json"):
     for root, dirs, files in os.walk(folder):
@@ -70,26 +70,26 @@ def make_paper_1_tables(exps: list[tuple[str, str]]):
         new_row = {
             "Dataset": rowname,
             "$Acc'_T$": f'{exp_output["analysis"]["avg_acc_train_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_teacher"]:.2f}',
-            "$Acc'_S$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
-            "$Acc'_D$": f'{exp_output["analysis"]["avg_acc_train_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_distilled"]:.2f}',
-            "$Acc'^{down}_D$": f'{exp_output["analysis"]["avg_acc_train_distilled_ds"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_distilled_ds"]:.2f}',
+            "$Acc'_S$": f'{exp_output["analysis"]["avg_acc_train_baseline"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_baseline"]:.2f}',
+            "$Acc'_D$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
+            "$Acc'^{down}_D$": f'{exp_output["analysis"]["avg_acc_train_baseline_ds"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_baseline_ds"]:.2f}',
             "$\\mathcal{T}'_T$": f'{exp_output["analysis"]["avg_time_train_teacher"]:.2f}',
-            "$\\mathcal{T}'_S$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f}',
-            "$\\mathcal{T}'_D$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f}',
-            "$\\mathcal{T}'_{PCD}$": f'{exp_output["analysis"]["avg_time_train_distilled_ds"]:.2f}'
+            "$\\mathcal{T}'_S$": f'{exp_output["analysis"]["avg_time_train_baseline"]:.2f}',
+            "$\\mathcal{T}'_D$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f}',
+            "$\\mathcal{T}'_{PCD}$": f'{exp_output["analysis"]["avg_time_train_baseline_ds"]:.2f}'
         }
         train_table = train_table._append(new_row, ignore_index=True)
         
         new_row = {
             "Dataset": rowname,
             "$Acc_T$": f'{exp_output["analysis"]["avg_acc_test_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_teacher"]:.2f}',
-            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
-            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_test_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_distilled"]:.2f}',
-            "$Acc'^{down}_D$": f'{exp_output["analysis"]["avg_acc_test_distilled_ds"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_distilled_ds"]:.2f}',
+            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_baseline"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_baseline"]:.2f}',
+            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
+            "$Acc'^{down}_D$": f'{exp_output["analysis"]["avg_acc_test_baseline_ds"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_baseline_ds"]:.2f}',
             "$\\mathcal{T}_T$": f'{exp_output["analysis"]["avg_time_test_teacher"]:.2f}',
-            "$\\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f}',
-            "$\\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f}',
-            "$\\mathcal{T}'_{PCD}$": f'{exp_output["analysis"]["avg_time_test_distilled_ds"]:.2f}'
+            "$\\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_test_baseline"]:.2f}',
+            "$\\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f}',
+            "$\\mathcal{T}'_{PCD}$": f'{exp_output["analysis"]["avg_time_test_baseline_ds"]:.2f}'
         }
         test_table = test_table._append(new_row, ignore_index=True)
 
@@ -203,22 +203,22 @@ def make_experiment_tables(exps: list[tuple[str, str]]):
         new_row = {
             "Dataset": rowname,
             "$Acc'_T$": f'{exp_output["analysis"]["avg_acc_train_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_teacher"]:.2f}',
-            "$Acc'_S$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
-            "$Acc'_D$": f'{exp_output["analysis"]["avg_acc_train_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_distilled"]:.2f}',
+            "$Acc'_S$": f'{exp_output["analysis"]["avg_acc_train_baseline"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_baseline"]:.2f}',
+            "$Acc'_D$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
             "$\\mathcal{T}'_T$": f'{exp_output["analysis"]["avg_time_train_teacher"]:.2f}',
-            "$\\mathcal{T}'_S$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f}',
-            "$\\mathcal{T}'_D$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f}'
+            "$\\mathcal{T}'_S$": f'{exp_output["analysis"]["avg_time_train_baseline"]:.2f}',
+            "$\\mathcal{T}'_D$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f}'
         }
         train_table = train_table._append(new_row, ignore_index=True)
         
         new_row = {
             "Dataset": rowname,
             "$Acc_T$": f'{exp_output["analysis"]["avg_acc_test_teacher"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_teacher"]:.2f}',
-            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
-            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_test_distilled"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_distilled"]:.2f}',
+            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_baseline"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_baseline"]:.2f}',
+            "$Acc_D$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
             "$\\mathcal{T}_T$": f'{exp_output["analysis"]["avg_time_test_teacher"]:.2f}',
-            "$\\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f}',
-            "$\\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f}'
+            "$\\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_test_baseline"]:.2f}',
+            "$\\mathcal{T}_D$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f}'
         }
         test_table = test_table._append(new_row, ignore_index=True)
 
@@ -386,22 +386,22 @@ def make_experiment_tables_aggregate(exps: list[tuple[str, str]]):
         new_row = {
             "Dataset": rowname,
             "$Acc'_T$": f'{exp_output["analysis"]["avg_acc_train_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_teacher"]:.2f}',
-            "$Acc'_B$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
-            "$Acc'_S$": f'{exp_output["analysis"]["avg_acc_train_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_distilled"]:.2f}',
+            "$Acc'_B$": f'{exp_output["analysis"]["avg_acc_train_baseline"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_baseline"]:.2f}',
+            "$Acc'_S$": f'{exp_output["analysis"]["avg_acc_train_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_train_student"]:.2f}',
             "$\\mathcal{T}'_T$": f'{exp_output["analysis"]["avg_time_train_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_teacher"]:.2f}',
-            "$\\mathcal{T}'_B$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_student"]:.2f}',
-            "$\\mathcal{T}'_S$": f'{exp_output["analysis"]["avg_time_train_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_distilled"]:.2f}'
+            "$\\mathcal{T}'_B$": f'{exp_output["analysis"]["avg_time_train_baseline"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_baseline"]:.2f}',
+            "$\\mathcal{T}'_S$": f'{exp_output["analysis"]["avg_time_train_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_train_student"]:.2f}'
         }
         train_table = train_table._append(new_row, ignore_index=True)
 
         new_row = {
             "Dataset": rowname,
             "$Acc_T$": f'{exp_output["analysis"]["avg_acc_test_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_teacher"]:.2f}',
-            "$Acc_B$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
-            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_distilled"]:.2f}',
+            "$Acc_B$": f'{exp_output["analysis"]["avg_acc_test_baseline"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_baseline"]:.2f}',
+            "$Acc_S$": f'{exp_output["analysis"]["avg_acc_test_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_acc_test_student"]:.2f}',
             "$\\mathcal{T}_T$": f'{exp_output["analysis"]["avg_time_test_teacher"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_teacher"]:.2f}',
-            "$\\mathcal{T}_B$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_student"]:.2f}',
-            "$\\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_test_distilled"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_distilled"]:.2f}'
+            "$\\mathcal{T}_B$": f'{exp_output["analysis"]["avg_time_test_baseline"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_baseline"]:.2f}',
+            "$\\mathcal{T}_S$": f'{exp_output["analysis"]["avg_time_test_student"]:.2f} \\newline $\pm$ {exp_output["analysis"]["std_time_test_student"]:.2f}'
         }
         test_table = test_table._append(new_row, ignore_index=True)
 
@@ -481,19 +481,19 @@ def make_formatted_tables(exps: list[str]):
     phase_keys = {
         "train": (
             "avg_acc_train_teacher", "std_acc_train_teacher",
+            "avg_acc_train_baseline", "std_acc_train_baseline",
             "avg_acc_train_student", "std_acc_train_student",
-            "avg_acc_train_distilled", "std_acc_train_distilled",
             "avg_time_train_teacher", "std_time_train_teacher",
+            "avg_time_train_baseline", "std_time_train_baseline",
             "avg_time_train_student", "std_time_train_student",
-            "avg_time_train_distilled", "std_time_train_distilled",
         ),
         "test": (
             "avg_acc_test_teacher", "std_acc_test_teacher",
+            "avg_acc_test_baseline", "std_acc_test_baseline",
             "avg_acc_test_student", "std_acc_test_student",
-            "avg_acc_test_distilled", "std_acc_test_distilled",
             "avg_time_test_teacher", "std_time_test_teacher",
+            "avg_time_test_baseline", "std_time_test_baseline",
             "avg_time_test_student", "std_time_test_student",
-            "avg_time_test_distilled", "std_time_test_distilled",
         ),
     }
 
@@ -510,8 +510,8 @@ def make_formatted_tables(exps: list[str]):
         dataset_order.append(dataset_name)
 
         run_data = {
-            "train": {"student_acc": [], "distilled_acc": [], "student_time": [], "distilled_time": []},
-            "test": {"student_acc": [], "distilled_acc": [], "student_time": [], "distilled_time": []},
+            "train": {"baseline_acc": [], "student_acc": [], "baseline_time": [], "student_time": []},
+            "test": {"baseline_acc": [], "student_acc": [], "baseline_time": [], "student_time": []},
         }
         for entry in sorted(os.scandir(exp), key=lambda e: e.name):
             if not entry.is_dir():
@@ -521,14 +521,14 @@ def make_formatted_tables(exps: list[str]):
                 continue
             run_output = load_json(run_json)
             a = run_output["analysis"]
+            run_data["train"]["baseline_acc"].append(a["avg_acc_train_baseline"])
             run_data["train"]["student_acc"].append(a["avg_acc_train_student"])
-            run_data["train"]["distilled_acc"].append(a["avg_acc_train_distilled"])
+            run_data["train"]["baseline_time"].append(a["avg_time_train_baseline"])
             run_data["train"]["student_time"].append(a["avg_time_train_student"])
-            run_data["train"]["distilled_time"].append(a["avg_time_train_distilled"])
+            run_data["test"]["baseline_acc"].append(a["avg_acc_test_baseline"])
             run_data["test"]["student_acc"].append(a["avg_acc_test_student"])
-            run_data["test"]["distilled_acc"].append(a["avg_acc_test_distilled"])
+            run_data["test"]["baseline_time"].append(a["avg_time_test_baseline"])
             run_data["test"]["student_time"].append(a["avg_time_test_student"])
-            run_data["test"]["distilled_time"].append(a["avg_time_test_distilled"])
 
         by_dataset[dataset_name] = {"agg": agg, "run_data": run_data}
 
@@ -549,18 +549,18 @@ def make_formatted_tables(exps: list[str]):
             # Accuracy block
             acc_teacher = f"{agg[acc_t_avg]:.2f} $\\pm$ {agg[acc_t_std]:.2f}"
             acc_baseline = f"{agg[acc_b_avg]:.2f} $\\pm$ {agg[acc_b_std]:.2f}"
-            _, p_acc = stats.ttest_rel(rd["distilled_acc"], rd["student_acc"], alternative="greater")
+            _, p_acc = stats.ttest_rel(rd["student_acc"], rd["baseline_acc"], alternative="greater")
             stars_acc = _stars(p_acc)
             acc_student = f"{agg[acc_s_avg]:.2f} $\\pm$ {agg[acc_s_std]:.2f}"
-            delta_acc = f'{((sum(rd["distilled_acc"]) - sum(rd["student_acc"])) / len(rd["student_acc"])):+.2f}{stars_acc}'
+            delta_acc = f'{((sum(rd["student_acc"]) - sum(rd["baseline_acc"])) / len(rd["baseline_acc"])):+.2f}{stars_acc}'
 
             # Time block
             time_teacher = f"{agg[time_t_avg]:.2f} $\\pm$ {agg[time_t_std]:.2f}"
             time_baseline = f"{agg[time_b_avg]:.2f} $\\pm$ {agg[time_b_std]:.2f}"
-            _, p_time = stats.ttest_rel(rd["distilled_time"], rd["student_time"], alternative="two-sided")
+            _, p_time = stats.ttest_rel(rd["student_time"], rd["baseline_time"], alternative="two-sided")
             stars_time = _stars(p_time)
             time_student = f"{agg[time_s_avg]:.2f} $\\pm$ {agg[time_s_std]:.2f}"
-            delta_time = f'{((sum(rd["distilled_time"]) - sum(rd["student_time"])) / len(rd["student_time"])):+.2f}{stars_time}'
+            delta_time = f'{((sum(rd["student_time"]) - sum(rd["baseline_time"])) / len(rd["baseline_time"])):+.2f}{stars_time}'
 
             rows.append({
                 "acc_teacher": acc_teacher,
@@ -627,10 +627,10 @@ def make_combined_graphs(exps: list[tuple[str, str]], output_dir: str):
     
     # Colors for different models
     colors = {
-        "distilled": "tab:blue",
-        "Distilled w/ PCD": "tab:purple",
+        "student": "tab:blue",
+        "Student DS": "tab:purple",
         "teacher": "tab:orange",
-        "student": "tab:green"
+        "baseline": "tab:green"
     }
     
     # Process data for each experiment
@@ -651,13 +651,13 @@ def make_combined_graphs(exps: list[tuple[str, str]], output_dir: str):
                     "acc": exp_output["analysis"]["avg_acc_train_teacher"],
                     "time": exp_output["analysis"]["avg_time_train_teacher"]
                 },
+                "baseline": {
+                    "acc": exp_output["analysis"]["avg_acc_train_baseline"],
+                    "time": exp_output["analysis"]["avg_time_train_baseline"]
+                },
                 "student": {
                     "acc": exp_output["analysis"]["avg_acc_train_student"],
                     "time": exp_output["analysis"]["avg_time_train_student"]
-                },
-                "distilled": {
-                    "acc": exp_output["analysis"]["avg_acc_train_distilled"],
-                    "time": exp_output["analysis"]["avg_time_train_distilled"]
                 }
             },
             "test": {
@@ -665,24 +665,24 @@ def make_combined_graphs(exps: list[tuple[str, str]], output_dir: str):
                     "acc": exp_output["analysis"]["avg_acc_test_teacher"],
                     "time": exp_output["analysis"]["avg_time_test_teacher"]
                 },
+                "baseline": {
+                    "acc": exp_output["analysis"]["avg_acc_test_baseline"],
+                    "time": exp_output["analysis"]["avg_time_test_baseline"]
+                },
                 "student": {
                     "acc": exp_output["analysis"]["avg_acc_test_student"],
                     "time": exp_output["analysis"]["avg_time_test_student"]
-                },
-                "distilled": {
-                    "acc": exp_output["analysis"]["avg_acc_test_distilled"],
-                    "time": exp_output["analysis"]["avg_time_test_distilled"]
                 }
             }
         }
         if "downsample_info" in exp_output:
-            data["train"]["Distilled w/ PCD"] = {
-                "acc": exp_output["analysis"]["avg_acc_train_distilled_ds"],
-                "time": exp_output["analysis"]["avg_time_train_distilled_ds"]
+            data["train"]["Student DS"] = {
+                "acc": exp_output["analysis"]["avg_acc_train_student_ds"],
+                "time": exp_output["analysis"]["avg_time_train_student_ds"]
             }
-            data["test"]["Distilled w/ PCD"] = {
-                "acc": exp_output["analysis"]["avg_acc_test_distilled_ds"],
-                "time": exp_output["analysis"]["avg_time_test_distilled_ds"]
+            data["test"]["Student DS"] = {
+                "acc": exp_output["analysis"]["avg_acc_test_student_ds"],
+                "time": exp_output["analysis"]["avg_time_test_student_ds"]
             }
             downsampled = True
         experiment_data.append(data)
@@ -694,7 +694,7 @@ def make_combined_graphs(exps: list[tuple[str, str]], output_dir: str):
             
             # Calculate bar positions
             n_experiments = len(experiment_data)
-            n_models = 3  # teacher, student, distilled
+            n_models = 3  # teacher, baseline, student
             bar_width = 0.25
             spacing = 0.5  # Space between experiment groups
             bar_spacing = 0.01  # 1px spacing between bars (in data coordinates)
@@ -705,17 +705,17 @@ def make_combined_graphs(exps: list[tuple[str, str]], output_dir: str):
                 base_pos = i * (n_models * bar_width + spacing)
                 positions.append({
                     "teacher": base_pos,
-                    "student": base_pos + bar_width + bar_spacing,  # Add spacing after first bar
-                    "distilled": base_pos + 2 * (bar_width + bar_spacing)  # Add spacing after second bar
+                    "baseline": base_pos + bar_width + bar_spacing,  # Add spacing after first bar
+                    "student": base_pos + 2 * (bar_width + bar_spacing)  # Add spacing after second bar
                 })
                 if downsampled:
-                    positions[-1]["Distilled w/ PCD"] = base_pos + 3 * (bar_width + bar_spacing)  # Add spacing after third bar
-            
+                    positions[-1]["Student DS"] = base_pos + 3 * (bar_width + bar_spacing)  # Add spacing after third bar
+
             # Plot bars
 
-            models = ["teacher", "student", "distilled", "Distilled w/ PCD"]
+            models = ["teacher", "baseline", "student", "Student DS"]
             if not downsampled:
-                models.remove("Distilled w/ PCD")
+                models.remove("Student DS")
             for model in models:
                 if metric == "time":
                     # Normalize time values relative to teacher for each experiment
@@ -728,8 +728,8 @@ def make_combined_graphs(exps: list[tuple[str, str]], output_dir: str):
                     means = [data[phase][model][metric] for data in experiment_data]
                 pos = [pos[model] for pos in positions]
                 
-                bars = plt.bar(pos, means, bar_width, 
-                             label=model.capitalize() if model != "Distilled w/ PCD" else "Distilled w/ PCD",
+                bars = plt.bar(pos, means, bar_width,
+                             label=model.capitalize() if model != "Student DS" else "Student DS",
                              color=colors[model],
                              zorder=10)  # Set zorder to 10 to put bars above grid
                 
@@ -746,7 +746,7 @@ def make_combined_graphs(exps: list[tuple[str, str]], output_dir: str):
                 plt.ylabel(f'Average {phase.capitalize()} Time (normalized)')
             
             # Set x-axis ticks and labels
-            plt.xticks([pos["student"] for pos in positions], 
+            plt.xticks([pos["baseline"] for pos in positions],
                       [data["name"] for data in experiment_data],
                       rotation=0)
             
@@ -798,10 +798,10 @@ def make_combined_graphs_aggregate(exps: list[tuple[str, str]], output_dir: str)
     
     # Colors for different models
     colors = {
-        "distilled": "tab:blue",
-        "Distilled w/ PCD": "tab:purple",
+        "student": "tab:blue",
+        "Student DS": "tab:purple",
         "teacher": "tab:orange",
-        "student": "tab:green"
+        "baseline": "tab:green"
     }
     
     # Process data for each experiment
@@ -827,17 +827,17 @@ def make_combined_graphs_aggregate(exps: list[tuple[str, str]], output_dir: str)
                     "avg_time": exp_output["analysis"]["avg_time_train_teacher_normalized"],
                     "std_time": exp_output["analysis"]["std_time_train_teacher_normalized"],
                 },
+                "baseline": {
+                    "avg_acc": exp_output["analysis"]["avg_acc_train_baseline"],
+                    "std_acc": exp_output["analysis"]["std_acc_train_baseline"],
+                    "avg_time": exp_output["analysis"]["avg_time_train_baseline_normalized"],
+                    "std_time": exp_output["analysis"]["std_time_train_baseline_normalized"],
+                },
                 "student": {
                     "avg_acc": exp_output["analysis"]["avg_acc_train_student"],
                     "std_acc": exp_output["analysis"]["std_acc_train_student"],
                     "avg_time": exp_output["analysis"]["avg_time_train_student_normalized"],
                     "std_time": exp_output["analysis"]["std_time_train_student_normalized"],
-                },
-                "distilled": {
-                    "avg_acc": exp_output["analysis"]["avg_acc_train_distilled"],
-                    "std_acc": exp_output["analysis"]["std_acc_train_distilled"],
-                    "avg_time": exp_output["analysis"]["avg_time_train_distilled_normalized"],
-                    "std_time": exp_output["analysis"]["std_time_train_distilled_normalized"],
                 }
             },
             "test": {
@@ -847,17 +847,17 @@ def make_combined_graphs_aggregate(exps: list[tuple[str, str]], output_dir: str)
                     "avg_time": exp_output["analysis"]["avg_time_test_teacher_normalized"],
                     "std_time": exp_output["analysis"]["std_time_test_teacher_normalized"],
                 },
+                "baseline": {
+                    "avg_acc": exp_output["analysis"]["avg_acc_test_baseline"],
+                    "std_acc": exp_output["analysis"]["std_acc_test_baseline"],
+                    "avg_time": exp_output["analysis"]["avg_time_test_baseline_normalized"],
+                    "std_time": exp_output["analysis"]["std_time_test_baseline_normalized"],
+                },
                 "student": {
                     "avg_acc": exp_output["analysis"]["avg_acc_test_student"],
                     "std_acc": exp_output["analysis"]["std_acc_test_student"],
                     "avg_time": exp_output["analysis"]["avg_time_test_student_normalized"],
                     "std_time": exp_output["analysis"]["std_time_test_student_normalized"],
-                },
-                "distilled": {
-                    "avg_acc": exp_output["analysis"]["avg_acc_test_distilled"],
-                    "std_acc": exp_output["analysis"]["std_acc_test_distilled"],
-                    "avg_time": exp_output["analysis"]["avg_time_test_distilled_normalized"],
-                    "std_time": exp_output["analysis"]["std_time_test_distilled_normalized"],
                 }
             }
         }
@@ -870,7 +870,7 @@ def make_combined_graphs_aggregate(exps: list[tuple[str, str]], output_dir: str)
             
             # Calculate bar positions
             n_experiments = len(experiment_data)
-            n_models = 3  # teacher, student, distilled
+            n_models = 3  # teacher, baseline, student
             bar_width = 0.25
             spacing = 0.5  # Space between experiment groups
             bar_spacing = 0.01  # 1px spacing between bars (in data coordinates)
@@ -881,14 +881,14 @@ def make_combined_graphs_aggregate(exps: list[tuple[str, str]], output_dir: str)
                 base_pos = i * (n_models * bar_width + spacing)
                 positions.append({
                     "teacher": base_pos,
-                    "student": base_pos + bar_width + bar_spacing,  # Add spacing after first bar
-                    "distilled": base_pos + 2 * (bar_width + bar_spacing)  # Add spacing after second bar
+                    "baseline": base_pos + bar_width + bar_spacing,  # Add spacing after first bar
+                    "student": base_pos + 2 * (bar_width + bar_spacing)  # Add spacing after second bar
                 })
             
             # Plot bars
 
-            display_names = {"teacher": "Teacher", "student": "Baseline", "distilled": "Student"}
-            models = ["teacher", "student", "distilled"]
+            display_names = {"teacher": "Teacher", "baseline": "Baseline", "student": "Student"}
+            models = ["teacher", "baseline", "student"]
             for model in models:
                 means = [data[phase][model]["avg_"+metric] for data in experiment_data]
                 stds = [data[phase][model]["std_"+metric] for data in experiment_data]
@@ -914,7 +914,7 @@ def make_combined_graphs_aggregate(exps: list[tuple[str, str]], output_dir: str)
                 plt.ylabel(f'Average {phase.capitalize()} Time (normalized)')
 
             # Set x-axis ticks and labels
-            plt.xticks([pos["student"] for pos in positions],
+            plt.xticks([pos["baseline"] for pos in positions],
                       [f"{data['name']}\n$K={data['K']}$" for data in experiment_data],
                       rotation=0)
             
@@ -987,10 +987,10 @@ if __name__ == "__main__":
         output = load_json(os.path.join("combined_results", "distribution", folder, OUTPUT_JSON_PATH))
         print(output["experiment_name"])
         results = pd.DataFrame(output["results"])
-        output["analysis"]["avg_acc_test_distilled"] = results[ACC_TEST_DISTILLED].mean()
-        output["analysis"]["std_acc_test_distilled"] = results[ACC_TEST_DISTILLED].std()
-        output["analysis"]["avg_acc_train_distilled"] = results[ACC_TRAIN_DISTILLED].mean()
-        output["analysis"]["std_acc_train_distilled"] = results[ACC_TRAIN_DISTILLED].std()
+        output["analysis"]["avg_acc_test_student"] = results[ACC_TEST_STUDENT].mean()
+        output["analysis"]["std_acc_test_student"] = results[ACC_TEST_STUDENT].std()
+        output["analysis"]["avg_acc_train_student"] = results[ACC_TRAIN_STUDENT].mean()
+        output["analysis"]["std_acc_train_student"] = results[ACC_TRAIN_STUDENT].std()
         save_json(output, os.path.join("combined_results", "distribution", folder, OUTPUT_JSON_PATH))
         plot_results(output, os.path.join("combined_results", "distribution", folder))
 """

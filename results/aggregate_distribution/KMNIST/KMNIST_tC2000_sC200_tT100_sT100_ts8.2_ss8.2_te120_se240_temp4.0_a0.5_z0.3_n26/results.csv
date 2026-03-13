@@ -1,4 +1,4 @@
-,acc_test_teacher,acc_test_student,acc_test_distilled,acc_train_teacher,acc_train_student,acc_train_distilled,time_train_teacher,time_train_student,time_train_distilled,time_test_teacher,time_test_student,time_test_distilled
+,acc_test_teacher,acc_test_baseline,acc_test_student,acc_train_teacher,acc_train_baseline,acc_train_student,time_train_teacher,time_train_baseline,time_train_student,time_test_teacher,time_test_baseline,time_test_student
 0,73.54,68.89,73.54,85.665,82.795,85.665,2.601883888244629,0.44736552238464355,2.601883888244629,0.8854894638061523,0.08705615997314453,0.8854894638061523
 1,74.37,72.48,74.37,86.94666666666667,85.735,86.94666666666667,2.2498936653137207,0.38788628578186035,2.2498936653137207,0.8875870704650879,0.08925747871398926,0.8875870704650879
 2,76.05,72.77,76.05,88.08833333333334,86.175,88.08833333333334,2.1206188201904297,0.3696749210357666,2.1206188201904297,0.8804678916931152,0.08613061904907227,0.8804678916931152

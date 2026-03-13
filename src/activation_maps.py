@@ -7,14 +7,14 @@ from keras.datasets import mnist
 import matplotlib.pyplot as plt
 import os
 
-def visualize_activation_maps(teacher_model, student_model, distilled_model, samples, true_labels, image_shape, output_filepath):
+def visualize_activation_maps(teacher_model, baseline_model, student_model, samples, true_labels, image_shape, output_filepath):
     """
-    Creates a visualization of activation maps for teacher, student, and distilled models.
-    
+    Creates a visualization of activation maps for teacher, baseline, and student models.
+
     Args:
         teacher_model: The teacher TsetlinMachine model
-        student_model: The student TsetlinMachine model
-        distilled_model: The distilled TsetlinMachine model
+        baseline_model: The baseline TsetlinMachine model (small model without KD)
+        student_model: The student TsetlinMachine model (small model with KD)
         samples: List of input samples to visualize
         true_labels: List of true labels for the samples
         image_shape: Tuple with image dimensions (height, width)
@@ -66,18 +66,18 @@ def visualize_activation_maps(teacher_model, student_model, distilled_model, sam
             spine.set_edgecolor(correct_color) if correct else spine.set_edgecolor(incorrect_color)
             spine.set_linewidth(line_width)
         
-        # Generate and display student activation map
-        student_activation = student_model.get_activation_map(sample, class_idx=sample_class_idx, image_shape=image_shape)
-        axes[i, 2].imshow(student_activation)
+        # Generate and display baseline activation map
+        baseline_activation = baseline_model.get_activation_map(sample, class_idx=sample_class_idx, image_shape=image_shape)
+        axes[i, 2].imshow(baseline_activation)
         axes[i, 2].set_xticks([])
         axes[i, 2].set_yticks([])
         for spine in axes[i, 2].spines.values():
             spine.set_edgecolor(correct_color) if correct else spine.set_edgecolor(incorrect_color)
             spine.set_linewidth(line_width)
-        
-        # Generate and display distilled activation map
-        distilled_activation = distilled_model.get_activation_map(sample, class_idx=sample_class_idx, image_shape=image_shape)
-        axes[i, 3].imshow(distilled_activation)
+
+        # Generate and display student activation map
+        student_activation = student_model.get_activation_map(sample, class_idx=sample_class_idx, image_shape=image_shape)
+        axes[i, 3].imshow(student_activation)
         axes[i, 3].set_xticks([])
         axes[i, 3].set_yticks([])
         for spine in axes[i, 3].spines.values():
@@ -88,8 +88,8 @@ def visualize_activation_maps(teacher_model, student_model, distilled_model, sam
         if i == 0:
             axes[i, 0].set_title("Original Sample")
             axes[i, 1].set_title("Teacher Features")
-            axes[i, 2].set_title("Student Features")
-            axes[i, 3].set_title("Distilled Features")
+            axes[i, 2].set_title("Baseline Features")
+            axes[i, 3].set_title("Student Features")
     
     #plt.suptitle(f"Activation Maps Comparison", fontsize=16)
     

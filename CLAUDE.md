@@ -52,23 +52,24 @@ This project implements **knowledge distillation (KD) for Tsetlin Machines** —
 ### Experiment flow (distillation.py)
 
 Each experiment trains three models for comparison:
-1. **Teacher baseline** — large TM trained normally
-2. **Student baseline** — small TM trained normally (no KD)
-3. **Distilled model** — small TM trained with KD from teacher
+1. **Teacher** — large TM trained normally
+2. **Baseline** — small TM trained normally (no KD)
+3. **Student** — small TM trained with KD from teacher
 
-For clause-based KD, a 4th model (**distilled_ds**) is also trained with downsampled clauses.
+For clause-based KD, a 4th model (**student_ds**) is also trained with downsampled clauses.
 
-### Naming in outputs and tables
+### Naming conventions
 
-In JSON/output and code, the three comparison models use internal names that differ from paper labels:
+All naming is consistent throughout code, JSON outputs, CSV files, and display:
 
-| Internal (JSON, code) | Display (tables, figures) |
-|-----------------------|----------------------------|
-| `teacher`             | Teacher                    |
-| `student`             | **Baseline** (small TM, no KD) |
-| `distilled`           | **Student** (small TM with KD)  |
+| Name | Description |
+|------|-------------|
+| `teacher` | Large TM trained normally |
+| `baseline` | Small TM trained normally (no KD) |
+| `student` | Small TM trained with KD from teacher |
+| `student_ds` | Student with downsampled clauses (CKD only) |
 
-So "student" in `output.json` / `aggregated_output.json` (e.g. `avg_acc_test_student`) is the **baseline** small model; "distilled" is the **KD student** we compare against it. Postprocessing uses a `display_names` mapping (e.g. in `make_formatted_tables`, `make_combined_graphs_aggregate`) so tables and charts show "Baseline" and "Student" and avoid confusion.
+JSON keys follow the pattern `avg_acc_test_baseline`, `avg_acc_test_student`, etc.
 
 Results are saved to a directory named by experiment parameters (e.g., `MNIST_tC1000_sC100_tT10_sT10_ts4.0_ss4.0_te120_se240_temp3.0_a0.5_z0.3`).
 
@@ -110,7 +111,7 @@ assets/
 Each experiment directory contains:
 - `output.json` — all results, params, and analysis
 - `results.csv` — per-epoch metrics
-- `teacher_baseline.pkl`, `student_baseline.pkl`, `distilled.pkl` — serialized TM models
+- `teacher_baseline.pkl`, `baseline.pkl`, `student.pkl` — serialized TM models
 - PNG plots for accuracy and timing
 
 ### Data caching

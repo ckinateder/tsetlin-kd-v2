@@ -78,8 +78,8 @@ if __name__ == "__main__":
     emnist_dataset = load_or_create(os.path.join("data", "emnist_dataset.pkl"), EMNISTLettersDataset)
     print("Datasets loaded")
         
-    #run distilled experiments
-    # this goes (dataset, name, params, kwargs)
+    # Run distribution-based KD experiments
+    # this goes (dataset, name, params, kwargs, n)
     distribution_distilled_experiments = [
         (mnist_dataset, "MNIST", 
             {
@@ -147,11 +147,11 @@ if __name__ == "__main__":
             continue
         # get dataset from output
         dataset = locals()[output["experiment_name"].lower()+"_dataset"]
-        distilled_model = load_pkl(os.path.join(one_off_dir, fpath, "distilled.pkl"))
+        student_model = load_pkl(os.path.join(one_off_dir, fpath, "student.pkl"))
         teacher_model = load_pkl(os.path.join(one_off_dir, fpath, "teacher_baseline.pkl"))
-        student_model = load_pkl(os.path.join(one_off_dir, fpath, "student_baseline.pkl"))
+        baseline_model = load_pkl(os.path.join(one_off_dir, fpath, "baseline.pkl"))
 
         samples = np.random.randint(0, len(dataset.X_train), size=4)
         plot_results(output, os.path.join(one_off_dir, fpath))
-        visualize_activation_maps(teacher_model, student_model, distilled_model, 
+        visualize_activation_maps(teacher_model, baseline_model, student_model,
                                 dataset.X_train[samples], dataset.Y_train[samples], dataset.image_shape, os.path.join(one_off_dir, fpath, output["experiment_name"]+"_activation_maps.png"))

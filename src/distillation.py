@@ -172,7 +172,7 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
     """
     Plot the results of a distillation experiment.
     
-    This function generates and saves plots showing the accuracy of teacher, student, and distilled models
+    This function generates and saves plots showing the accuracy of teacher, baseline, and student models
     on both test and training datasets. It also plots inference times for comparison.
     
     Args:
@@ -194,16 +194,16 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
     avg_alpha = 0.7
     minor_alpha = 0.2
     colors = {
-        "distilled": "tab:blue",
+        "student": "tab:blue",
         "teacher": "tab:orange",
-        "student": "tab:green",
-        "distilled_ds": "tab:purple"
+        "baseline": "tab:green",
+        "student_ds": "tab:purple"
     }
     display_names = {
         "teacher": "Teacher",
-        "student": "Baseline",
-        "distilled": "Student",
-        "distilled_ds": "Distilled w/ PCD",
+        "baseline": "Baseline",
+        "student": "Student",
+        "student_ds": "Student DS",
     }
     line_thickness = 1.2
     default_font_size = 14
@@ -256,26 +256,26 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
     def plot_accuracy_curves(metric_type: str):
         """Plot accuracy curves for a given metric type (train/test)."""
         plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
-        
+
         # Plot average lines
-        for model in ["distilled", "teacher", "student"]:
-            if downsample is not None and model == "distilled":
-                plt.axhline(analysis[f"avg_acc_{metric_type}_distilled_ds"], 
-                          color=colors["distilled_ds"], linestyle=":", 
-                          alpha=avg_alpha, label="_Distilled DS Avg")
-            plt.axhline(analysis[f"avg_acc_{metric_type}_{model}"], 
-                      color=colors[model], linestyle=":", 
+        for model in ["student", "teacher", "baseline"]:
+            if downsample is not None and model == "student":
+                plt.axhline(analysis[f"avg_acc_{metric_type}_student_ds"],
+                          color=colors["student_ds"], linestyle=":",
+                          alpha=avg_alpha, label="_Student DS Avg")
+            plt.axhline(analysis[f"avg_acc_{metric_type}_{model}"],
+                      color=colors[model], linestyle=":",
                       alpha=avg_alpha, label=f"_{display_names[model]} Avg")
-        
+
         # Plot curves
-        for model in ["distilled", "teacher", "student"]:
-            if downsample is not None and model == "distilled":
-                plt.plot(results[f"acc_{metric_type}_distilled_ds"], 
-                        label="Distilled w/ PCD", color=colors["distilled_ds"], 
+        for model in ["student", "teacher", "baseline"]:
+            if downsample is not None and model == "student":
+                plt.plot(results[f"acc_{metric_type}_student_ds"],
+                        label="Student DS", color=colors["student_ds"],
                         linewidth=line_thickness)
-            plt.plot(results[f"acc_{metric_type}_{model}"], 
+            plt.plot(results[f"acc_{metric_type}_{model}"],
                     label=display_names[model], color=colors[model],
-                    alpha=alpha if model != "distilled" else 1.0, 
+                    alpha=alpha if model != "student" else 1.0,
                     linewidth=line_thickness)
         
         plt.xlabel("Epoch")
@@ -293,15 +293,15 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         """Plot time bars for a given metric type (train/test)."""
         plt.figure(figsize=PLOT_FIGSIZE, dpi=PLOT_DPI)
         plt.grid(linestyle='dotted', zorder=0, axis="y")
-        
+
         labels = ["Teacher", "Baseline", "Student"]
-        data = [analysis[f"avg_time_{metric_type}_teacher"], analysis[f"avg_time_{metric_type}_student"], analysis[f"avg_time_{metric_type}_distilled"]]
-        bar_colors = [colors["teacher"], colors["student"], colors["distilled"]]
+        data = [analysis[f"avg_time_{metric_type}_teacher"], analysis[f"avg_time_{metric_type}_baseline"], analysis[f"avg_time_{metric_type}_student"]]
+        bar_colors = [colors["teacher"], colors["baseline"], colors["student"]]
 
         if downsample is not None:
-            data.append(analysis[f"avg_time_{metric_type}_distilled_ds"])
-            labels.append("Distilled w/ PCD")
-            bar_colors.append(colors["distilled_ds"])
+            data.append(analysis[f"avg_time_{metric_type}_student_ds"])
+            labels.append("Student DS")
+            bar_colors.append(colors["student_ds"])
 
         plt.bar(labels, data, color=bar_colors, zorder=10)
         yticks = plt.yticks()[0]
@@ -322,17 +322,17 @@ def plot_results(output: dict, fpath: str, downsample: float | None = None):
         
         # Create data points for each model
         models = [
-            ("Teacher", analysis[f"avg_acc_{metric_type}_teacher"], 
+            ("Teacher", analysis[f"avg_acc_{metric_type}_teacher"],
              analysis[f"avg_time_{metric_type}_teacher"], colors["teacher"]),
-            ("Baseline", analysis[f"avg_acc_{metric_type}_student"],
-             analysis[f"avg_time_{metric_type}_student"], colors["student"]),
-            ("Student", analysis[f"avg_acc_{metric_type}_distilled"],
-             analysis[f"avg_time_{metric_type}_distilled"], colors["distilled"])
+            ("Baseline", analysis[f"avg_acc_{metric_type}_baseline"],
+             analysis[f"avg_time_{metric_type}_baseline"], colors["baseline"]),
+            ("Student", analysis[f"avg_acc_{metric_type}_student"],
+             analysis[f"avg_time_{metric_type}_student"], colors["student"])
         ]
-        
+
         if downsample is not None:
-            models.append(("Distilled w/ PCD", analysis[f"avg_acc_{metric_type}_distilled_ds"], 
-                          analysis[f"avg_time_{metric_type}_distilled_ds"], colors["distilled_ds"]))
+            models.append(("Student DS", analysis[f"avg_acc_{metric_type}_student_ds"],
+                          analysis[f"avg_time_{metric_type}_student_ds"], colors["student_ds"]))
         
         # Plot points first
         for name, acc, time, color in models:
@@ -484,32 +484,30 @@ def distribution_distillation_experiment(
     plot_if_exists: bool = True,
 ) -> dict:
     """
-    Run a distillation experiment comparing teacher, student, and distilled models.
+    Run a distribution-based distillation experiment comparing teacher, baseline, and student models.
 
-    Note on baseline_teacher_model and baseline_student_model:
-    This is really only for the downsample experiment where we only want to change the downsampling parameters.
-    This lets us use the same teacher and student models for all downsampling experiments.
-    Remember, the training looks like this:
-        student_model trained on original data for combined_epochs
-        teacher_model trained on original data for combined_epochs, but a checkpoint is saved after teacher_epochs
-        distilled_model trained on output of teacher_model (transformed and downsampled) for student_epochs
+    Training flow:
+        1. Teacher model trained on original data for teacher_epochs (checkpoint saved)
+        2. Baseline model trained on original data for combined_epochs (no KD)
+        3. Student model initialized with top-z teacher clauses, then trained for student_epochs
+           using soft labels from teacher (KD with temperature and alpha)
 
     Args:
         dataset (Dataset): The dataset to use for the experiment
         experiment_name (str): Name of the experiment
-        params (dict, optional): Parameters for the experiment. Defaults to DISTILLED_DEFAULTS.
+        params (dict, optional): Parameters for the experiment. Defaults to DISTRIB_DISTILLED_DEFAULTS.
         folderpath (str, optional): Path to save experiment results. Defaults to DEFAULT_FOLDERPATH.
-        save_all (bool, optional): Whether to save all models. Defaults to False. If True, saves 
-            all models to the experiment directory with paths teacher_baseline.pkl, student_baseline.pkl, distilled.pkl
+        save_all (bool, optional): Whether to save all models. Defaults to False. If True, saves
+            all models to the experiment directory with paths teacher_baseline.pkl, baseline.pkl, student.pkl
+        overwrite (bool, optional): Whether to overwrite existing results. Defaults to False.
+        make_activation_maps (bool, optional): Whether to generate activation map visualizations. Defaults to True.
+        plot_if_exists (bool, optional): Whether to regenerate plots if experiment exists. Defaults to True.
 
     Returns:
-        tuple: Tuple containing:
-            - Dictionary containing experiment results including:
-                - Teacher, student and distilled model accuracies
-                - Training and testing times
-                - Number of clauses dropped during distillation
-                - Total experiment time
-            - pd.DataFrame: Results dataframe
+        dict: Dictionary containing experiment results including:
+            - Teacher, baseline and student model accuracies and times
+            - Analysis statistics (mean, std, etc.)
+            - Experiment parameters and metadata
     """
     exp_start = time()
     print(f"Starting distribution-based distillation experiment {experiment_name} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -538,8 +536,8 @@ def distribution_distillation_experiment(
         
         model_files_exist = not save_all or all(os.path.exists(os.path.join(folderpath, experiment_id, f)) 
                                                for f in [TEACHER_BASELINE_MODEL_PATH, 
-                                                       STUDENT_BASELINE_MODEL_PATH,
-                                                       DISTILLED_MODEL_PATH])
+                                                       BASELINE_MODEL_PATH,
+                                                       STUDENT_MODEL_PATH])
         
         if basic_files_exist and model_files_exist:
             print(f"Experiment {experiment_id} already exists, replotting and skipping")
@@ -557,17 +555,17 @@ def distribution_distillation_experiment(
     teacher_model_path = os.path.join(folderpath, experiment_id, TEACHER_CHECKPOINT_PATH)
 
     # create models
-    baseline_student_tm = MultiClassTsetlinMachine(
+    baseline_tm = MultiClassTsetlinMachine(
         params.student.C, params.student.T, params.student.s, number_of_state_bits=params.number_of_state_bits, weighted_clauses=params.weighted_clauses)
     baseline_teacher_tm = MultiClassTsetlinMachine(
         params.teacher.C, params.teacher.T, params.teacher.s, number_of_state_bits=params.number_of_state_bits, weighted_clauses=params.weighted_clauses)
-    distilled_tm = MultiClassTsetlinMachine(
+    student_tm = MultiClassTsetlinMachine(
         params.student.C, params.student.T, params.student.s, number_of_state_bits=params.number_of_state_bits, weighted_clauses=params.weighted_clauses)
 
     # create a results dataframe
     results = pd.DataFrame(columns=DISTRIBUTION_RESULTS_COLUMNS, index=range(params.combined_epochs))
     try:
-        teacher_done, student_done, distilled_done = [False]*3
+        teacher_done, baseline_done, student_done = [False]*3
         # train baselines
         # train baseline teacher
         print(f"Creating a baseline teacher with {params.teacher.C} clauses and training on original data")
@@ -594,21 +592,21 @@ def distribution_distillation_experiment(
         teacher_done = True
         print(f'Baseline teacher training time: {end-start:.2f} s')
 
-        # copy first teacher_epochs results to distilled results
-        results.loc[:params.teacher.epochs, ACC_TEST_DISTILLED] = results.loc[:params.teacher.epochs, ACC_TEST_TEACHER]
-        results.loc[:params.teacher.epochs, ACC_TRAIN_DISTILLED] = results.loc[:params.teacher.epochs, ACC_TRAIN_TEACHER]
-        results.loc[:params.teacher.epochs, TIME_TRAIN_DISTILLED] = results.loc[:params.teacher.epochs, TIME_TRAIN_TEACHER]
-        results.loc[:params.teacher.epochs, TIME_TEST_DISTILLED] = results.loc[:params.teacher.epochs, TIME_TEST_TEACHER]
+        # copy first teacher_epochs results to student results
+        results.loc[:params.teacher.epochs, ACC_TEST_STUDENT] = results.loc[:params.teacher.epochs, ACC_TEST_TEACHER]
+        results.loc[:params.teacher.epochs, ACC_TRAIN_STUDENT] = results.loc[:params.teacher.epochs, ACC_TRAIN_TEACHER]
+        results.loc[:params.teacher.epochs, TIME_TRAIN_STUDENT] = results.loc[:params.teacher.epochs, TIME_TRAIN_TEACHER]
+        results.loc[:params.teacher.epochs, TIME_TEST_STUDENT] = results.loc[:params.teacher.epochs, TIME_TEST_TEACHER]
 
         # train baseline student
         print(f"Creating a baseline student with {params.student.C} clauses and training on original data")
         start = time()
-        bs_pbar = tqdm(range(params.combined_epochs), desc="Student", leave=False, dynamic_ncols=True)
+        bs_pbar = tqdm(range(params.combined_epochs), desc="Baseline", leave=False, dynamic_ncols=True)
         for i in bs_pbar:
-            train_result, test_result, train_time, test_time = train_step(baseline_student_tm, X_train, Y_train, X_test, Y_test, i)
-            results.loc[i, ACC_TRAIN_STUDENT], results.loc[i, TIME_TRAIN_STUDENT] = train_result, train_time
-            results.loc[i, ACC_TEST_STUDENT], results.loc[i, TIME_TEST_STUDENT] = test_result, test_time
-            bs_pbar.set_description(f"Student: {results[ACC_TEST_STUDENT].mean():.2f} +/- {results[ACC_TEST_STUDENT].std():.2f}%")
+            train_result, test_result, train_time, test_time = train_step(baseline_tm, X_train, Y_train, X_test, Y_test, i)
+            results.loc[i, ACC_TRAIN_BASELINE], results.loc[i, TIME_TRAIN_BASELINE] = train_result, train_time
+            results.loc[i, ACC_TEST_BASELINE], results.loc[i, TIME_TEST_BASELINE] = test_result, test_time
+            bs_pbar.set_description(f"Baseline: {results[ACC_TEST_BASELINE].mean():.2f} +/- {results[ACC_TEST_BASELINE].std():.2f}%")
 
         bs_pbar.close()
         end = time()
@@ -622,29 +620,29 @@ def distribution_distillation_experiment(
 
         # GET soft labels
         print(f"Initializing student with {params.student.C} clauses from teacher and z={params.z}")
-        distilled_tm.init_from_teacher(teacher_tm, X_train, Y_train, clauses_per_class=params.student.C, z=params.z)
+        student_tm.init_from_teacher(teacher_tm, X_train, Y_train, clauses_per_class=params.student.C, z=params.z)
         print(f"Generating soft labels from teacher")
         soft_labels = teacher_tm.get_soft_labels(X_train)
         print(f"Soft labels generated")
 
         start = time()
-        print(f"Training distilled model for {params.student.epochs} epochs")
-        dt_pbar = tqdm(range(params.teacher.epochs, params.combined_epochs), desc="Distilled", leave=False, dynamic_ncols=True)
+        print(f"Training student model for {params.student.epochs} epochs")
+        dt_pbar = tqdm(range(params.teacher.epochs, params.combined_epochs), desc="Student", leave=False, dynamic_ncols=True)
         for i in dt_pbar:
-            train_result, test_result, train_time, test_time = train_step(distilled_tm, X_train, Y_train, X_test, Y_test, i, soft_labels, params.temperature, params.alpha)
-            results.loc[i, ACC_TRAIN_DISTILLED], results.loc[i, TIME_TRAIN_DISTILLED] = train_result, train_time
-            results.loc[i, ACC_TEST_DISTILLED], results.loc[i, TIME_TEST_DISTILLED] = test_result, test_time
-            dt_pbar.set_description(f"Distilled: {results[ACC_TEST_DISTILLED].mean():.2f} +/- {results[ACC_TEST_DISTILLED].std():.2f}%")
+            train_result, test_result, train_time, test_time = train_step(student_tm, X_train, Y_train, X_test, Y_test, i, soft_labels, params.temperature, params.alpha)
+            results.loc[i, ACC_TRAIN_STUDENT], results.loc[i, TIME_TRAIN_STUDENT] = train_result, train_time
+            results.loc[i, ACC_TEST_STUDENT], results.loc[i, TIME_TEST_STUDENT] = test_result, test_time
+            dt_pbar.set_description(f"Student: {results[ACC_TEST_STUDENT].mean():.2f} +/- {results[ACC_TEST_STUDENT].std():.2f}%")
 
         dt_pbar.close()
         end = time()
-        distilled_done = True
+        student_done = True
         print(f'Teacher-student training time: {end-start:.2f} s')
 
         if save_all:
             save_pkl(baseline_teacher_tm, os.path.join(folderpath, experiment_id, TEACHER_BASELINE_MODEL_PATH))
-            save_pkl(baseline_student_tm, os.path.join(folderpath, experiment_id, STUDENT_BASELINE_MODEL_PATH))
-            save_pkl(distilled_tm, os.path.join(folderpath, experiment_id, DISTILLED_MODEL_PATH))
+            save_pkl(baseline_tm, os.path.join(folderpath, experiment_id, BASELINE_MODEL_PATH))
+            save_pkl(student_tm, os.path.join(folderpath, experiment_id, STUDENT_MODEL_PATH))
 
         total_time = time() - exp_start
 
@@ -654,59 +652,59 @@ def distribution_distillation_experiment(
         output = {
             "analysis": {
                 # average accuracy on the test set
-                "avg_acc_test_teacher": results[ACC_TEST_TEACHER].mean(), 
+                "avg_acc_test_teacher": results[ACC_TEST_TEACHER].mean(),
+                "avg_acc_test_baseline": results[ACC_TEST_BASELINE].mean(),
                 "avg_acc_test_student": results[ACC_TEST_STUDENT].mean(),
-                "avg_acc_test_distilled": results[ACC_TEST_DISTILLED].mean(),
 
                 # standard deviation of accuracy on the test set
                 "std_acc_test_teacher": results[ACC_TEST_TEACHER].std(),
+                "std_acc_test_baseline": results[ACC_TEST_BASELINE].std(),
                 "std_acc_test_student": results[ACC_TEST_STUDENT].std(),
-                "std_acc_test_distilled": results[ACC_TEST_DISTILLED].std(),
 
                 # average accuracy on the training set
                 "avg_acc_train_teacher": results[ACC_TRAIN_TEACHER].mean(),
+                "avg_acc_train_baseline": results[ACC_TRAIN_BASELINE].mean(),
                 "avg_acc_train_student": results[ACC_TRAIN_STUDENT].mean(),
-                "avg_acc_train_distilled": results[ACC_TRAIN_DISTILLED].mean(),\
 
                 # standard deviation of accuracy on the training set
                 "std_acc_train_teacher": results[ACC_TRAIN_TEACHER].std(),
+                "std_acc_train_baseline": results[ACC_TRAIN_BASELINE].std(),
                 "std_acc_train_student": results[ACC_TRAIN_STUDENT].std(),
-                "std_acc_train_distilled": results[ACC_TRAIN_DISTILLED].std(),
 
                 # final accuracy on the test set
-                "final_acc_test_distilled": results[ACC_TEST_DISTILLED].iloc[-1],
-                "final_acc_test_teacher": results[ACC_TEST_TEACHER].iloc[-1],
                 "final_acc_test_student": results[ACC_TEST_STUDENT].iloc[-1],
+                "final_acc_test_teacher": results[ACC_TEST_TEACHER].iloc[-1],
+                "final_acc_test_baseline": results[ACC_TEST_BASELINE].iloc[-1],
 
                 # final accuracy on the training set
-                "final_acc_train_distilled": results[ACC_TRAIN_DISTILLED].iloc[-1],
-                "final_acc_train_teacher": results[ACC_TRAIN_TEACHER].iloc[-1],
                 "final_acc_train_student": results[ACC_TRAIN_STUDENT].iloc[-1],
+                "final_acc_train_teacher": results[ACC_TRAIN_TEACHER].iloc[-1],
+                "final_acc_train_baseline": results[ACC_TRAIN_BASELINE].iloc[-1],
 
                 # sum of all training epoch times
                 "sum_time_train_teacher": results[TIME_TRAIN_TEACHER].sum(),
+                "sum_time_train_baseline": results[TIME_TRAIN_BASELINE].sum(),
                 "sum_time_train_student": results[TIME_TRAIN_STUDENT].sum(),
-                "sum_time_train_distilled": results[TIME_TRAIN_DISTILLED].sum(),
 
                 # sum of all test set evaluation times
                 "sum_time_test_teacher": results[TIME_TEST_TEACHER].sum(),
+                "sum_time_test_baseline": results[TIME_TEST_BASELINE].sum(),
                 "sum_time_test_student": results[TIME_TEST_STUDENT].sum(),
-                "sum_time_test_distilled": results[TIME_TEST_DISTILLED].sum(),
 
                 # average time for each training epoch
                 "avg_time_train_teacher": results[TIME_TRAIN_TEACHER].mean(),
-                "avg_time_train_student": results[TIME_TRAIN_STUDENT].mean(),
-                "avg_time_train_distilled": post_teacher_results[TIME_TRAIN_DISTILLED].mean(),
+                "avg_time_train_baseline": results[TIME_TRAIN_BASELINE].mean(),
+                "avg_time_train_student": post_teacher_results[TIME_TRAIN_STUDENT].mean(),
 
                 # average time for each test set evaluation
                 "avg_time_test_teacher": results[TIME_TEST_TEACHER].mean(),
-                "avg_time_test_student": results[TIME_TEST_STUDENT].mean(),
-                "avg_time_test_distilled": post_teacher_results[TIME_TEST_DISTILLED].mean(),
+                "avg_time_test_baseline": results[TIME_TEST_BASELINE].mean(),
+                "avg_time_test_student": post_teacher_results[TIME_TEST_STUDENT].mean(),
 
                 # inference time for each epoch
                 "inference_time_teacher": post_teacher_results[TIME_TEST_TEACHER].mean(),
+                "inference_time_baseline": post_teacher_results[TIME_TEST_BASELINE].mean(),
                 "inference_time_student": post_teacher_results[TIME_TEST_STUDENT].mean(),
-                "inference_time_distilled": post_teacher_results[TIME_TEST_DISTILLED].mean(),
 
                 "total_time": total_time,
             },
@@ -735,7 +733,7 @@ def distribution_distillation_experiment(
             try:
                 # plot activation maps
                 samples = np.random.randint(0, len(X_test), size=4)
-                visualize_activation_maps(baseline_teacher_tm, baseline_student_tm, distilled_tm, 
+                visualize_activation_maps(baseline_teacher_tm, baseline_tm, student_tm, 
                                         X_test[samples], Y_test[samples], dataset.image_shape, os.path.join(fpath, 
                                         experiment_name+"_"+ACTIVATION_MAPS_PNG_PATH))
             except Exception as e:
@@ -774,10 +772,10 @@ def aggregate_distribution_distillation_experiment(
     
     # run each experiment
     outputs = []
-    output_dataframe = pd.DataFrame(columns=["acc_train_teacher", "acc_train_student", "acc_train_distilled", 
-                                             "time_train_teacher", "time_train_student", "time_train_distilled", 
-                                             "acc_test_teacher", "acc_test_student", "acc_test_distilled", 
-                                             "time_test_teacher", "time_test_student", "time_test_distilled", 
+    output_dataframe = pd.DataFrame(columns=["acc_train_teacher", "acc_train_baseline", "acc_train_student",
+                                             "time_train_teacher", "time_train_baseline", "time_train_student",
+                                             "acc_test_teacher", "acc_test_baseline", "acc_test_student",
+                                             "time_test_teacher", "time_test_baseline", "time_test_student",
                                              "total_time"])
 
     # average the json results
@@ -800,10 +798,10 @@ def aggregate_distribution_distillation_experiment(
         params["_agg_num"] = i
         output, _ = distribution_distillation_experiment(dataset, experiment_name, params, folderpath, save_all, overwrite, make_activation_maps, plot_if_exists=False)
         analysis = output["analysis"]
-        output_dataframe.loc[i] = [analysis["avg_acc_train_teacher"], analysis["avg_acc_train_student"], analysis["avg_acc_train_distilled"], 
-                                  analysis["avg_time_train_teacher"], analysis["avg_time_train_student"], analysis["avg_time_train_distilled"], 
-                                  analysis["avg_acc_test_teacher"], analysis["avg_acc_test_student"], analysis["avg_acc_test_distilled"], 
-                                  analysis["avg_time_test_teacher"], analysis["avg_time_test_student"], analysis["avg_time_test_distilled"], 
+        output_dataframe.loc[i] = [analysis["avg_acc_train_teacher"], analysis["avg_acc_train_baseline"], analysis["avg_acc_train_student"],
+                                  analysis["avg_time_train_teacher"], analysis["avg_time_train_baseline"], analysis["avg_time_train_student"],
+                                  analysis["avg_acc_test_teacher"], analysis["avg_acc_test_baseline"], analysis["avg_acc_test_student"],
+                                  analysis["avg_time_test_teacher"], analysis["avg_time_test_baseline"], analysis["avg_time_test_student"],
                                   analysis["total_time"]]
         outputs.append(output)
 
@@ -812,47 +810,47 @@ def aggregate_distribution_distillation_experiment(
         aggregated_output["num_experiments"] = i
         aggregated_output["analysis"] = {
             "avg_acc_test_teacher": output_dataframe["acc_test_teacher"].mean(),
+            "avg_acc_test_baseline": output_dataframe["acc_test_baseline"].mean(),
             "avg_acc_test_student": output_dataframe["acc_test_student"].mean(),
-            "avg_acc_test_distilled": output_dataframe["acc_test_distilled"].mean(),
             "std_acc_test_teacher": output_dataframe["acc_test_teacher"].std(),
+            "std_acc_test_baseline": output_dataframe["acc_test_baseline"].std(),
             "std_acc_test_student": output_dataframe["acc_test_student"].std(),
-            "std_acc_test_distilled": output_dataframe["acc_test_distilled"].std(),
 
             "avg_acc_train_teacher": output_dataframe["acc_train_teacher"].mean(),
+            "avg_acc_train_baseline": output_dataframe["acc_train_baseline"].mean(),
             "avg_acc_train_student": output_dataframe["acc_train_student"].mean(),
-            "avg_acc_train_distilled": output_dataframe["acc_train_distilled"].mean(),
             "std_acc_train_teacher": output_dataframe["acc_train_teacher"].std(),
+            "std_acc_train_baseline": output_dataframe["acc_train_baseline"].std(),
             "std_acc_train_student": output_dataframe["acc_train_student"].std(),
-            "std_acc_train_distilled": output_dataframe["acc_train_distilled"].std(),    
 
             "avg_time_train_teacher": output_dataframe["time_train_teacher"].mean(),
+            "avg_time_train_baseline": output_dataframe["time_train_baseline"].mean(),
             "avg_time_train_student": output_dataframe["time_train_student"].mean(),
-            "avg_time_train_distilled": output_dataframe["time_train_distilled"].mean(),
             "std_time_train_teacher": output_dataframe["time_train_teacher"].std(),
+            "std_time_train_baseline": output_dataframe["time_train_baseline"].std(),
             "std_time_train_student": output_dataframe["time_train_student"].std(),
-            "std_time_train_distilled": output_dataframe["time_train_distilled"].std(),
 
             "avg_time_test_teacher": output_dataframe["time_test_teacher"].mean(),
+            "avg_time_test_baseline": output_dataframe["time_test_baseline"].mean(),
             "avg_time_test_student": output_dataframe["time_test_student"].mean(),
-            "avg_time_test_distilled": output_dataframe["time_test_distilled"].mean(),
             "std_time_test_teacher": output_dataframe["time_test_teacher"].std(),
+            "std_time_test_baseline": output_dataframe["time_test_baseline"].std(),
             "std_time_test_student": output_dataframe["time_test_student"].std(),
-            "std_time_test_distilled": output_dataframe["time_test_distilled"].std(),
-            
+
             # normalized time. normalize by teacher time
             "avg_time_train_teacher_normalized": output_dataframe["time_train_teacher"].mean() / output_dataframe["time_train_teacher"].mean(),
+            "avg_time_train_baseline_normalized": output_dataframe["time_train_baseline"].mean() / output_dataframe["time_train_teacher"].mean(),
             "avg_time_train_student_normalized": output_dataframe["time_train_student"].mean() / output_dataframe["time_train_teacher"].mean(),
-            "avg_time_train_distilled_normalized": output_dataframe["time_train_distilled"].mean() / output_dataframe["time_train_teacher"].mean(),
             "std_time_train_teacher_normalized": output_dataframe["time_train_teacher"].transform(lambda x: x / output_dataframe["time_train_teacher"].mean()).std(),
+            "std_time_train_baseline_normalized": output_dataframe["time_train_baseline"].transform(lambda x: x / output_dataframe["time_train_teacher"].mean()).std(),
             "std_time_train_student_normalized": output_dataframe["time_train_student"].transform(lambda x: x / output_dataframe["time_train_teacher"].mean()).std(),
-            "std_time_train_distilled_normalized": output_dataframe["time_train_distilled"].transform(lambda x: x / output_dataframe["time_train_teacher"].mean()).std(),
 
             "avg_time_test_teacher_normalized": output_dataframe["time_test_teacher"].mean() / output_dataframe["time_test_teacher"].mean(),
+            "avg_time_test_baseline_normalized": output_dataframe["time_test_baseline"].mean() / output_dataframe["time_test_teacher"].mean(),
             "avg_time_test_student_normalized": output_dataframe["time_test_student"].mean() / output_dataframe["time_test_teacher"].mean(),
-            "avg_time_test_distilled_normalized": output_dataframe["time_test_distilled"].mean() / output_dataframe["time_test_teacher"].mean(),
-            "std_time_test_teacher_normalized": output_dataframe["time_test_teacher"].transform(lambda x: x / output_dataframe["time_test_teacher"].mean()).std(),  
+            "std_time_test_teacher_normalized": output_dataframe["time_test_teacher"].transform(lambda x: x / output_dataframe["time_test_teacher"].mean()).std(),
+            "std_time_test_baseline_normalized": output_dataframe["time_test_baseline"].transform(lambda x: x / output_dataframe["time_test_teacher"].mean()).std(),
             "std_time_test_student_normalized": output_dataframe["time_test_student"].transform(lambda x: x / output_dataframe["time_test_teacher"].mean()).std(),
-            "std_time_test_distilled_normalized": output_dataframe["time_test_distilled"].transform(lambda x: x / output_dataframe["time_test_teacher"].mean()).std(),
 
             "avg_total_time": output_dataframe["total_time"].mean(),
             "std_total_time": output_dataframe["total_time"].std(),
@@ -884,7 +882,7 @@ def get_downsample_indices(X:np.ndarray, downsample: float, symmetric: bool = Tr
         downsample (float): Drop clauses that are activated in (1 - downsample)*100% of the time. 
             If downsample is 0.05, then any clause that is activated in 95% of the time is dropped.
         symmetric (bool): If True, ALSO drop clauses that are inactive in (1 - downsample)*100% of the time.
-            This doesn't usually make a difference to the distilled model's performance.
+            This doesn't usually make a difference to the student model's performance.
 
     Returns:
         np.ndarray: Indices of clauses to drop
@@ -922,7 +920,7 @@ def downsample_clauses(X_train_transformed:np.ndarray, X_test_transformed:np.nda
         downsample (float): Drop clauses that are activated in (1 - downsample)*100% of the time. 
             If downsample is 0.05, then any clause that is activated in 95% of the time is dropped.
         symmetric (bool): If True, ALSO drop clauses that are inactive in (1 - downsample)*100% of the time.
-            This doesn't usually make a difference to the distilled model's performance.
+            This doesn't usually make a difference to the student model's performance.
 
     Returns:
         tuple: Contains:
@@ -956,32 +954,29 @@ def clause_distillation_experiment(
     overwrite: bool = False,
 ) -> dict:
     """
-    Run a distillation experiment comparing teacher, student, and distilled models.
+    Run a clause-based distillation experiment comparing teacher, baseline, and student models.
 
-    Note on baseline_teacher_model and baseline_student_model:
-    This is really only for the downsample experiment where we only want to change the downsampling parameters.
-    This lets us use the same teacher and student models for all downsampling experiments.
-    Remember, the training looks like this:
-        student_model trained on original data for combined_epochs
-        teacher_model trained on original data for combined_epochs, but a checkpoint is saved after teacher_epochs
-        distilled_model trained on output of teacher_model (transformed and downsampled) for student_epochs
+    Training flow:
+        1. Teacher model trained on original data for combined_epochs (checkpoint saved after teacher_epochs)
+        2. Baseline model trained on original data for combined_epochs (no KD)
+        3. Student model trained on transformed teacher outputs for student_epochs (clause-based KD)
+        4. Student_ds model trained on downsampled transformed outputs (if downsample > 0)
 
     Args:
         dataset (Dataset): The dataset to use for the experiment
         experiment_name (str): Name of the experiment
-        params (dict, optional): Parameters for the experiment. Defaults to DISTILLED_DEFAULTS.
+        params (dict, optional): Parameters for the experiment. Defaults to CLAUSE_DISTILLED_DEFAULTS.
         folderpath (str, optional): Path to save experiment results. Defaults to DEFAULT_FOLDERPATH.
-        save_all (bool, optional): Whether to save all models. Defaults to False. If True, saves 
-            all models to the experiment directory with paths teacher_baseline.pkl, student_baseline.pkl, distilled.pkl
+        save_all (bool, optional): Whether to save all models. Defaults to False. If True, saves
+            all models to the experiment directory with paths teacher_baseline.pkl, baseline.pkl, student.pkl
+        overwrite (bool, optional): Whether to overwrite existing results. Defaults to False.
 
     Returns:
-        tuple: Tuple containing:
-            - Dictionary containing experiment results including:
-                - Teacher, student and distilled model accuracies
-                - Training and testing times
-                - Number of clauses dropped during distillation
-                - Total experiment time
-            - pd.DataFrame: Results dataframe
+        dict: Dictionary containing experiment results including:
+            - Teacher, baseline and student model accuracies
+            - Training and testing times
+            - Number of clauses dropped during downsampling
+            - Total experiment time
     """
     exp_start = time()
     print(f"Starting clause-based distillation experiment {experiment_name} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -1010,8 +1005,8 @@ def clause_distillation_experiment(
         
         model_files_exist = not save_all or all(os.path.exists(os.path.join(folderpath, experiment_id, f)) 
                                                for f in [TEACHER_BASELINE_MODEL_PATH, 
-                                                       STUDENT_BASELINE_MODEL_PATH,
-                                                       DISTILLED_MODEL_PATH])
+                                                       BASELINE_MODEL_PATH,
+                                                       STUDENT_MODEL_PATH])
         
         if basic_files_exist and model_files_exist:
             print(f"Experiment {experiment_id} already exists, replotting and skipping")
@@ -1028,13 +1023,13 @@ def clause_distillation_experiment(
     teacher_model_path = os.path.join(folderpath, experiment_id, TEACHER_CHECKPOINT_PATH)
 
     # create models
-    baseline_student_tm = MultiClassTsetlinMachine(
+    baseline_tm = MultiClassTsetlinMachine(
         params.student.C, params.student.T, params.student.s, number_of_state_bits=params.number_of_state_bits, weighted_clauses=params.weighted_clauses)
     baseline_teacher_tm = MultiClassTsetlinMachine(
         params.teacher.C, params.teacher.T, params.teacher.s, number_of_state_bits=params.number_of_state_bits, weighted_clauses=params.weighted_clauses)
-    distilled_tm = MultiClassTsetlinMachine(
+    student_tm = MultiClassTsetlinMachine(
         params.student.C, params.student.T, params.student.s, number_of_state_bits=params.number_of_state_bits, weighted_clauses=params.weighted_clauses)
-    distilled_downsampled_tm = MultiClassTsetlinMachine(
+    student_ds_tm = MultiClassTsetlinMachine(
         params.student.C, params.student.T, params.student.s, number_of_state_bits=params.number_of_state_bits, weighted_clauses=params.weighted_clauses)
 
     # create a results dataframe
@@ -1065,25 +1060,25 @@ def clause_distillation_experiment(
     end = time()
     print(f'Baseline teacher training time: {end-start:.2f} s')
 
-    # copy first teacher_epochs results to distilled results and distilled downsampled results
-    results.loc[:params.teacher.epochs, ACC_TEST_DISTILLED] = results.loc[:params.teacher.epochs, ACC_TEST_TEACHER]
-    results.loc[:params.teacher.epochs, ACC_TRAIN_DISTILLED] = results.loc[:params.teacher.epochs, ACC_TRAIN_TEACHER]
-    results.loc[:params.teacher.epochs, TIME_TRAIN_DISTILLED] = results.loc[:params.teacher.epochs, TIME_TRAIN_TEACHER]
-    results.loc[:params.teacher.epochs, TIME_TEST_DISTILLED] = results.loc[:params.teacher.epochs, TIME_TEST_TEACHER]
-    results.loc[:params.teacher.epochs, ACC_TEST_DISTILLED_DS] = results.loc[:params.teacher.epochs, ACC_TEST_TEACHER]
-    results.loc[:params.teacher.epochs, ACC_TRAIN_DISTILLED_DS] = results.loc[:params.teacher.epochs, ACC_TRAIN_TEACHER]
-    results.loc[:params.teacher.epochs, TIME_TEST_DISTILLED_DS] = results.loc[:params.teacher.epochs, TIME_TEST_TEACHER]
-    results.loc[:params.teacher.epochs, TIME_TRAIN_DISTILLED_DS] = results.loc[:params.teacher.epochs, TIME_TRAIN_TEACHER]
+    # copy first teacher_epochs results to student results and student_ds results
+    results.loc[:params.teacher.epochs, ACC_TEST_STUDENT] = results.loc[:params.teacher.epochs, ACC_TEST_TEACHER]
+    results.loc[:params.teacher.epochs, ACC_TRAIN_STUDENT] = results.loc[:params.teacher.epochs, ACC_TRAIN_TEACHER]
+    results.loc[:params.teacher.epochs, TIME_TRAIN_STUDENT] = results.loc[:params.teacher.epochs, TIME_TRAIN_TEACHER]
+    results.loc[:params.teacher.epochs, TIME_TEST_STUDENT] = results.loc[:params.teacher.epochs, TIME_TEST_TEACHER]
+    results.loc[:params.teacher.epochs, ACC_TEST_STUDENT_DS] = results.loc[:params.teacher.epochs, ACC_TEST_TEACHER]
+    results.loc[:params.teacher.epochs, ACC_TRAIN_STUDENT_DS] = results.loc[:params.teacher.epochs, ACC_TRAIN_TEACHER]
+    results.loc[:params.teacher.epochs, TIME_TEST_STUDENT_DS] = results.loc[:params.teacher.epochs, TIME_TEST_TEACHER]
+    results.loc[:params.teacher.epochs, TIME_TRAIN_STUDENT_DS] = results.loc[:params.teacher.epochs, TIME_TRAIN_TEACHER]
 
-    # train baseline student
-    print(f"Creating a baseline student with {params.student.C} clauses and training on original data")
+    # train baseline
+    print(f"Creating a baseline with {params.student.C} clauses and training on original data")
     start = time()
-    bs_pbar = tqdm(range(params.combined_epochs), desc="Student", leave=False, dynamic_ncols=True)
+    bs_pbar = tqdm(range(params.combined_epochs), desc="Baseline", leave=False, dynamic_ncols=True)
     for i in bs_pbar:
-        train_result, test_result, train_time, test_time = train_step(baseline_student_tm, X_train, Y_train, X_test, Y_test, i)
-        results.loc[i, ACC_TRAIN_STUDENT], results.loc[i, TIME_TRAIN_STUDENT] = train_result, train_time
-        results.loc[i, ACC_TEST_STUDENT], results.loc[i, TIME_TEST_STUDENT] = test_result, test_time
-        bs_pbar.set_description(f"Student: {results[ACC_TEST_STUDENT].mean():.2f} +/- {results[ACC_TEST_STUDENT].std():.2f}%")
+        train_result, test_result, train_time, test_time = train_step(baseline_tm, X_train, Y_train, X_test, Y_test, i)
+        results.loc[i, ACC_TRAIN_BASELINE], results.loc[i, TIME_TRAIN_BASELINE] = train_result, train_time
+        results.loc[i, ACC_TEST_BASELINE], results.loc[i, TIME_TEST_BASELINE] = test_result, test_time
+        bs_pbar.set_description(f"Baseline: {results[ACC_TEST_BASELINE].mean():.2f} +/- {results[ACC_TEST_BASELINE].std():.2f}%")
 
     bs_pbar.close()
     end = time()
@@ -1108,18 +1103,18 @@ def clause_distillation_experiment(
     print(f"Got clause outputs for X_test in {test_transform_time:.2f}s")
 
     start = time()
-    print(f"Training distilled model for {params.student.epochs} epochs")
-    dt_pbar = tqdm(range(params.teacher.epochs, params.combined_epochs), desc="Distilled", leave=False, dynamic_ncols=True)
+    print(f"Training student model for {params.student.epochs} epochs")
+    dt_pbar = tqdm(range(params.teacher.epochs, params.combined_epochs), desc="Student", leave=False, dynamic_ncols=True)
     for i in dt_pbar:
-        train_result, test_result, train_time, test_time = train_step(distilled_tm, X_train_transformed, Y_train, X_test_transformed, Y_test, i)
-        results.loc[i, ACC_TRAIN_DISTILLED], results.loc[i, TIME_TRAIN_DISTILLED] = train_result, train_time
-        results.loc[i, ACC_TEST_DISTILLED], results.loc[i, TIME_TEST_DISTILLED] = test_result, test_time
-        dt_pbar.set_description(f"Distilled: {results[ACC_TEST_DISTILLED].mean():.2f} +/- {results[ACC_TEST_DISTILLED].std():.2f}%")
+        train_result, test_result, train_time, test_time = train_step(student_tm, X_train_transformed, Y_train, X_test_transformed, Y_test, i)
+        results.loc[i, ACC_TRAIN_STUDENT], results.loc[i, TIME_TRAIN_STUDENT] = train_result, train_time
+        results.loc[i, ACC_TEST_STUDENT], results.loc[i, TIME_TEST_STUDENT] = test_result, test_time
+        dt_pbar.set_description(f"Student: {results[ACC_TEST_STUDENT].mean():.2f} +/- {results[ACC_TEST_STUDENT].std():.2f}%")
 
     dt_pbar.close()
     end = time()
 
-    print(f'Teacher-student (no downsampling) training time: {end-start:.2f} s')
+    print(f'Student (no downsampling) training time: {end-start:.2f} s')
 
     # downsample clauses
     if params.downsample > 0:
@@ -1133,25 +1128,25 @@ def clause_distillation_experiment(
         X_train_downsampled = X_train_transformed
         X_test_downsampled = X_test_transformed
 
-    # train distilled downsampled
-    print(f"Training distilled model for {params.student.epochs} epochs")
-    dt_pbar = tqdm(range(params.teacher.epochs, params.combined_epochs), desc="Distilled", leave=False, dynamic_ncols=True)
+    # train student downsampled
+    print(f"Training student DS model for {params.student.epochs} epochs")
+    dt_pbar = tqdm(range(params.teacher.epochs, params.combined_epochs), desc="Student DS", leave=False, dynamic_ncols=True)
     for i in dt_pbar:
-        train_result, test_result, train_time, test_time = train_step(distilled_downsampled_tm, X_train_downsampled, Y_train, X_test_downsampled, Y_test, i)
-        results.loc[i, ACC_TRAIN_DISTILLED_DS], results.loc[i, TIME_TRAIN_DISTILLED_DS] = train_result, train_time
-        results.loc[i, ACC_TEST_DISTILLED_DS], results.loc[i, TIME_TEST_DISTILLED_DS] = test_result, test_time
-        dt_pbar.set_description(f"Distilled (ds): {results[ACC_TEST_DISTILLED_DS].mean():.2f} +/- {results[ACC_TEST_DISTILLED_DS].std():.2f}%")
+        train_result, test_result, train_time, test_time = train_step(student_ds_tm, X_train_downsampled, Y_train, X_test_downsampled, Y_test, i)
+        results.loc[i, ACC_TRAIN_STUDENT_DS], results.loc[i, TIME_TRAIN_STUDENT_DS] = train_result, train_time
+        results.loc[i, ACC_TEST_STUDENT_DS], results.loc[i, TIME_TEST_STUDENT_DS] = test_result, test_time
+        dt_pbar.set_description(f"Student DS: {results[ACC_TEST_STUDENT_DS].mean():.2f} +/- {results[ACC_TEST_STUDENT_DS].std():.2f}%")
 
     dt_pbar.close()
     end = time()
 
-    print(f'Teacher-student (downsampled) training time: {end-start:.2f} s')
+    print(f'Student (downsampled) training time: {end-start:.2f} s')
 
     if save_all:
         save_pkl(baseline_teacher_tm, os.path.join(folderpath, experiment_id, TEACHER_BASELINE_MODEL_PATH))
-        save_pkl(baseline_student_tm, os.path.join(folderpath, experiment_id, STUDENT_BASELINE_MODEL_PATH))
-        save_pkl(distilled_tm, os.path.join(folderpath, experiment_id, DISTILLED_MODEL_PATH))
-        save_pkl(distilled_downsampled_tm, os.path.join(folderpath, experiment_id, DISTILLED_DS_MODEL_PATH))
+        save_pkl(baseline_tm, os.path.join(folderpath, experiment_id, BASELINE_MODEL_PATH))
+        save_pkl(student_tm, os.path.join(folderpath, experiment_id, STUDENT_MODEL_PATH))
+        save_pkl(student_ds_tm, os.path.join(folderpath, experiment_id, STUDENT_DS_MODEL_PATH))
     total_time = time() - exp_start
 
     # THIS IS DONE BECAUSE the teacher model will skew inference time when it doesn't actually affect reality
@@ -1160,68 +1155,68 @@ def clause_distillation_experiment(
     output = {
         "analysis": {
             # average accuracy on the test set
-            "avg_acc_test_teacher": results[ACC_TEST_TEACHER].mean(), 
+            "avg_acc_test_teacher": results[ACC_TEST_TEACHER].mean(),
+            "avg_acc_test_baseline": results[ACC_TEST_BASELINE].mean(),
             "avg_acc_test_student": results[ACC_TEST_STUDENT].mean(),
-            "avg_acc_test_distilled": results[ACC_TEST_DISTILLED].mean(),
-            "avg_acc_test_distilled_ds": results[ACC_TEST_DISTILLED_DS].mean(),
+            "avg_acc_test_student_ds": results[ACC_TEST_STUDENT_DS].mean(),
 
             # standard deviation of accuracy on the test set
             "std_acc_test_teacher": results[ACC_TEST_TEACHER].std(),
+            "std_acc_test_baseline": results[ACC_TEST_BASELINE].std(),
             "std_acc_test_student": results[ACC_TEST_STUDENT].std(),
-            "std_acc_test_distilled": results[ACC_TEST_DISTILLED].std(),
-            "std_acc_test_distilled_ds": results[ACC_TEST_DISTILLED_DS].std(),
+            "std_acc_test_student_ds": results[ACC_TEST_STUDENT_DS].std(),
 
             # average accuracy on the training set
             "avg_acc_train_teacher": results[ACC_TRAIN_TEACHER].mean(),
+            "avg_acc_train_baseline": results[ACC_TRAIN_BASELINE].mean(),
             "avg_acc_train_student": results[ACC_TRAIN_STUDENT].mean(),
-            "avg_acc_train_distilled": results[ACC_TRAIN_DISTILLED].mean(),
-            "avg_acc_train_distilled_ds": results[ACC_TRAIN_DISTILLED_DS].mean(),
+            "avg_acc_train_student_ds": results[ACC_TRAIN_STUDENT_DS].mean(),
 
             # standard deviation of accuracy on the training set
             "std_acc_train_teacher": results[ACC_TRAIN_TEACHER].std(),
+            "std_acc_train_baseline": results[ACC_TRAIN_BASELINE].std(),
             "std_acc_train_student": results[ACC_TRAIN_STUDENT].std(),
-            "std_acc_train_distilled": results[ACC_TRAIN_DISTILLED].std(),
-            "std_acc_train_distilled_ds": results[ACC_TRAIN_DISTILLED_DS].std(),
+            "std_acc_train_student_ds": results[ACC_TRAIN_STUDENT_DS].std(),
             # final accuracy on the test set
-            "final_acc_test_distilled": results[ACC_TEST_DISTILLED].iloc[-1],
-            "final_acc_test_teacher": results[ACC_TEST_TEACHER].iloc[-1],
             "final_acc_test_student": results[ACC_TEST_STUDENT].iloc[-1],
-            "final_acc_test_distilled_ds": results[ACC_TEST_DISTILLED_DS].iloc[-1],
+            "final_acc_test_teacher": results[ACC_TEST_TEACHER].iloc[-1],
+            "final_acc_test_baseline": results[ACC_TEST_BASELINE].iloc[-1],
+            "final_acc_test_student_ds": results[ACC_TEST_STUDENT_DS].iloc[-1],
             # final accuracy on the training set
-            "final_acc_train_distilled": results[ACC_TRAIN_DISTILLED].iloc[-1],
-            "final_acc_train_teacher": results[ACC_TRAIN_TEACHER].iloc[-1],
             "final_acc_train_student": results[ACC_TRAIN_STUDENT].iloc[-1],
-            "final_acc_train_distilled_ds": results[ACC_TRAIN_DISTILLED_DS].iloc[-1],
+            "final_acc_train_teacher": results[ACC_TRAIN_TEACHER].iloc[-1],
+            "final_acc_train_baseline": results[ACC_TRAIN_BASELINE].iloc[-1],
+            "final_acc_train_student_ds": results[ACC_TRAIN_STUDENT_DS].iloc[-1],
 
             # sum of all training epoch times
             "sum_time_train_teacher": results[TIME_TRAIN_TEACHER].sum(),
+            "sum_time_train_baseline": results[TIME_TRAIN_BASELINE].sum(),
             "sum_time_train_student": results[TIME_TRAIN_STUDENT].sum(),
-            "sum_time_train_distilled": results[TIME_TRAIN_DISTILLED].sum(),
-            "sum_time_train_distilled_ds": results[TIME_TRAIN_DISTILLED_DS].sum(),
+            "sum_time_train_student_ds": results[TIME_TRAIN_STUDENT_DS].sum(),
 
             # sum of all test set evaluation times
             "sum_time_test_teacher": results[TIME_TEST_TEACHER].sum(),
+            "sum_time_test_baseline": results[TIME_TEST_BASELINE].sum(),
             "sum_time_test_student": results[TIME_TEST_STUDENT].sum(),
-            "sum_time_test_distilled": results[TIME_TEST_DISTILLED].sum(),
-            "sum_time_test_distilled_ds": results[TIME_TEST_DISTILLED_DS].sum(),
+            "sum_time_test_student_ds": results[TIME_TEST_STUDENT_DS].sum(),
 
             # average time for each training epoch
             "avg_time_train_teacher": results[TIME_TRAIN_TEACHER].mean(),
+            "avg_time_train_baseline": results[TIME_TRAIN_BASELINE].mean(),
             "avg_time_train_student": results[TIME_TRAIN_STUDENT].mean(),
-            "avg_time_train_distilled": results[TIME_TRAIN_DISTILLED].mean(),
-            "avg_time_train_distilled_ds": results[TIME_TRAIN_DISTILLED_DS].mean(),
+            "avg_time_train_student_ds": results[TIME_TRAIN_STUDENT_DS].mean(),
 
             # average time for each test set evaluation
             "avg_time_test_teacher": results[TIME_TEST_TEACHER].mean(),
+            "avg_time_test_baseline": results[TIME_TEST_BASELINE].mean(),
             "avg_time_test_student": results[TIME_TEST_STUDENT].mean(),
-            "avg_time_test_distilled": results[TIME_TEST_DISTILLED].mean(),
-            "avg_time_test_distilled_ds": results[TIME_TEST_DISTILLED_DS].mean(),
+            "avg_time_test_student_ds": results[TIME_TEST_STUDENT_DS].mean(),
 
             # inference time for each epoch
             "inference_time_teacher": post_teacher_results[TIME_TEST_TEACHER].mean(),
+            "inference_time_baseline": post_teacher_results[TIME_TEST_BASELINE].mean(),
             "inference_time_student": post_teacher_results[TIME_TEST_STUDENT].mean(),
-            "inference_time_distilled": post_teacher_results[TIME_TEST_DISTILLED].mean(),
-            "inference_time_distilled_ds": post_teacher_results[TIME_TEST_DISTILLED_DS].mean(),
+            "inference_time_student_ds": post_teacher_results[TIME_TEST_STUDENT_DS].mean(),
             "total_time": total_time,
         },
         "data": {

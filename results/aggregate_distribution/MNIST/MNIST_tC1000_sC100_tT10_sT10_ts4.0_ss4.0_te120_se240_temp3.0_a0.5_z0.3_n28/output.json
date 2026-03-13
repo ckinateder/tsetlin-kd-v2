@@ -1,38 +1,38 @@
 {
     "analysis": {
         "avg_acc_test_teacher": 95.30805555555554,
-        "avg_acc_test_student": 90.37552777777779,
-        "avg_acc_test_distilled": 93.92380555555557,
+        "avg_acc_test_baseline": 90.37552777777779,
+        "avg_acc_test_student": 93.92380555555557,
         "std_acc_test_teacher": 1.035832983183018,
-        "std_acc_test_student": 1.102053160760714,
-        "std_acc_test_distilled": 1.4179807196917442,
+        "std_acc_test_baseline": 1.102053160760714,
+        "std_acc_test_student": 1.4179807196917442,
         "avg_acc_train_teacher": 97.7616990740741,
-        "avg_acc_train_student": 90.6614953703703,
-        "avg_acc_train_distilled": 95.25606944444444,
+        "avg_acc_train_baseline": 90.6614953703703,
+        "avg_acc_train_student": 95.25606944444444,
         "std_acc_train_teacher": 1.4896245750798764,
-        "std_acc_train_student": 1.1658988227860358,
-        "std_acc_train_distilled": 1.8144759067764036,
-        "final_acc_test_distilled": 94.04,
+        "std_acc_train_baseline": 1.1658988227860358,
+        "std_acc_train_student": 1.8144759067764036,
+        "final_acc_test_student": 94.04,
         "final_acc_test_teacher": 95.28999999999999,
-        "final_acc_test_student": 88.92999999999999,
-        "final_acc_train_distilled": 95.31833333333334,
+        "final_acc_test_baseline": 88.92999999999999,
+        "final_acc_train_student": 95.31833333333334,
         "final_acc_train_teacher": 98.65833333333333,
-        "final_acc_train_student": 89.30333333333334,
+        "final_acc_train_baseline": 89.30333333333334,
         "sum_time_train_teacher": 249.59751200675964,
-        "sum_time_train_student": 94.7771806716919,
-        "sum_time_train_distilled": 146.67625880241394,
+        "sum_time_train_baseline": 94.7771806716919,
+        "sum_time_train_student": 146.67625880241394,
         "sum_time_test_teacher": 135.9039397239685,
-        "sum_time_test_student": 20.378695487976074,
-        "sum_time_test_distilled": 59.29209089279175,
+        "sum_time_test_baseline": 20.378695487976074,
+        "sum_time_test_student": 59.29209089279175,
         "avg_time_train_teacher": 0.693326422240999,
-        "avg_time_train_student": 0.26326994631025524,
-        "avg_time_train_distilled": 0.23643474479516347,
+        "avg_time_train_baseline": 0.26326994631025524,
+        "avg_time_train_student": 0.23643474479516347,
         "avg_time_test_teacher": 0.3775109436776903,
-        "avg_time_test_student": 0.05660748746660021,
-        "avg_time_test_distilled": 0.06002085407574972,
+        "avg_time_test_baseline": 0.05660748746660021,
+        "avg_time_test_student": 0.06002085407574972,
         "inference_time_teacher": 0.37923689087231954,
-        "inference_time_student": 0.056580992539723714,
-        "inference_time_distilled": 0.06002085407574972,
+        "inference_time_baseline": 0.056580992539723714,
+        "inference_time_student": 0.06002085407574972,
         "total_time": 1522.1698813438416
     },
     "data": {
@@ -440,7 +440,7 @@
             "358": 95.74000000000001,
             "359": 95.28999999999999
         },
-        "acc_test_student": {
+        "acc_test_baseline": {
             "0": 83.54,
             "1": 85.88,
             "2": 87.53999999999999,
@@ -802,7 +802,7 @@
             "358": 89.87,
             "359": 88.92999999999999
         },
-        "acc_test_distilled": {
+        "acc_test_student": {
             "0": 83.86,
             "1": 88.82,
             "2": 90.03999999999999,
@@ -1526,7 +1526,7 @@
             "358": 98.43666666666667,
             "359": 98.65833333333333
         },
-        "acc_train_student": {
+        "acc_train_baseline": {
             "0": 83.32166666666667,
             "1": 84.72666666666666,
             "2": 86.94333333333333,
@@ -1888,7 +1888,7 @@
             "358": 90.15333333333334,
             "359": 89.30333333333334
         },
-        "acc_train_distilled": {
+        "acc_train_student": {
             "0": 83.76666666666667,
             "1": 89.26333333333332,
             "2": 90.14333333333333,
@@ -2612,7 +2612,7 @@
             "358": 0.6626036167144775,
             "359": 0.6626152992248535
         },
-        "time_train_student": {
+        "time_train_baseline": {
             "0": 0.351914644241333,
             "1": 0.31085753440856934,
             "2": 0.2963871955871582,
@@ -2974,7 +2974,7 @@
             "358": 0.26062560081481934,
             "359": 0.26204800605773926
         },
-        "time_train_distilled": {
+        "time_train_student": {
             "0": 1.5187385082244873,
             "1": 1.1748168468475342,
             "2": 1.054347038269043,
@@ -3698,7 +3698,7 @@
             "358": 0.3766202926635742,
             "359": 0.38042688369750977
         },
-        "time_test_student": {
+        "time_test_baseline": {
             "0": 0.058008432388305664,
             "1": 0.05303144454956055,
             "2": 0.05703115463256836,
@@ -4060,7 +4060,7 @@
             "358": 0.05384063720703125,
             "359": 0.05522632598876953
         },
-        "time_test_distilled": {
+        "time_test_student": {
             "0": 0.3587167263031006,
             "1": 0.36678647994995117,
             "2": 0.3684079647064209,

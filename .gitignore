@@ -15,3 +15,4 @@ venv
 .venv
 .cursorindexingignore
 .claude
+results_backup*
