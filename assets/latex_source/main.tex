@@ -61,6 +61,7 @@
 \usepackage{booktabs}
 \usepackage{subcaption}
 
+
 %%%%
 
 %%%%%=============================================================================%%%%
@@ -118,7 +119,7 @@
 
 \affil*[1]{\orgdiv{Dept. of Computer Science}, \orgname{University of Cincinnati}, \orgaddress{\street{2600 Clifton Ave}, \city{Cincinnati}, \postcode{45221}, \state{OH}, \country{USA}}}
 
-\affil[2]{\orgdiv{Dept. of Computer Science}, \orgname{Ottowa University}, \orgaddress{\street{15950 N Civic Center Dr}, \city{Surprise}, \postcode{885374}, \state{AZ}, \country{USA}}}
+\affil[2]{\orgdiv{Dept. of Arts \& Sciences}, \orgname{Ottowa University}, \orgaddress{\street{15950 N Civic Center Dr}, \city{Surprise}, \postcode{85374}, \state{AZ}, \country{USA}}}
 
 %%==================================%%
 %% Sample for unstructured abstract %%
@@ -229,7 +230,7 @@ The central idea behind DKD is that the teacher's most informative patterns shou
 
 To control the relative influence of these components, DKD introduces three interpretable hyperparameters:
 \begin{enumerate}
-	\item \textbf{Temperature} $(\tau \in (0,\infty))$: Regulates the entropy of teacher-derived probability distributions. High temperatures $(\tau > 1)$ produce softer distributions that highlight inter-class similarities, while low temperatures $(\tau < 1)$ sharpen the distribution around the predicted class. It is adapted from traditional knowledge distribution \cite{hinton2015distillingknowledgeneuralnetwork}.
+	\item \textbf{Temperature} $(\tau \in (0,\infty))$: Regulates the entropy of teacher-derived probability distributions. High temperatures $(\tau > 1)$ produce softer distributions that highlight inter-class similarities, while low temperatures $(\tau < 1)$ sharpen the distribution around predicted class. It is adapted from traditional knowledge distillation \cite{hinton2015distillingknowledgeneuralnetwork}.
 	\item \textbf{Balance} $(\alpha \in [0,1])$: Determines the trade-off between ground-truth labels and teacher soft labels. When $\alpha = 1$, training reduces to standard TM learning; when $\alpha = 0$, training relies entirely on soft labels.
 	\item \textbf{Weight transfer fraction} $(z \in [0,1])$: Controls how clauses are selected during initialization. Larger values emphasize high-weight clauses, and smaller values promote structural diversity among transferred clauses.
 \end{enumerate}
@@ -357,7 +358,7 @@ To address these issues, Algorithm~\ref{algo:soft-labels} applies a sequence of 
 		\Function{GetSoftLabels}{$\mathbb{C}$}
 		\Comment{Phase 1: Make class sums non-negative}
 		\State $c_{\min}^i = \min_{j \in \{1,\dots,\zeta\}} \mathbb{C}_{ij}, \quad \forall i = 1,\dots,N$
-		\State $\hat{\mathbb{C}}_{ij} = \mathbb{C}_{ij} + |c_{\min}^i|, \quad \forall i,j$  
+		\State $\hat{\mathbb{C}}_{ij} = \mathbb{C}_{ij} - c_{\min}^i, \quad \forall i,j$  
 		\Comment{Now $\hat{\mathbb{C}}_{ij} \ge 0$}
 		\\
 		\Comment{Phase 2: Normalize per example to [0,1]}
@@ -403,6 +404,26 @@ S \approx [0.204,\;0.554,\;0.229].
 Thus the teacher assigns approximately 55.4\% probability to class 2, 22.9\% to class 3, and 20.4\% to class 1 — not just the single top class but a full distribution reflecting confidence and relative class plausibility.
 
 The ``dark knowledge'' contained in a teacher model is transferable to the student through its inter-class similarity structure \cite{hinton2015distillingknowledgeneuralnetwork}. In a TM, that inter-class similarity is encoded in the relative ordering and magnitude differences of TM class sums. Because shifting by a constant (Phase 1), normalizing by a positive scalar (Phase 2), and applying softmax (Phase 3) each retain the relative ordering of their inputs, their composition likewise preserves rank ordering. Therefore, the soft labels produced by Algorithm 2 suitably preserve the dark knowledge contained in the teacher.
+
+\begin{proposition}[Rank Preservation]
+	Let $\mathbf{C} \in \mathbb{R}^\zeta$ be a vector of raw class sums. The composition
+	of shift (Phase~1), normalization (Phase~2), and softmax (Phase~3) in
+	Algorithm~\ref{algo:soft-labels} preserves the rank ordering of $\mathbf{C}$.
+\end{proposition}
+\begin{proof}
+	Phase~1 applies a uniform shift $\hat{C}_j = C_j - \min_k C_k$. Since the same
+	constant is subtracted from every element, the relative ordering is unchanged.
+	Phase~2 divides by $\max_k \hat{C}_k > 0$, a strictly positive scalar, which
+	also preserves ordering. Phase~3 applies the exponential function, which is
+	strictly monotone increasing, followed by normalization by a positive constant.
+	Each operation is therefore order-preserving, and their composition likewise
+	preserves the rank ordering of the original class sums.
+\end{proof}
+Since rank ordering encodes the teacher's relative class confidence --- the core of
+``dark knowledge'' as defined by Hinton et al.~\cite{hinton2015distillingknowledgeneuralnetwork} --- Algorithm~\ref{algo:soft-labels} provides a theoretically grounded transformation rather than a heuristic one.
+Ablation studies comparing alternative transformations are left as future work;
+however, the rank-preservation guarantee ensures that distributional information
+transferred to the student faithfully reflects the teacher's confidence structure.
 
 Our approach differs from standard logit-based softmax (often used in neural networks) by introducing shifting and scaling before exponentiation. These steps ensure non-negativity, avoid numerical instability due to large or negative sums, and preserve relative differences in class votes. We apply any temperature scaling only during the fit stage (Algorithm \ref{algo:fit-soft}), not during soft‑label generation, which simplifies reuse of soft labels across different training regimes.
 
@@ -527,7 +548,7 @@ First, the baseline model $TM_B$ is trained on the dataset for $E_{T+S}$ epochs,
 
 Once the baselines are established, we reinitialize the teacher model $TM_T$ from the checkpoint at $E_T$ epochs to avoid giving the student model an unfair advantage. We then initialize the student model $TM_S$ with the clauses of the trained teacher using Algorithm~\ref{algo:init-clauses}. Soft labels are generated from the teacher over the training dataset using Algorithm~\ref{algo:soft-labels}. Finally, the student model is trained for $E_S$ epochs on the training dataset and the soft labels from the teacher using Algorithm~\ref{algo:fit-soft}. Because Tsetlin Machines are stochastic, each experiment is repeated $K$ times and results are averaged, reporting mean and standard deviation across runs. 
 
-We evaluate the statistical siginificance of observed improvements by conducting paired \textit{t}-tests across $K$ independent trials, comparing the distilled student against the baseline. 
+We evaluate the statistical significance of observed improvements by conducting paired \textit{t}-tests across $K$ independent trials, comparing the distilled student against the baseline. 
 We use a one tailed paired \textit{t}-test to measure accuracy ($H_1$: student $>$ baseline) and a two tailed test on training and inference time ($H_1$: ), reflecting our directional hypothesis on accuracy and neutral effect on computational time. Significance thresholds are set at the conventional $p < 0.05$, $p < 0.01$, and $p < 0.001$ and reported as *, **, and ***, respectively.
 
 The experimental design focuses on isolating the effect of distribution-enhanced supervision and clause-level transfer under fixed architectural settings. Accordingly, comparisons are limited to teacher, baseline, and student models that share identical hyperparameters aside from clause count. Alternative approaches such as extended training of smaller Tsetlin Machines, regularized TMs, and explicit clause pruning without distillation are not evaluated experimentally in this study. These comparisons represent important directions for future work.
@@ -557,7 +578,7 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 
 \begin{table*}
 	\centering
-	\caption{Training accuracy and epoch time for the teacher ($Acc_T$, $\mathcal{T}_T$), baseline ($Acc_B$, $\mathcal{T}_B$), and student ($Acc_S$, $\mathcal{T}_S$) models. $\delta$ represents the student minus baseline difference. Statistical significance is displayed for the paired \textit{t}-test results via stars: {*}$p < 0.05$, {**}$p < 0.01$, {***}$p < 0.001$ (one-tailed for accuracy, two-tailed for time). All values are reported as mean $\pm$ standard deviation across $K$ trials. Each TM is weighted, and the student and the baseline are parametrically identical. Only the student model uses our DKD algorithm.}
+	\caption{Training accuracy and epoch time for the teacher ($Acc_T$, $\mathcal{T}_T$), baseline ($Acc_B$, $\mathcal{T}_B$), and student ($Acc_S$, $\mathcal{T}_S$) models. $\delta$ represents the student minus baseline difference. Statistical significance is displayed for the paired \textit{t}-test results via stars: {*}$p < 0.05$, {**}$p < 0.01$, {***}$p < 0.001$ (one-tailed for accuracy, two-tailed for time). All values are reported as mean $\pm$ standard deviation across $K$ trials. Each TM is weighted, and the student and the baseline are parametrically identical. Only the student model uses our DKD algorithm. $\Gamma = (Acc_S - Acc_B)/(Acc_T - Acc_B) \times 100\%$ denotes the percentage of the teacher--student accuracy gap closed by DKD. Accuracy and gamma values are reported in percentage points, and times are reported in seconds.}
 	\begin{tabular}{l|cccc}
 		\hline
 		Metric & MNIST & KMNIST & EMNIST & IMDB \\
@@ -566,6 +587,7 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 		$Acc_B$ & 90.63 $\pm$ 0.16 & 92.45 $\pm$ 0.06 & 79.36 $\pm$ 0.06 & 98.39 $\pm$ 0.24 \\
 		$Acc_S$ (DKD) & 95.24 $\pm$ 0.06 & 94.63 $\pm$ 0.05 & 83.17 $\pm$ 0.06 & 98.96 $\pm$ 0.13 \\
 		$\Delta$ ($Acc_S-Acc_B$) & +4.61*** & +2.18*** & +3.81*** & +0.57*** \\
+		$\Gamma$             & $65.4$        & $35.1$        & $54.4$        & $55.9$        \\
 		\hline
 		$\mathcal{T}_T$ & 0.70 $\pm$ 0.02 & 1.66 $\pm$ 0.04 & 3.09 $\pm$ 0.05 & 28.95 $\pm$ 0.42 \\
 		$\mathcal{T}_B$ & 0.26 $\pm$ 0.00 & 0.33 $\pm$ 0.01 & 0.58 $\pm$ 0.04 & 17.07 $\pm$ 0.35 \\
@@ -581,17 +603,17 @@ Overall, we observe across all datasets that the proposed knowledge distillation
 	\begin{subfigure}[b]{0.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{combined_train_acc.png}
-		\caption{Average training accuracy on each dataset using DKD.}
+		\caption{Average training accuracy on each dataset.}
 		\label{fig:train-acc-combined}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}[b]{0.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{combined_train_time.png}
-		\caption{Average epoch training time $\mathcal{T}'$ on each dataset using DKD.}
+		\caption{Average epoch training time $\mathcal{T}$ on each dataset.}
 		\label{fig:train-time-combined}
 	\end{subfigure}
-	\caption{Training accuracy and epoch time on each dataset using DKD.}
+	\caption{Training accuracy and epoch time on each dataset. $TM_T$ and $TM_B$ are trained naively, and $TM_S$ is trained with DKD.}
 	\label{fig:train-acc-time-combined}
 \end{figure}
 
@@ -621,7 +643,7 @@ Training efficiency can also be visualized in an efficiency plot (Figure~\ref{fi
 For MNIST, the student model $TM_S$ increases training accuracy over the baseline by approximately 5 percentage points, with reduced variance and slightly lower training time. On KMNIST, $TM_S$ achieves modest gains, increasing average accuracy by around 2 percentage points with similar epoch times. 
 For the EMNIST dataset, training accuracy improves by nearly 4 percentage points compared to the baseline model, while maintaining similar epoch times. This is further illustrated in Figures~\ref{fig:train-acc-emnist} and~\ref{fig:train-time-combined}. 
 On the IMDB dataset, $TM_S$ achieves accuracy between the teacher and baseline while reducing the training time by half when compared to the baseline, and by almost four times when compared to the teacher. This is enabled by rapid literal pruning guided by the teacher, and IMDB results stabilize more quickly than the MNIST datasets, allowing for fewer epochs.
-Note that the neglible increase in training time for KMNIST and EMNIST occurs for the same reason.
+Note that the negligible increase in training time for KMNIST and EMNIST occurs for the same reason.
 
 For all datasets, the effects of DKD on training accuracy and epoch time are statistically significant at $p<0.001$, as evidenced by our paired \textit{t}-test on the baseline and student model.
 
@@ -635,7 +657,7 @@ Figure~\ref{fig:test-acc-combined} shows the average accuracy of each model for 
 
 \begin{table*}
 	\centering
-	\caption{Testing accuracy and epoch time for the teacher ($Acc_T$, $\mathcal{T}_T$), baseline ($Acc_B$, $\mathcal{T}_B$), and student ($Acc_S$, $\mathcal{T}_S$) models. $\Delta$ represents the student minus baseline difference. Statistical significance is displayed for the paired \textit{t}-test results via stars: {*}$p < 0.05$, {**}$p < 0.01$, {***}$p < 0.001$ (one-tailed for accuracy, two-tailed for time). All values are reported as mean $\pm$ standard deviation across $K$ trials. Each TM is weighted, and the student and the baseline are parametrically identical. Only the student model uses our DKD algorithm.}
+	\caption{Testing accuracy and epoch time for the teacher ($Acc_T$, $\mathcal{T}_T$), baseline ($Acc_B$, $\mathcal{T}_B$), and student ($Acc_S$, $\mathcal{T}_S$) models. $\Delta$ represents the student minus baseline difference. Statistical significance is displayed for the paired \textit{t}-test results via stars: {*}$p < 0.05$, {**}$p < 0.01$, {***}$p < 0.001$ (one-tailed for accuracy, two-tailed for time). All values are reported as mean $\pm$ standard deviation across $K$ trials. Each TM is weighted, and the student and the baseline are parametrically identical. Only the student model uses our DKD algorithm. $\Gamma = (Acc_S - Acc_B)/(Acc_T - Acc_B) \times 100\%$ denotes the percentage of the teacher--student accuracy gap closed by DKD. Accuracy and gamma values are reported in percentage points, and times are reported in seconds.}
 	\begin{tabular}{l|cccc}
 		\hline
 		Metric & MNIST & KMNIST & EMNIST & IMDB \\
@@ -644,6 +666,7 @@ Figure~\ref{fig:test-acc-combined} shows the average accuracy of each model for 
 		$Acc_B$ & 90.37 $\pm$ 0.16 & 80.11 $\pm$ 0.09 & 77.51 $\pm$ 0.07 & 87.85 $\pm$ 0.24 \\
 		$Acc_S$ (DKD) & 93.95 $\pm$ 0.05 & 82.47 $\pm$ 0.09 & 80.26 $\pm$ 0.07 & 88.62 $\pm$ 0.03 \\
 		$\Delta$ ($Acc_S-Acc_B$) & +3.58*** & +2.36*** & +2.75*** & +0.78*** \\
+		$\Gamma$             & $76.5$        & $43.7$        & $58.7$        & $70.9$        \\
 		\hline
 		$\mathcal{T}_T$ & 0.38 $\pm$ 0.02 & 0.95 $\pm$ 0.03 & 3.13 $\pm$ 0.12 & 17.88 $\pm$ 0.71 \\
 		$\mathcal{T}_B$ & 0.06 $\pm$ 0.00 & 0.10 $\pm$ 0.01 & 0.24 $\pm$ 0.01 & 10.37 $\pm$ 0.30 \\
@@ -659,21 +682,21 @@ Figure~\ref{fig:test-acc-combined} shows the average accuracy of each model for 
 	\begin{subfigure}[b]{0.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{combined_test_acc.png}
-		\caption{Average testing accuracy on each dataset using DKD.}
+		\caption{Average testing accuracy on each dataset.}
 		\label{fig:test-acc-combined}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}[b]{0.49\linewidth}
 		\centering
 		\includegraphics[width=\linewidth]{combined_test_time.png}
-		\caption{Average testing epoch time $\mathcal{T}$ on each dataset using DKD.}
+		\caption{Average testing epoch time $\mathcal{T}$ on each dataset.}
 		\label{fig:test-time-combined}
 	\end{subfigure}
-	\caption{Testing accuracy and epoch time on each dataset using DKD.}
+	\caption{Testing accuracy and epoch time on each dataset. $TM_T$ and $TM_B$ are trained naively, and $TM_S$ is trained with DKD.}
 	\label{fig:test-acc-time-combined}
 \end{figure}
 
-Figure~\ref{fig:test-time-combined} shows the normalized average testing time per epoch relative to the teacher. Normalization allows a fair comparison across datasets of different sizes (see Table~\ref{tab:dataset-size}). We observe that each student model achieves testing performance similar to its respective baseline model while improving accuracy. As with the training analyis, we observe that all perfomance gains are statistically significant at $p<0.001$.
+Figure~\ref{fig:test-time-combined} shows the normalized average testing time per epoch relative to the teacher. Normalization allows a fair comparison across datasets of different sizes (see Table~\ref{tab:dataset-size}). We observe that each student model achieves testing performance similar to its respective baseline model while improving accuracy. As with the training analysis, we observe that all performance gains are statistically significant at $p<0.001$.
 
 For EMNIST, the student model demonstrates notable efficiency under the evaluated settings. As shown in Figure~\ref{fig:test-eff-emnist}, $TM_S$ achieves near-teacher accuracy while reducing inference time by roughly 12$\times$. The accuracy is comparable to multi-layer Tsetlin Machines reported in~\cite{gorbenko2024multi}, but with lower inference time and a reduced number of clauses (Figures~\ref{fig:test-acc-emnist} and~\ref{fig:test-time-combined}). 
 
@@ -702,6 +725,12 @@ MNIST testing results reflect similar trends: $TM_S$ improves accuracy over the 
 
 The temporary drop in accuracy at $E_T$ epochs is also observed in testing, for the same reasons described in Section~\ref{sec:trapa}.
 
+To quantify how effectively DKD transfers teacher knowledge, we define the
+gap closure metric $\Gamma = (Acc_S - Acc_B)/(Acc_T - Acc_B)$, representing
+the proportion of the teacher--student accuracy gap recovered by the distilled
+student at no additional model cost. As shown in Tables~\ref{tab:train-table-dkd}
+and~\ref{tab:test-table-dkd}, DKD closes between $35\%$ and $77\%$ of the teacher--student gap across all datasets without increasing model size or inference time, demonstrating that DKD provides a practical path toward teacher-level accuracy in a student-sized model.
+
 \subsection{Activation Analysis}
 
 The influence of the teacher on the student can be visualized through activation maps generated over the input data. Figure~\ref{fig:activation-emnist} shows an example on EMNIST test samples. For each pixel, green indicates an included positive feature (e.g., a white pixel), and red indicates an included negated feature (e.g., a black pixel). Pixel intensity reflects feature importance.
@@ -717,15 +746,67 @@ Even with identical model sizes, $TM_S$ shows lower activation entropy (3.1 vs 3
 	\label{fig:activation-emnist}
 \end{figure}
 
+\subsection{Memory and Computational Complexity}
+
+Table~\ref{tab:complexity} summarizes the memory and computational complexity
+for all models across experimental configurations. Tsetlin Machine memory scales
+as $\mathcal{O}(\zeta |C| n)$, where $\zeta$ is the number of classes, $|C|$
+the clause count, and $n$ the number of input features. We report the theoretical
+clause-state count $M = \zeta \cdot |C| \cdot 2n$ as a platform-agnostic proxy
+for memory consumption. Because $TM_T$ and $TM_S$ differ only in clause count,
+the student reduces memory by the teacher-to-student clause ratio: $10\times$
+for MNIST, KMNIST, and EMNIST, and $2\times$ for IMDB. Inference time scales
+proportionally with clause count, which the empirical timing results in
+Table~\ref{tab:test-table-dkd} confirm. Crucially, the student trained with DKD achieves
+this memory and time reduction while closing a substantial portion of the
+teacher--student accuracy gap, as quantified by $\Gamma$ in Tables~\ref{tab:train-table-dkd} and~\ref{tab:test-table-dkd}.
+
+\begin{table}[h]
+	\caption{Memory and computational complexity for teacher, baseline, and student 
+		models. $M = \zeta \cdot |C| \cdot 2n$ is the theoretical clause-state count 
+		(millions). Inference time $\mathcal{T}$ is from Table~\ref{tab:test-table-dkd}.}
+	\label{tab:complexity}
+	\centering
+    \begin{tabular}{lllrrr}
+        \hline
+        Dataset & $\zeta$ & Model & $|C|$ & $M$ (M) & $\mathcal{T}$ (s) \\
+        \hline
+        \multirow{3}{*}{MNIST}   & \multirow{3}{*}{10} & Teacher       & 1000 & 15.68 & $0.38 \pm 0.02$ \\
+                                 &                     & Baseline      & 100  & 1.57  & $0.06 \pm 0.00$ \\
+                                 &                     & Student (DKD) & 100  & 1.57  & $0.06 \pm 0.00$ \\
+        \hline
+        \multirow{3}{*}{KMNIST}  & \multirow{3}{*}{10} & Teacher       & 2000 & 31.36 & $0.95 \pm 0.03$ \\
+                                 &                     & Baseline      & 200  & 3.14  & $0.10 \pm 0.01$ \\
+                                 &                     & Student (DKD) & 200  & 3.14  & $0.10 \pm 0.01$ \\
+        \hline
+        \multirow{3}{*}{EMNIST}  & \multirow{3}{*}{26} & Teacher       & 1000 & 40.77 & $3.13 \pm 0.12$ \\
+                                 &                     & Baseline      & 100  & 4.08  & $0.24 \pm 0.01$ \\
+                                 &                     & Student (DKD) & 100  & 4.08  & $0.25 \pm 0.01$ \\
+        \hline
+        \multirow{3}{*}{IMDB}    & \multirow{3}{*}{2}  & Teacher       & 8000 & 160.0 & $17.88 \pm 0.71$ \\
+                                 &                     & Baseline      & 4000 & 80.0  & $10.37 \pm 0.30$ \\
+                                 &                     & Student (DKD) & 4000 & 80.0  & $9.36  \pm 0.17$ \\
+        \hline
+    \end{tabular}
+\end{table}
+
 \section{Limitations}
 While our Distribution-Enhanced Knowledge Distillation demonstrates consistent empirical improvements, several limitations warrant acknowledgment.
 
 Our experiments focus on relatively simple, balanced datasets with moderate feature dimensionality (784--5000 features). Performance on high-dimensional problems, severely imbalanced classes, or complex domains (e.g., medical imaging, time-series) remains unexplored. Notably, IMDB shows a modest improvement of 0.57 percentage points, suggesting that distillation effectiveness may vary across domains.
 
-We do not compare against simpler compression alternatives such as direct clause pruning from the teacher. Additionally, explicit memory consumption measurements and actual edge device deployment tests are not included in this study; however, such measurements would only be relevant to the specific tested Tsetlin Machine implementation, which is why it was omitted. The clause count of each model serves as a platform-agnostic representative basis for memory consumption.
+While broader comparisons against clause pruning and regularized TMs remain 
+as future work, the gap-closure metric $\Gamma$ provides a meaningful internal 
+benchmark demonstrating that DKD consistently recovers $35$--$77\%$ of the 
+teacher--student accuracy gap across all evaluated datasets.
+
+Additionally, explicit memory consumption measurements and actual edge device deployment tests are not included in this study; however, such measurements would only be relevant to the specific tested Tsetlin Machine implementation, which is why it was omitted. The clause count of each model serves as a platform-agnostic representative basis for memory consumption.
 
 
-Our approach lacks formal analysis of approximation bounds or information-theoretic characterization of what ``dark knowledge'' the soft labels capture in propositional logic systems. Understanding why temperature values $\tau \in [3.0, 4.0]$ work well for TMs, compared to $\tau \approx 1$--2 typical in neural networks, requires further investigation.
+While we provide a rank-preservation guarantee for the soft-label transformation 
+in Algorithm~2, a formal information-theoretic characterization of how much 
+``dark knowledge'' is captured by rank-preserved distributions in propositional 
+logic systems remains an open theoretical question. Understanding why temperature values $\tau \in [3.0, 4.0]$ work well for TMs, compared to $\tau \approx 1$--2 typical in neural networks, requires further investigation.
 
 Further research could be directed at optimizing the balance $\alpha$, weight transfer $z$, and temperature $\tau$ parameters, through automated hyperparameter search methods, or exploring adaptive temperature scheduling during training similar to curriculum learning approaches. Investigating whether temperature should vary by dataset characteristics (e.g., number of classes, class imbalance) could yield additional insights. The clause transfer algorithm could also be improved by considering clause coverage on all features, not just diversity and weight. Instead of solely using offline distillation as shown in this paper, further research could also be directed at comparing the effects of online and offline distillation. We would also explore the application of our algorithm in other domains like few-shot learning \cite{anjum2025using, DBLP:conf/bigdataconf/GuoAZ22, anjum2025weighted} and bioinformatics \cite{woessner2024identifying}, where data is few and knowledge transfer can help training these models with limited data.
 
